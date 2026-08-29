@@ -34,8 +34,14 @@ const ratio = (a, b) => { const L = [lum(a), lum(b)].sort((x,y) => y-x);
 const K = ['backgroundColor','borderTopColor','borderTopWidth','color','boxShadow',
            'borderRadius','fontSize','minHeight','padding'];
 const sig = e => { const c = getComputedStyle(e); return K.map(k => c[k]).join('|'); };
-const lines = e => { const r = document.createRange(); r.selectNodeContents(e);
-  return new Set([...r.getClientRects()].map(x => Math.round(x.top))).size || 1; };
+const lines = e => {   /* cluster by position: .px-punct boxes sit off the baseline */
+  const r = document.createRange(); r.selectNodeContents(e);
+  const lh = parseFloat(getComputedStyle(e).lineHeight) ||
+             parseFloat(getComputedStyle(e).fontSize) * 1.2;
+  const tops = [...r.getClientRects()].map(x => x.top).sort((a,b) => a-b);
+  let n = 0, last = -1e9;
+  for (const t of tops) { if (t - last > lh * 0.5) { n++; last = t; } }
+  return n || 1; };
 
 const els = [...st.querySelectorAll(SEL)].filter(e => {
   const r = R(e); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; });

@@ -4,7 +4,7 @@ Published as its OWN canvas (final-three-121.html); the six-lane v3 board
 at visual-directions-121.html is untouched.
 Regenerate:  python3 explorations/v4/build_v4.py
 """
-import base64, json, pathlib
+import base64, json, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 OUT  = ROOT / "explorations" / "v4"
@@ -13,6 +13,29 @@ OUT.mkdir(exist_ok=True)
 # title from data.js in each lane's own box and records the largest ladder rung that
 # fits in two balanced lines; build_v4.py just reads the answer. Regenerate with
 #   python3 explorations/v4/measure_titles.py
+def esc(t):
+    return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+def bibush_title(t):
+    """Lane 1's title, set in Bibush Chunky, which has no - and no / .
+    Both are drawn as CSS boxes on the font's own stroke (.px-punct), the same
+    mechanism the caption strip demonstrates — the font files are never touched.
+    A digit/digit run is wrapped dir=ltr: with the real slash gone the two numbers
+    become separate runs and the bidi algorithm would otherwise reorder them
+    («7/10» coming out as «10 7»). 4 of the 16 real titles need this."""
+    # Both passes emit markup whose own class names contain "-", so the source hyphens
+    # are parked on a sentinel first and swapped in last. Substituting them in place
+    # rewrote «px-punct px-slash» into nested tags — silently, and only in the four
+    # titles that carry punctuation.
+    SENT = "\x01"
+    t = esc(t).replace("-", SENT)
+    t = re.sub(r"(\d+)/(\d+)",
+               r'<span dir="ltr">\1<i class="px-punct px-slash"></i>\2</span>', t)
+    # <wbr> after the box gives back the line-break opportunity a real hyphen carries:
+    # the boxes are elements, not characters, so the line breaker sees nothing there.
+    # None inside the digit run — «7/10» should never be split across lines.
+    return t.replace(SENT, '<i class="px-punct px-hyphen"></i><wbr>')
+
 TITLE_STEPS = json.loads((pathlib.Path(__file__).resolve().parent / "title-steps.json")
                          .read_text(encoding="utf-8"))
 LADDER = {"lane1": [66, 58, 50, 44, 38, 34, 30],
@@ -41,6 +64,8 @@ ART     = "🪖"
 MAP     = "מפה"
 LONGTITLE = "מדינה פלסטינית: התנגדות עקרונית"   # data.js issues[m2].title — the longest of the 16
 LONGNOTE  = " · מקרה קצה: הכותרת הארוכה ביותר"
+PUNCTTITLE = "ועדת חקירה ל-7/10"   # data.js issues[a1].title — the only one with both - and /
+PUNCTNOTE  = " · מקרה קצה: פיסוק שחסר ב-Bibush, מצויר בקופסאות CSS"
 
 # v4.3 CHANGE 1, optional half — OFF. See the .verified block in SHARED.
 # True renders a bare check glyph (no outlet, no words) where the source chip was.
@@ -262,12 +287,17 @@ LANES.append(dict(
   # religion highlighter in a single sample.
   frames=[dict(file="Main.dc.html", label=TOPICS["religion"]),
           dict(file="MainLongTitle.dc.html", label=TOPICS["religion"],
-               title=LONGTITLE, note=LONGNOTE)],
+               title=LONGTITLE, note=LONGNOTE, row=1),
+          # the punctuation worst case, and the only frame where .px-punct is visible
+          # inside a title rather than in the caption specimen
+          dict(file="MainPunct.dc.html", label=TOPICS["religion"],
+               title=PUNCTTITLE, note=PUNCTNOTE, row=2)],
   he="טופס מודבק", en="Defaced Paperwork",
   tokens="""<!--
   LANE 1 · Defaced Paperwork
   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-              · file-tab manila #C0B393 · accent muted red #A8443C
+              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
+              · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
   type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in system face for body
   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
   BOLDNESS  : the Bibush Chunky title at 66px — it takes a third of the card on its own
@@ -278,7 +308,8 @@ LANES.append(dict(
 -->""",
   css="""/* LANE 1 · Defaced Paperwork
    palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-               · file-tab manila #C0B393 · accent muted red #A8443C
+               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
+               · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
    texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
    BOLDNESS  : the Bibush Chunky title at 66px, taking a third of the card on its own
@@ -336,13 +367,24 @@ LANES.append(dict(
 .lane1 .map-btn:focus-visible{outline:3px solid #D9D2C0;outline-offset:3px}
 .lane1 .avatar{border-radius:0;background:#C0B393;box-shadow:inset 0 0 0 2px #1A1714}
 .lane1 .avatar-sil{fill:#1A1714}
-/* file-tab pile */
-.lane1 .pile-card{background:#C0B393;box-shadow:inset 0 0 0 1px #8E8264,0 2px 0 rgba(0,0,0,.55)}
-.lane1 .pile-card::before{content:"";position:absolute;top:-13px;width:96px;height:14px;background:#C0B393;
-  box-shadow:inset 0 0 0 1px #8E8264}
+/* file-tab pile — v4.4 CHANGE B. Three sheets of the same manila read as one thick
+   sheet, not as a case file. Papers, Please is differently tinted papers on a brown
+   desk, so each back gets its own document colour and its own edge: cream, the pale
+   lavender-pink of a fingerprint hand-out, the pale blue of an ID record. The front
+   card stays neutral manila — the colour is around and behind it, never on it. */
+.lane1 .pile-card{box-shadow:inset 0 0 0 1px #8E8264,0 2px 0 rgba(0,0,0,.55)}
+.lane1 .pile-card::before{content:"";position:absolute;top:-13px;width:96px;height:14px;
+  background:inherit;box-shadow:inset 0 0 0 1px #8E8264}
+.lane1 .pile-1{background:#E4DCC4}
 .lane1 .pile-1::before{right:26px}
+.lane1 .pile-2{background:#D3C4CE}
 .lane1 .pile-2::before{right:132px}
+.lane1 .pile-3{background:#B8C3D2}
 .lane1 .pile-3::before{right:230px}
+/* the second saturated accent, used once: one folder in the file is tabbed muted teal.
+   A coloured tab is document furniture, it sits behind the card so it can never touch
+   content, and it belongs to no topic and no verdict. */
+.lane1 .pile-2::before{background:#2F7D74;box-shadow:inset 0 0 0 1px #215A54}
 .lane1 .card{background:#D9D2C0;padding-right:36px;
   box-shadow:inset 0 0 0 1px #A79C81,0 4px 0 rgba(0,0,0,.6),0 20px 30px rgba(0,0,0,.5)}
 /* INTERVENTION 1 — one slapped die-cut sticker, carrying the topic colour.
@@ -414,7 +456,7 @@ LANES.append(dict(
   # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
   frames=[dict(file="NytGames.dc.html", tid="branches", label=TOPICS["branches"]),
           dict(file="NytGamesLongTitle.dc.html", tid="branches", label=TOPICS["branches"],
-               title=LONGTITLE, note=LONGNOTE)],
+               title=LONGTITLE, note=LONGNOTE, row=1)],
   tokens="""<!--
   LANE 2 · NYT Games
   palette   : warm grey #E8E6E1 · paper #FDFDFB · ink #1A1A1A · rule #DDD9D0 · neutral back #CFCBC2
@@ -484,10 +526,12 @@ LANES.append(dict(
 LANES.append(dict(
   n="3", file="Stickers.dc.html", cls="lane3", dispnote="",
   he="תרבות סטיקרים", en="Israeli Sticker Culture",
+  rung_trim=dict(keep_above=58, chrome=38, inner=290,
+                 css="border-width:3px;padding:4px 8px 6px"),
   # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
   frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"]),
           dict(file="StickersLongTitle.dc.html", tid="religion", label=TOPICS["religion"],
-               title=LONGTITLE, note=LONGNOTE)],
+               title=LONGTITLE, note=LONGNOTE, row=1)],
   tokens="""<!--
   LANE 3 · Israeli Sticker Culture
   palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
@@ -618,7 +662,7 @@ def frames_of(lane):
     for f in lane["frames"]:
         d = dict(tid=f.get("tid", "merged"), label=f.get("label", TOPICS["religion"]),
                  file=f["file"], var=f.get("var", ""), note=f.get("note", ""),
-                 title=f.get("title", TITLE))
+                 title=f.get("title", TITLE), row=f.get("row", 0))
         out.append(d)
     return out
 
@@ -642,15 +686,26 @@ def build():
                     .replace("%NUM%", lane["n"]).replace("%HE%", lane["he"]).replace("%EN%", lane["en"])
                     .replace("%DISPNOTE%", lane["dispnote"] + fr["note"])
                     .replace("%COINS%", COINS).replace("%TOPIC%", tlabel)
-                    .replace("%TITLE%", fr["title"])
+                    .replace("%TITLE%", bibush_title(fr["title"])
+                                          if lane["cls"] == "lane1" else esc(fr["title"]))
                     .replace("%CLAIM_A%", CLAIM_A).replace("%CLAIM_B%", CLAIM_B)
                     .replace("%ANS_T%", ANS_T).replace("%ANS_F%", ANS_F)
                     .replace("%VERIFY%", VERIFY_HTML if VERIFY_MARK else "")
                     .replace("%ART%", ART).replace("%MAP%", MAP)
                     .replace("%BILLDATE%", BILLDATE))
+            cls = lane["cls"]
             rungs = "/* v4.4 — measured title ladder for this lane; see measure_titles.py */\n" + \
-                    "\n".join(".%s.ts-%d .issue-title{font-size:%dpx}" % (lane["cls"], f, f)
-                               for f in LADDER[lane["cls"]])
+                    "\n".join(".%s.ts-%d .issue-title{font-size:%dpx}" % (cls, f, f)
+                               for f in LADDER[cls])
+            trim = lane.get("rung_trim")
+            if trim:
+                low = [f for f in LADDER[cls] if f < trim["keep_above"]]
+                rungs += ("\n/* the box itself gives ground at the low rungs. The top rung keeps the\n"
+                          "   approved proportions exactly; below it the border and padding come in so\n"
+                          "   the long titles are not paying %dpx of chrome out of %dpx of card. */\n"
+                          % (trim["chrome"], trim["inner"])) + \
+                         ".%s:is(%s) .issue-title{%s}" % (
+                             cls, ",".join(".ts-%d" % f for f in low), trim["css"])
             page = (PAGE.replace("%TOKENS%", lane["tokens"]).replace("%SHARED%", shared)
                     .replace("%LANECSS%", lane["css"].replace("%BIBUSHFONT%", BIBUSH)
                                                      .replace("%TITLESTEPS%", rungs))
@@ -664,7 +719,7 @@ def build():
     for fname, lane, fr in boards:
         col = LANES.index(lane)
         arts.append({"file": fname, "x": (len(LANES) - 1 - col) * 480,
-                     "y": 1010 if fr["note"] else 0, "w": 390, "h": 930,
+                     "y": fr["row"] * 1010, "w": 390, "h": 930,
                      "title": "%s · %s · %s%s" % (lane["n"], lane["he"], lane["en"],
                                                   fr["note"] or " — " + fr["label"])})
     (OUT / "canvas.json").write_text(

@@ -22,6 +22,7 @@ W, H = 390, 780
 NAMES = {
     "Main.dc.html":              "lane1-defaced-paperwork",
     "MainLongTitle.dc.html":     "lane1-defaced-paperwork-longtitle",
+    "MainPunct.dc.html":         "lane1-defaced-paperwork-punctuation",
     "NytGames.dc.html":          "lane2-nyt-games",
     "NytGamesLongTitle.dc.html": "lane2-nyt-games-longtitle",
     "Stickers.dc.html":          "lane3-stickers",

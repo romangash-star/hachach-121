@@ -12,7 +12,8 @@ Output: title-steps.json, read by build_v4.py.
 
     python3 explorations/v4/measure_titles.py
 """
-import json, pathlib, re, shutil, subprocess, tempfile
+import json, pathlib, re, shutil, subprocess, sys, tempfile
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -38,28 +39,48 @@ document.addEventListener('DOMContentLoaded', () => {
 """
 
 MEASURE = """
+/* The rung is driven the way the artboard drives it: by swapping the stage's ts-* class,
+   never by setting font-size directly. That matters because a lane may change the title
+   box itself at the low rungs (lane 3 trims its border and padding there) — measuring
+   with an inline font-size would silently measure the wrong box. */
 window.__measure = (titles, steps, maxLines) => {
+  const stage = document.querySelector('.stage');
   const el = document.querySelector('.issue-title');
   const out = {};
   const lineCount = e => {
+    /* Cluster the range rects by vertical position instead of counting distinct tops:
+       lane 1's .px-punct boxes sit on their own vertical-align, so they produce rects a
+       few px off the text baseline and a naive count read one line as four. */
     const r = document.createRange(); r.selectNodeContents(e);
-    const tops = new Set([...r.getClientRects()].map(x => Math.round(x.top)));
-    return tops.size || 1;
+    const lh = parseFloat(getComputedStyle(e).lineHeight) ||
+               parseFloat(getComputedStyle(e).fontSize) * 1.2;
+    const tops = [...r.getClientRects()].map(x => x.top).sort((a, b) => a - b);
+    let n = 0, last = -1e9;
+    for (const t of tops) { if (t - last > lh * 0.5) { n++; last = t; } }
+    return n || 1;
   };
-  const orig = el.textContent, origSize = el.style.fontSize;
+  const setRung = fs => {
+    [...stage.classList].filter(c => /^ts-\d+$/.test(c)).forEach(c => stage.classList.remove(c));
+    stage.classList.add('ts-' + fs);
+    void el.offsetWidth;
+  };
+  const origHTML = el.innerHTML;
+  const origRung = [...stage.classList].find(c => /^ts-\d+$/.test(c));
   for (const t of titles) {
-    el.textContent = t;
-    let chosen = null, detail = [];
+    el.innerHTML = t.html;
+    let chosen = null; const detail = [];
     for (const fs of steps) {
-      el.style.fontSize = fs + 'px';
+      setRung(fs);
       const lines = lineCount(el);
       const overflow = el.scrollWidth > el.clientWidth + 1;
-      detail.push({fs, lines, overflow});
+      const px = parseFloat(getComputedStyle(el).fontSize);
+      detail.push({fs, px, lines, overflow});
       if (!overflow && lines <= maxLines) { chosen = fs; break; }
     }
-    out[t] = {step: chosen, detail};
+    out[t.plain] = {step: chosen, detail};
   }
-  el.textContent = orig; el.style.fontSize = origSize;
+  el.innerHTML = origHTML;
+  if (origRung) setRung(parseInt(origRung.slice(3), 10));
   return out;
 };
 """
@@ -70,6 +91,15 @@ def titles():
     d, _ = json.JSONDecoder().raw_decode(s[i:])
     return [v["title"] for v in d["issues"]]
 
+def payload(lane, ts):
+    """Per lane, the exact HTML the artboard will put in the title. Lane 1 sets its
+    title in Bibush Chunky, which has no - and no / , so those two characters are
+    drawn as CSS boxes; measuring the plain string there would measure the browser's
+    fallback glyph instead of what ships."""
+    import build_v4 as B
+    f = B.bibush_title if lane == "lane1" else (lambda t: B.esc(t))
+    return [{"plain": t, "html": f(t)} for t in ts]
+
 def run():
     ts = titles()
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="v4titles-"))
@@ -79,14 +109,12 @@ def run():
         for lane, cfg in LADDERS.items():
             src = (HERE / cfg["file"]).read_text(encoding="utf-8")
             # the title must wrap and balance while being measured, exactly as it will ship
-            src = src.replace("</style>",
-                ".issue-title{white-space:normal;text-wrap:balance}\n  </style>", 1)
             src = src.replace("</body>", "<script>%s</script>\n"
                 "<pre id=\"out\" hidden></pre>\n"
                 "<script>document.fonts.ready.then(()=>{"
                 "document.getElementById('out').textContent="
                 "JSON.stringify(window.__measure(%s,%s,%d));});</script>\n</body>"
-                % (MEASURE, json.dumps(ts, ensure_ascii=False),
+                % (MEASURE, json.dumps(payload(lane, ts), ensure_ascii=False),
                    json.dumps(cfg["steps"]), MAX_LINES), 1)
             page = tmp / ("m_" + cfg["file"])
             page.write_text(src, encoding="utf-8")

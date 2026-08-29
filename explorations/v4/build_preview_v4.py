@@ -16,10 +16,9 @@ for f, lane, tid in order:
     stages.append(re.search(r'(<div class="stage .*?)\n</x-dc>', src, re.S).group(1))
 
 # v4.4 — r1 row on top, longest-real-title row below
-top, bottom = [], []
+rows = [[], [], []]
 for (f, lane, tid), st in zip(order, stages):
-    (bottom if "LongTitle" in f else top).append(st)
-rows = top, bottom
+    rows[0 if "LongTitle" not in f and "Punct" not in f else (1 if "LongTitle" in f else 2)].append(st)
 page = """<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,8 +31,10 @@ page = """<!DOCTYPE html>
 <body>
 <div class="row">%R1%</div>
 <div class="row">%R2%</div>
+<div class="row">%R3%</div>
 </body></html>
 """.replace("%SHARED%", shared).replace("%LANES%", "\n\n".join(styles)) \
-   .replace("%R1%", "\n".join(rows[0])).replace("%R2%", "\n".join(rows[1]))
+   .replace("%R1%", "\n".join(rows[0])).replace("%R2%", "\n".join(rows[1])) \
+   .replace("%R3%", "\n".join(rows[2]))
 (OUT / "final-three.html").write_text(page, encoding="utf-8")
 print("final-three.html  %.1f KB" % ((OUT / "final-three.html").stat().st_size / 1024))
