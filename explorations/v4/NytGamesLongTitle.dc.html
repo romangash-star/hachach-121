@@ -6,17 +6,14 @@
 </head>
 <body>
 <!--
-  LANE 3 · Israeli Sticker Culture
-  palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
-  type      : SimplerPro Black in slogan chunks; the HUD is a flat band, not a sticker sheet
-  texture   : one — the pole: two-scale grain over pale ghost remnants of older stickers
-  BOLDNESS  : a 216px die-cut sticker cut to the helmet's own silhouette, stuck on
-              the card and breaking out over its top edge
-  FIXED     : אמת/שקר buttons #2EC4B6 — one lane constant, identical on both buttons and
-              both topic frames, never topic-tinted; direction is the arrow alone.
-              #FF3B6B survives only as one card in the pile (v4.2: the swipe hints are gone)
-  TOPIC     : religion #ffd23f/#ffb800 -> #FFD60A/#FF8A00  (sticker yellow, sticker orange)
-              branches #2b4cff/#1a3acc -> #3D5BFF/#1E36B8  (electric blue, deep blue)
+  LANE 2 · NYT Games
+  palette   : warm grey #E8E6E1 · paper #FDFDFB · ink #1A1A1A · rule #DDD9D0 · neutral back #CFCBC2
+  type      : the boldness lives here — title 52px, claim 17.5px/700, small caps micro-labels
+  texture   : none — flat games-family colour and a strict grid; green banned lane-wide
+  BOLDNESS  : type scale. The title is a poster headline, not a form label
+  TOPIC     : religion #ffd23f/#ffb800 -> #EE9F3C/#C7701D  (pushed to warm orange so the
+                                                            #C9A227 surprise amber stays distinct)
+              branches #2b4cff/#1a3acc -> #6AA9E0/#4A6FB5  (games sky, deep sky)
 -->
 <x-dc>
 <helmet>
@@ -84,8 +81,10 @@ a:hover{color:#0f2894}
 .art-clip{display:none;position:absolute;width:26px;height:58px;fill:none;stroke:currentColor;
   stroke-width:3.4;stroke-linecap:round}
 .sticker{display:none}
+/* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
+   from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
-  font-size:36px;line-height:1.04}
+  font-size:36px;line-height:1.04;text-wrap:balance}
 .claim-text{margin-top:10px;font-size:16px;line-height:1.5;font-weight:700;text-wrap:balance}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
@@ -115,123 +114,74 @@ a:hover{color:#0f2894}
 
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 
-/* LANE 3 · Israeli Sticker Culture
-   palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
-   type      : SimplerPro Black slogan chunks; the HUD is a flat band, not a sticker sheet
-   texture   : one — the pole: two-scale grain over pale ghost remnants of older stickers
-   BOLDNESS  : a 216px die-cut sticker cut to the helmet's own silhouette, stuck on
-              the card and breaking out over its top edge
-   TOPIC old->new : religion #ffd23f/#ffb800 -> #FFD60A/#FF8A00 (sticker yellow, sticker orange)
-                    branches #2b4cff/#1a3acc -> #3D5BFF/#1E36B8 (electric blue, deep blue) */
-/* v4.4 CHANGE A — as in lane 2: the pile is a fixed mixed set and
-   THE TOPIC TOKEN LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+/* LANE 2 · NYT Games
+   palette   : warm grey #E8E6E1 · paper #FDFDFB · ink #1A1A1A · rule #DDD9D0 · neutral #CFCBC2
+   type      : the boldness lives here — title 52px, claim 17.5px/700, small caps micro-labels
+   texture   : none — flat games-family colour and a strict grid; green banned lane-wide
+   BOLDNESS  : type scale. The title is a poster headline, not a form label
+   TOPIC old->new : religion #ffd23f/#ffb800 -> #EE9F3C/#C7701D  (warm orange, pushed off the
+                      #C9A227 surprise amber so the verdict colour stays unmistakable)
+                    branches #2b4cff/#1a3acc -> #6AA9E0/#4A6FB5  (games sky, deep sky) */
+/* v4.4 CHANGE A — the pile stops carrying the topic and becomes one fixed mixed set.
+   THE TOPIC TOKEN NOW LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
        background on .card, via --card.
-   The die-cut sticker's registration rim, which carried the topic in v4.3, becomes a
-   lane constant (--rim) so the card region has one topic-keyed surface, not two. */
-.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000;--card:#FFF3CE}
-.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff;--card:#E6EDFF}
-.lane3{--rim:#3D5BFF}
-.lane3 .frame{background:#B3B1A9;color:#000}
-.lane3 .frame-bg{background:#B3B1A9}
-/* the pole: ghost remnants sit under two grains at different scales */
-.lane3 .frame-bg::after{content:"";position:absolute;inset:0;
-  background-image:
-    radial-gradient(rgba(0,0,0,.5) .5px,transparent .6px),
-    radial-gradient(rgba(255,255,255,.55) .5px,transparent .6px),
-    repeating-linear-gradient(89deg,rgba(0,0,0,.05) 0 1px,transparent 1px 4px);
-  background-size:3px 3px,7px 7px,100% 100%;background-position:0 0,2px 3px,0 0}
-/* v4.2 FIX 2 — the "ghost rectangle" under the buttons was one of these: a peeled-sticker
-   remnant from the pole texture. At .75 opacity with a crisp 3px light outline and rx:8
-   geometry, parked directly beneath the verdict buttons, it read as an empty UI panel.
-   Kept as texture, not deleted: outline dropped, opacity halved, and the shape that sits
-   in the button zone redrawn as a torn edge so nothing down there has control geometry. */
-.lane3 .deco .deco-ghosts{display:block;fill:#C6C4BC;stroke:none;opacity:.34}
-/* HUD: a flat band, one sticker accent only (the topic title).
-   v4.2 FIX 4 — the solid black bar read as browser chrome. It is now a bleached strip of
-   the pole itself: same grain, same colour family, lightened, with a hairline bottom rule
-   so it still reads as a band. Opaque rather than translucent so the card can never show
-   through it. Content flips to near-black (11.0:1 on #C9C7C1, down from 15.4:1). Still flat, still one
-   sticker accent, plain avatar circle, plain step dots. */
-.lane3 .hud{background:#C9C7C1;margin:-12px -16px 0;padding:10px 16px;min-height:60px;
-  overflow:hidden;box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.22)}
-.lane3 .hud::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background-image:
-    radial-gradient(rgba(0,0,0,.5) .5px,transparent .6px),
-    radial-gradient(rgba(255,255,255,.55) .5px,transparent .6px),
-    repeating-linear-gradient(89deg,rgba(0,0,0,.05) 0 1px,transparent 1px 4px);
-  background-size:3px 3px,7px 7px,100% 100%;background-position:0 0,2px 3px,0 0}
-.lane3 .coin-glyph{background:var(--t1);box-shadow:inset 0 0 0 2px #000}
-.lane3 .coin-num{color:#131310}
-.lane3 .topic-title{background:var(--t1);color:var(--on-t1);border:3px solid #fff;border-radius:999px;
-  padding:4px 13px;rotate:-2.5deg;font-weight:900;
-  box-shadow:0 0 0 1.5px rgba(0,0,0,.3),0 3px 0 rgba(0,0,0,.42)}
-.lane3 .steps{color:#131310}
-.lane3 .map-btn{color:#131310;background:none}
-.lane3 .map-btn:focus-visible{outline:3px solid #131310;outline-offset:2px}
-.lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
-.lane3 .avatar-sil{fill:#CFCDC4}
-.lane3 .pile-card{border:5px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.42)}
-/* the merged pile: warm red + warm orange against the lane's electric blue. Fixed —
-   identical in every round. Sticker yellow is deliberately NOT in the pile: the front
-   card is now pale warm yellow, and a yellow back behind it would flatten the stack. */
-.lane3 .pile-1{background:#FF3B6B;transform:translateY(-11px) rotate(-3.4deg)}
-.lane3 .pile-2{background:#3D5BFF;transform:translateY(-20px) rotate(4.6deg)}
-.lane3 .pile-3{background:#FF8A00;transform:translateY(-29px) rotate(-7deg)}
-.lane3 .card{background:var(--card);border:7px solid #fff;rotate:-1.4deg;overflow:visible;
-  padding:0 18px 16px;box-shadow:0 7px 0 rgba(0,0,0,.42),0 16px 26px rgba(0,0,0,.28)}
-/* BOLDNESS — v4.3 CHANGE 2: the helmet is a die-cut sticker stuck ON the card.
-   The coloured rounded square is gone. The white cut edge now follows the HELMET'S
-   OWN SILHOUETTE, which no border can do, so it is built in the filter that every
-   artboard carries in its <defs> (inert in lanes 1 and 2):
-     feMorphology dilate 15 on SourceAlpha, offset 5/8, flooded var(--t1)  -> the
-       colour registration rim, the frame's topic-colour carrier inside the card;
-     feMorphology dilate 9  on SourceAlpha, flooded #fff                   -> the cut;
-     SourceGraphic (the flat black helmet) on top.
-   A CSS drop-shadow underneath lifts it off the white card. Nothing here is
-   verdict-capable: the topic colour touches the sticker rim and nothing else. */
-.lane3 .dc-tint{flood-color:var(--rim);flood-opacity:1}
-.lane3 .dc-cut{flood-color:#fff;flood-opacity:1}
-.lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
-.lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
-.lane3 .art-emoji::before{content:"🪖";display:block;font-size:216px;line-height:1;
-  filter:grayscale(1) brightness(0) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-.lane3.topic-religion .art-emoji::before{filter:grayscale(1) brightness(0)
-  url(#dc-lane3-religion) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-.lane3.topic-branches .art-emoji::before{filter:grayscale(1) brightness(0)
-  url(#dc-lane3-branches) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-/* the title + claim block is centred in what the sticker leaves, and both grow into
-   the space the source chip freed: title 46 -> 58px, claim 17 -> 19px.
-   58px is the ceiling for one line: «חוק הגיוס» measures 244px of the 252px the box
-   can hold, and 60px overflows it to 252.4px and wraps. A wrapped title stretches the
-   black box to the full card width and stops reading as a slogan chunk, so the size
-   is pinned to the one-line fit and the remainder went to the sticker (196 -> 216px). */
-.lane3 .issue-title{background:#000;color:#fff;border:5px solid #fff;padding:6px 14px 9px;rotate:1.4deg;
-  align-self:flex-start;font-size:58px;box-shadow:0 4px 0 rgba(0,0,0,.45);margin-top:auto}
-.lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
-  max-width:27ch;text-wrap:balance}
-/* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-/* v4.4 CHANGE A — the אמת/שקר buttons drop in intensity: full-saturation teal was
-   competing with the sticker for the loudest thing on the card. Two options ship side
-   by side, differing ONLY in the button fill; everything else in the two artboards is
-   identical. In both, the two buttons are identical to each other and the direction is
-   carried by the arrow alone. Neither reads a topic token.
-   OPTION A (default) — the same teal, softened, with a dark teal label: 8.7:1. */
-.lane3 .ans{background:#A9E3DC;color:#0B3B36;border:5px solid #fff;border-radius:16px;
-  box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
-/* OPTION B (.btn-b) — white fill with the teal moved to a die-cut edge, echoing the
-   sticker's own construction: 12.3:1. */
-.lane3.btn-b .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6}
-.lane3 .ans-true{rotate:-1.8deg}
-.lane3 .ans-false{rotate:1.8deg}
-.lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
+   Everything else in the card region that the topic used to tint (the pile backs, the
+   art disc) is now a lane constant, so 8 topics x 2 rounds still differ round to round
+   without the whole frame recolouring. --t1/--t2 stay defined and stay correct: they
+   are what the HUD topic chip, coin and avatar ring read. --tint is retained but
+   unused, so the old per-topic disc can be restored in one line. */
+.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2;--card:#FDF4E6}
+.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3;--card:#EFF4FB}
+.lane2 .frame{background:#E8E6E1;color:#1A1A1A;padding:12px 20px 24px}
+.lane2 .frame-bg{background:#E8E6E1}
+.lane2 .coin-glyph{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .coin-num{color:#1A1A1A}
+.lane2 .topic-title{color:#4A4A46;font-size:10.5px;letter-spacing:.19em;padding:4px 0}
+.lane2 .steps{color:var(--t2)}
+.lane2 .map-btn{color:#1A1A1A;background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .map-btn:focus-visible{outline:3px solid #C9A227;outline-offset:2px}
+.lane2 .avatar{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .avatar-sil{fill:#B9B5AC}
+/* pile: two from the topic family + one neutral */
+.lane2 .pile-card{border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+/* the merged pile: the two topic families the board was comparing, plus the neutral
+   that was already there. Chosen over inventing a new palette because a deck of
+   different-coloured puzzle backs IS the NYT Games idiom, and warm / cool / neutral in
+   rotation reads as three different puzzles rather than three copies of one. Fixed —
+   identical in every round. */
+.lane2 .pile-1{background:#EE9F3C}
+.lane2 .pile-2{background:#6AA9E0}
+.lane2 .pile-3{background:#CFCBC2}
+.lane2 .card{background:var(--card);border-radius:6px;padding:14px 22px 16px;
+  box-shadow:0 0 0 1px #DDD9D0,0 12px 28px rgba(0,0,0,.16)}
+.lane2 .art{min-height:96px}
+.lane2 .art::before{content:"";position:absolute;width:172px;height:172px;border-radius:50%;
+  background:#E7E3DA}   /* lane constant now: the topic lives on --card */
+.lane2 .art-emoji{position:relative;font-size:100px;filter:grayscale(1) brightness(0)}
+/* BOLDNESS: poster type.
+   v4.2 FIX 3 — lane 2's freed space went to TYPE, which is where this lane's
+   boldness lives: title 52 -> 66px, claim 17.5 -> 19px. .art stays flex:1 and
+   takes what is left over, so the disc grows a little with it. */
+.lane2 .issue-title{font-size:66px;letter-spacing:-.03em;line-height:.94;margin-top:10px}
+.lane2 .claim-text{margin-top:14px;font-size:19px;line-height:1.42}
+/* v4.4 — measured title ladder for this lane; see measure_titles.py */
+.lane2.ts-66 .issue-title{font-size:66px}
+.lane2.ts-58 .issue-title{font-size:58px}
+.lane2.ts-50 .issue-title{font-size:50px}
+.lane2.ts-44 .issue-title{font-size:44px}
+.lane2.ts-38 .issue-title{font-size:38px}
+.lane2.ts-34 .issue-title{font-size:34px}
+.lane2 .ans{background:#FDFDFB;border:1.5px solid #1A1A1A;border-radius:3px;color:#1A1A1A;font-size:21px;
+  letter-spacing:.02em;box-shadow:0 3px 0 #1A1A1A}
+.lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}
   </style>
 </helmet>
-<div class="stage lane3 topic-religion btn-b">
+<div class="stage lane2 topic-branches ts-38">
   <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">3</span>
-    <span class="cap-he">תרבות סטיקרים</span>
-    <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · כפתורים ב׳: לבן עם קו טורקיז</span>
+    <span class="cap-num">2</span>
+    <span class="cap-he">משחקי עיתון</span>
+    <span class="cap-en" dir="ltr">NYT Games</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: מי מחליט פה? · מקרה קצה: הכותרת הארוכה ביותר</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
@@ -239,7 +189,7 @@ a:hover{color:#0f2894}
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
-        <filter id="dc-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+        <filter id="dc-lane2-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
           <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
           <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
           <feFlood class="dc-tint" result="f2"></feFlood>
@@ -267,7 +217,7 @@ a:hover{color:#0f2894}
         <span class="coin-num">240</span>
       </div>
       <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
+        <span class="topic-title">מי מחליט פה?</span>
         <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
       </div>
       <div class="hud-you">
@@ -293,7 +243,7 @@ a:hover{color:#0f2894}
             <span class="art-emoji">🪖</span>
             <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
           </div>
-          <h2 class="issue-title">חוק הגיוס</h2>
+          <h2 class="issue-title">מדינה פלסטינית: התנגדות עקרונית</h2>
           <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
         </article>
       </div>

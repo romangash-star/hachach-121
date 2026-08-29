@@ -9,6 +9,16 @@ import base64, json, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 OUT  = ROOT / "explorations" / "v4"
 OUT.mkdir(exist_ok=True)
+# v4.4 — title sizes are MEASURED, not chosen. measure_titles.py renders every issue
+# title from data.js in each lane's own box and records the largest ladder rung that
+# fits in two balanced lines; build_v4.py just reads the answer. Regenerate with
+#   python3 explorations/v4/measure_titles.py
+TITLE_STEPS = json.loads((pathlib.Path(__file__).resolve().parent / "title-steps.json")
+                         .read_text(encoding="utf-8"))
+LADDER = {"lane1": [66, 58, 50, 44, 38, 34, 30],
+          "lane2": [66, 58, 50, 44, 38, 34],
+          "lane3": [58, 50, 44, 38, 34, 30]}
+
 FONT   = base64.b64encode((ROOT / "fonts" / "SimplerPro_HLAR-Black.woff2").read_bytes()).decode()
 BIBUSH = base64.b64encode((ROOT / "fonts" / "BibushChunky.v1.0.otf").read_bytes()).decode()
 
@@ -29,6 +39,8 @@ ANS_F   = "שקר"
 BILLDATE = "11 ביוני 2024"   # data.js  issues[r1].bill_date — the sticker's date stamp
 ART     = "🪖"
 MAP     = "מפה"
+LONGTITLE = "מדינה פלסטינית: התנגדות עקרונית"   # data.js issues[m2].title — the longest of the 16
+LONGNOTE  = " · מקרה קצה: הכותרת הארוכה ביותר"
 
 # v4.3 CHANGE 1, optional half — OFF. See the .verified block in SHARED.
 # True renders a bare check glyph (no outlet, no words) where the source chip was.
@@ -101,8 +113,10 @@ a:hover{color:#0f2894}
 .art-clip{display:none;position:absolute;width:26px;height:58px;fill:none;stroke:currentColor;
   stroke-width:3.4;stroke-linecap:round}
 .sticker{display:none}
+/* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
+   from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
-  font-size:36px;line-height:1.04}
+  font-size:36px;line-height:1.04;text-wrap:balance}
 .claim-text{margin-top:10px;font-size:16px;line-height:1.5;font-weight:700;text-wrap:balance}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
@@ -246,7 +260,9 @@ LANES.append(dict(
   dispnote=" · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת",
   # v4.3 CHANGE 3 — lane 1 renders ONE frame, not two: the branches sticker and the
   # religion highlighter in a single sample.
-  frames=[dict(file="Main.dc.html", label=TOPICS["religion"])],
+  frames=[dict(file="Main.dc.html", label=TOPICS["religion"]),
+          dict(file="MainLongTitle.dc.html", label=TOPICS["religion"],
+               title=LONGTITLE, note=LONGNOTE)],
   he="טופס מודבק", en="Defaced Paperwork",
   tokens="""<!--
   LANE 1 · Defaced Paperwork
@@ -281,11 +297,15 @@ LANES.append(dict(
 .lane1.topic-branches{--t1:#4A6BD6;--t2:#25376B;--hl:#AEC4F2;--on-t1:#FFFFFF}
 .lane1.topic-merged{--t1:#4A6BD6;--t2:#25376B;--hl:#F7DC7A;--on-t1:#FFFFFF}
 
-/* Bibush Chunky covers Hebrew letters + digits only. Missing: - / " ׳ ״ .
-   Checked against data.js: 4 of the 16 real issue titles break, and ONLY on - and / .
-   The brief's suggested U+0022 fallback is absent from the font too, so punctuation is
-   drawn as CSS boxes matched to Bibush's stroke (.px-punct below) — the font files
-   themselves are never modified. Demo of «ועדת חקירה ל-7/10» sits in the caption strip. */
+/* Bibush Chunky's cmap, read directly off the file: 47 glyphs. It HAS . : and digits;
+   it lacks - / " ׳ ״ . (The other cut is the mirror image — it has - and lacks : .)
+   Checked against data.js: 4 of the 16 real titles break, and only on - and / :
+   ועדת חקירה ל-7/10 · המס על כלים חד-פעמיים · חוק המשטרה של בן-גביר ·
+   מדינה פלסטינית: הכרה חד-צדדית. The brief's suggested U+0022 fallback is absent too,
+   so punctuation is drawn as CSS boxes on Bibush's stroke (.px-punct below); the font
+   files themselves are never modified. The demo sits in the caption strip.
+   NOT YET WIRED INTO THE TITLE ITSELF — so the measured ladder rung for those four
+   titles is taken with the browser's fallback glyph and is approximate until it is. */
 @font-face{font-family:'BibushChunky';src:url(data:font/ttf;base64,%BIBUSHFONT%) format('truetype');
   font-weight:400;font-style:normal;font-display:block}
 .lane1 .cap-spec{display:block}
@@ -381,6 +401,7 @@ LANES.append(dict(
 .lane1 .hl{background:linear-gradient(104deg,rgba(0,0,0,0) 0,var(--hl) 1.5%,var(--hl) 98%,rgba(0,0,0,0) 100%);
   opacity:.999;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;
   mix-blend-mode:multiply}
+%TITLESTEPS%
 .lane1 .ans{background:#EDE8DA;color:#1A1714;border-radius:0;
   font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:27px;
   box-shadow:inset 0 0 0 2px #1A1714,4px 4px 0 rgba(0,0,0,.55)}
@@ -390,8 +411,10 @@ LANES.append(dict(
 LANES.append(dict(
   n="2", file="NytGames.dc.html", cls="lane2", dispnote="",
   he="משחקי עיתון", en="NYT Games",
-  # v4.4 CHANGE A — one frame, mixed pile
-  frames=[dict(file="NytGames.dc.html", tid="branches", label=TOPICS["branches"])],
+  # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
+  frames=[dict(file="NytGames.dc.html", tid="branches", label=TOPICS["branches"]),
+          dict(file="NytGamesLongTitle.dc.html", tid="branches", label=TOPICS["branches"],
+               title=LONGTITLE, note=LONGNOTE)],
   tokens="""<!--
   LANE 2 · NYT Games
   palette   : warm grey #E8E6E1 · paper #FDFDFB · ink #1A1A1A · rule #DDD9D0 · neutral back #CFCBC2
@@ -452,6 +475,7 @@ LANES.append(dict(
    takes what is left over, so the disc grows a little with it. */
 .lane2 .issue-title{font-size:66px;letter-spacing:-.03em;line-height:.94;margin-top:10px}
 .lane2 .claim-text{margin-top:14px;font-size:19px;line-height:1.42}
+%TITLESTEPS%
 .lane2 .ans{background:#FDFDFB;border:1.5px solid #1A1A1A;border-radius:3px;color:#1A1A1A;font-size:21px;
   letter-spacing:.02em;box-shadow:0 3px 0 #1A1A1A}
 .lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}"""))
@@ -460,12 +484,10 @@ LANES.append(dict(
 LANES.append(dict(
   n="3", file="Stickers.dc.html", cls="lane3", dispnote="",
   he="תרבות סטיקרים", en="Israeli Sticker Culture",
-  # v4.4 CHANGE A — one frame, mixed pile, plus one extra artboard that differs ONLY
-  # in the אמת/שקר fill, so the two button options can be compared side by side.
-  frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"],
-               note=" · כפתורים א׳: טורקיז מרוכך"),
-          dict(file="StickersAltButtons.dc.html", tid="religion", label=TOPICS["religion"],
-               var="btn-b", note=" · כפתורים ב׳: לבן עם קו טורקיז")],
+  # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
+  frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"]),
+          dict(file="StickersLongTitle.dc.html", tid="religion", label=TOPICS["religion"],
+               title=LONGTITLE, note=LONGNOTE)],
   tokens="""<!--
   LANE 3 · Israeli Sticker Culture
   palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
@@ -574,17 +596,14 @@ LANES.append(dict(
 .lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
   max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-/* v4.4 CHANGE A — the אמת/שקר buttons drop in intensity: full-saturation teal was
-   competing with the sticker for the loudest thing on the card. Two options ship side
-   by side, differing ONLY in the button fill; everything else in the two artboards is
-   identical. In both, the two buttons are identical to each other and the direction is
-   carried by the arrow alone. Neither reads a topic token.
-   OPTION A (default) — the same teal, softened, with a dark teal label: 8.7:1. */
-.lane3 .ans{background:#A9E3DC;color:#0B3B36;border:5px solid #fff;border-radius:16px;
+/* v4.4 CHANGE A, approved — full-saturation teal was competing with the sticker for
+   the loudest thing on the frame. The fill goes white and the teal moves out to a
+   die-cut edge, which is the sticker's own construction, so the card reads as one
+   system. Dark teal label on white: 12.3:1. Both buttons identical, no topic token,
+   direction carried by the arrow alone. */
+%TITLESTEPS%
+.lane3 .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
-/* OPTION B (.btn-b) — white fill with the teal moved to a die-cut edge, echoing the
-   sticker's own construction: 12.3:1. */
-.lane3.btn-b .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}"""))
@@ -598,7 +617,8 @@ def frames_of(lane):
     out = []
     for f in lane["frames"]:
         d = dict(tid=f.get("tid", "merged"), label=f.get("label", TOPICS["religion"]),
-                 file=f["file"], var=f.get("var", ""), note=f.get("note", ""))
+                 file=f["file"], var=f.get("var", ""), note=f.get("note", ""),
+                 title=f.get("title", TITLE))
         out.append(d)
     return out
 
@@ -612,29 +632,39 @@ def build():
             # undefined --card silently drops .card's background and the pile shows
             # through. Caught once the hard way; asserted from now on.
             assert ".%s.topic-%s{" % (lane["cls"], tid) in lane["css"], (lane["cls"], tid)
+            # the rung this title was measured into; the stage carries it so the
+            # markup skeleton stays identical frame to frame
+            step = TITLE_STEPS[lane["cls"]][fr["title"]]
+            classes = " ".join(x for x in ("ts-%d" % step, fr["var"]) if x)
             body = (BODY
                     .replace("%LANE%", lane["cls"]).replace("%TOPICID%", tid)
-                    .replace("%VARCLS%", (" " + fr["var"]) if fr["var"] else "")
+                    .replace("%VARCLS%", " " + classes)
                     .replace("%NUM%", lane["n"]).replace("%HE%", lane["he"]).replace("%EN%", lane["en"])
                     .replace("%DISPNOTE%", lane["dispnote"] + fr["note"])
-                    .replace("%COINS%", COINS).replace("%TOPIC%", tlabel).replace("%TITLE%", TITLE)
+                    .replace("%COINS%", COINS).replace("%TOPIC%", tlabel)
+                    .replace("%TITLE%", fr["title"])
                     .replace("%CLAIM_A%", CLAIM_A).replace("%CLAIM_B%", CLAIM_B)
                     .replace("%ANS_T%", ANS_T).replace("%ANS_F%", ANS_F)
                     .replace("%VERIFY%", VERIFY_HTML if VERIFY_MARK else "")
                     .replace("%ART%", ART).replace("%MAP%", MAP)
                     .replace("%BILLDATE%", BILLDATE))
+            rungs = "/* v4.4 — measured title ladder for this lane; see measure_titles.py */\n" + \
+                    "\n".join(".%s.ts-%d .issue-title{font-size:%dpx}" % (lane["cls"], f, f)
+                               for f in LADDER[lane["cls"]])
             page = (PAGE.replace("%TOKENS%", lane["tokens"]).replace("%SHARED%", shared)
-                    .replace("%LANECSS%", lane["css"].replace("%BIBUSHFONT%", BIBUSH))
+                    .replace("%LANECSS%", lane["css"].replace("%BIBUSHFONT%", BIBUSH)
+                                                     .replace("%TITLESTEPS%", rungs))
                     .replace("%BODY%", body))
             (OUT / fname).write_text(page, encoding="utf-8")
             boards.append((fname, lane, fr))
 
-    # v4.4 CHANGE A — every lane is one frame now, so the board is a single row,
-    # lane 1 on the right (RTL reading order)
+    # v4.4 — top row: the r1 round. Bottom row: the same lane with the longest real
+    # title in data.js, so the worst case is visible next to the normal one.
     arts = []
-    n = len(boards)
-    for i, (fname, lane, fr) in enumerate(boards):
-        arts.append({"file": fname, "x": (n - 1 - i) * 480, "y": 0, "w": 390, "h": 930,
+    for fname, lane, fr in boards:
+        col = LANES.index(lane)
+        arts.append({"file": fname, "x": (len(LANES) - 1 - col) * 480,
+                     "y": 1010 if fr["note"] else 0, "w": 390, "h": 930,
                      "title": "%s · %s · %s%s" % (lane["n"], lane["he"], lane["en"],
                                                   fr["note"] or " — " + fr["label"])})
     (OUT / "canvas.json").write_text(

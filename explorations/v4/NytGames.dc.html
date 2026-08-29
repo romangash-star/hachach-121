@@ -81,8 +81,10 @@ a:hover{color:#0f2894}
 .art-clip{display:none;position:absolute;width:26px;height:58px;fill:none;stroke:currentColor;
   stroke-width:3.4;stroke-linecap:round}
 .sticker{display:none}
+/* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
+   from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
-  font-size:36px;line-height:1.04}
+  font-size:36px;line-height:1.04;text-wrap:balance}
 .claim-text{margin-top:10px;font-size:16px;line-height:1.5;font-weight:700;text-wrap:balance}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
@@ -162,12 +164,19 @@ a:hover{color:#0f2894}
    takes what is left over, so the disc grows a little with it. */
 .lane2 .issue-title{font-size:66px;letter-spacing:-.03em;line-height:.94;margin-top:10px}
 .lane2 .claim-text{margin-top:14px;font-size:19px;line-height:1.42}
+/* v4.4 — measured title ladder for this lane; see measure_titles.py */
+.lane2.ts-66 .issue-title{font-size:66px}
+.lane2.ts-58 .issue-title{font-size:58px}
+.lane2.ts-50 .issue-title{font-size:50px}
+.lane2.ts-44 .issue-title{font-size:44px}
+.lane2.ts-38 .issue-title{font-size:38px}
+.lane2.ts-34 .issue-title{font-size:34px}
 .lane2 .ans{background:#FDFDFB;border:1.5px solid #1A1A1A;border-radius:3px;color:#1A1A1A;font-size:21px;
   letter-spacing:.02em;box-shadow:0 3px 0 #1A1A1A}
 .lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}
   </style>
 </helmet>
-<div class="stage lane2 topic-branches">
+<div class="stage lane2 topic-branches ts-66">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">2</span>
     <span class="cap-he">משחקי עיתון</span>

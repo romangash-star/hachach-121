@@ -2,35 +2,51 @@
   "artboards": [
     {
       "file": "Main.dc.html",
-      "x": 1440,
+      "x": 960,
       "y": 0,
       "w": 390,
       "h": 930,
       "title": "1 · טופס מודבק · Defaced Paperwork — דת ומדינה"
     },
     {
-      "file": "NytGames.dc.html",
+      "file": "MainLongTitle.dc.html",
       "x": 960,
+      "y": 1010,
+      "w": 390,
+      "h": 930,
+      "title": "1 · טופס מודבק · Defaced Paperwork · מקרה קצה: הכותרת הארוכה ביותר"
+    },
+    {
+      "file": "NytGames.dc.html",
+      "x": 480,
       "y": 0,
       "w": 390,
       "h": 930,
       "title": "2 · משחקי עיתון · NYT Games — מי מחליט פה?"
     },
     {
-      "file": "Stickers.dc.html",
+      "file": "NytGamesLongTitle.dc.html",
       "x": 480,
-      "y": 0,
+      "y": 1010,
       "w": 390,
       "h": 930,
-      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · כפתורים א׳: טורקיז מרוכך"
+      "title": "2 · משחקי עיתון · NYT Games · מקרה קצה: הכותרת הארוכה ביותר"
     },
     {
-      "file": "StickersAltButtons.dc.html",
+      "file": "Stickers.dc.html",
       "x": 0,
       "y": 0,
       "w": 390,
       "h": 930,
-      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · כפתורים ב׳: לבן עם קו טורקיז"
+      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture — דת ומדינה"
+    },
+    {
+      "file": "StickersLongTitle.dc.html",
+      "x": 0,
+      "y": 1010,
+      "w": 390,
+      "h": 930,
+      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · מקרה קצה: הכותרת הארוכה ביותר"
     }
   ],
   "launch": {

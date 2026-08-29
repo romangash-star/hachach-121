@@ -15,9 +15,10 @@ import json, pathlib
 OUT  = pathlib.Path(__file__).resolve().parent
 PAGE = OUT / "final-three-121.html"
 TAG  = '<script type="application/json" id="appifact-doc">'
-# v4.4 CHANGE A — one frame per lane, plus lane 3's second button option.
-FILES = ["Main.dc.html", "NytGames.dc.html", "Stickers.dc.html",
-         "StickersAltButtons.dc.html", "canvas.json"]
+# v4.4 — three lanes x (r1 frame + longest-real-title stress frame).
+FILES = ["Main.dc.html", "MainLongTitle.dc.html",
+         "NytGames.dc.html", "NytGamesLongTitle.dc.html",
+         "Stickers.dc.html", "StickersLongTitle.dc.html", "canvas.json"]
 
 def dump(doc):
     # the canvas writes compact JSON, non-ASCII literal, and escapes only "<"

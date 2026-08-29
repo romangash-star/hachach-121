@@ -21,9 +21,11 @@ W, H = 390, 780
 
 NAMES = {
     "Main.dc.html":              "lane1-defaced-paperwork",
+    "MainLongTitle.dc.html":     "lane1-defaced-paperwork-longtitle",
     "NytGames.dc.html":          "lane2-nyt-games",
-    "Stickers.dc.html":          "lane3-stickers-buttons-a",
-    "StickersAltButtons.dc.html": "lane3-stickers-buttons-b",
+    "NytGamesLongTitle.dc.html": "lane2-nyt-games-longtitle",
+    "Stickers.dc.html":          "lane3-stickers",
+    "StickersLongTitle.dc.html": "lane3-stickers-longtitle",
 }
 
 SHIM = """

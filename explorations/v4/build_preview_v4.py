@@ -15,7 +15,11 @@ for f, lane, tid in order:
         seen.add(lane["cls"])
     stages.append(re.search(r'(<div class="stage .*?)\n</x-dc>', src, re.S).group(1))
 
-rows = stages, []   # v4.4 CHANGE A — one frame per lane: a single row
+# v4.4 — r1 row on top, longest-real-title row below
+top, bottom = [], []
+for (f, lane, tid), st in zip(order, stages):
+    (bottom if "LongTitle" in f else top).append(st)
+rows = top, bottom
 page = """<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">

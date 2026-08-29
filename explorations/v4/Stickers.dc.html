@@ -84,8 +84,10 @@ a:hover{color:#0f2894}
 .art-clip{display:none;position:absolute;width:26px;height:58px;fill:none;stroke:currentColor;
   stroke-width:3.4;stroke-linecap:round}
 .sticker{display:none}
+/* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
+   from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
-  font-size:36px;line-height:1.04}
+  font-size:36px;line-height:1.04;text-wrap:balance}
 .claim-text{margin-top:10px;font-size:16px;line-height:1.5;font-weight:700;text-wrap:balance}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
@@ -210,28 +212,31 @@ a:hover{color:#0f2894}
 .lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
   max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-/* v4.4 CHANGE A — the אמת/שקר buttons drop in intensity: full-saturation teal was
-   competing with the sticker for the loudest thing on the card. Two options ship side
-   by side, differing ONLY in the button fill; everything else in the two artboards is
-   identical. In both, the two buttons are identical to each other and the direction is
-   carried by the arrow alone. Neither reads a topic token.
-   OPTION A (default) — the same teal, softened, with a dark teal label: 8.7:1. */
-.lane3 .ans{background:#A9E3DC;color:#0B3B36;border:5px solid #fff;border-radius:16px;
+/* v4.4 CHANGE A, approved — full-saturation teal was competing with the sticker for
+   the loudest thing on the frame. The fill goes white and the teal moves out to a
+   die-cut edge, which is the sticker's own construction, so the card reads as one
+   system. Dark teal label on white: 12.3:1. Both buttons identical, no topic token,
+   direction carried by the arrow alone. */
+/* v4.4 — measured title ladder for this lane; see measure_titles.py */
+.lane3.ts-58 .issue-title{font-size:58px}
+.lane3.ts-50 .issue-title{font-size:50px}
+.lane3.ts-44 .issue-title{font-size:44px}
+.lane3.ts-38 .issue-title{font-size:38px}
+.lane3.ts-34 .issue-title{font-size:34px}
+.lane3.ts-30 .issue-title{font-size:30px}
+.lane3 .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
-/* OPTION B (.btn-b) — white fill with the teal moved to a die-cut edge, echoing the
-   sticker's own construction: 12.3:1. */
-.lane3.btn-b .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
   </style>
 </helmet>
-<div class="stage lane3 topic-religion">
+<div class="stage lane3 topic-religion ts-58">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">3</span>
     <span class="cap-he">תרבות סטיקרים</span>
     <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · כפתורים א׳: טורקיז מרוכך</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
