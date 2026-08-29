@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 JS = r"""
 const SEL = '.art,.art-emoji,.issue-title,.claim-text,.ans-true,.ans-false,.topic-title,' +
-            '.coin-num,.avatar,.map-btn,.steps,.sticker';
+            '.coin-num,.coin-glyph,.avatar,.map-btn,.sticker,.doc-stamp,.art-clip';
 const st = document.querySelector('.stage');
 const R = e => e.getBoundingClientRect();
 const gap = (a, b) => +(Math.max(R(a).left, R(b).left) - Math.min(R(a).right, R(b).right)).toFixed(1);
@@ -43,6 +43,7 @@ const lines = e => {   /* cluster by position: .px-punct boxes sit off the basel
   for (const t of tops) { if (t - last > lh * 0.5) { n++; last = t; } }
   return n || 1; };
 
+const cn = e => (e.getAttribute('class') || '').split(' ')[0] || e.tagName;
 const els = [...st.querySelectorAll(SEL)].filter(e => {
   const r = R(e); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; });
 const hits = [];
@@ -51,8 +52,7 @@ for (let i = 0; i < els.length; i++) for (let j = i+1; j < els.length; j++) {
   const a = R(els[i]), b = R(els[j]);
   const ox = Math.min(a.right,b.right) - Math.max(a.left,b.left);
   const oy = Math.min(a.bottom,b.bottom) - Math.max(a.top,b.top);
-  if (ox > 1 && oy > 1) hits.push(els[i].className.split(' ')[0] + ' x ' +
-                                 els[j].className.split(' ')[0] +
+  if (ox > 1 && oy > 1) hits.push(cn(els[i]) + ' x ' + cn(els[j]) +
                                  ' (' + ox.toFixed(0) + 'x' + oy.toFixed(0) + ')');
 }
 const card = st.querySelector('.card'), an = st.querySelector('.answers');
@@ -89,8 +89,8 @@ return JSON.stringify({
     const ok = [[-21.5,-21.5],[21.5,-21.5],[-21.5,21.5],[21.5,21.5]].every(probe);
     return ok ? 44 : (([[-19.5,-19.5],[19.5,-19.5],[-19.5,19.5],[19.5,19.5]].every(probe)) ? 40 : 0);
   })(),
-  progress: {bar: getComputedStyle(st.querySelector('.storybar')).display !== 'none',
-             dots: getComputedStyle(st.querySelector('.steps')).display !== 'none'},
+  /* v4.8 — no progress indicator anywhere; assert that stays true */
+  progressElements: st.querySelectorAll('.storybar,.steps,.step,.seg').length,
   claimText: cl.textContent.trim()
 });
 """

@@ -52,8 +52,14 @@ BIBUSH = base64.b64encode((ROOT / "fonts" / "BibushChunky.v1.0.otf").read_bytes(
 # ---- verbatim r1 content ---------------------------------------------------
 COINS   = "240"
 TITLE   = "חוק הגיוס"
-CLAIM_A = "הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על "
-CLAIM_B = "מתווה שכתב... בני גנץ"
+# The claim is verbatim; it is only SPLIT so a second marker swipe has something to
+# land on. C1+C2+C3+C4+"." must reassemble the data.js string exactly — asserted below.
+CLAIM_1 = "הצעת חוק הגיוס שהקואליציה קידמה "
+CLAIM_2 = "ב-2024"
+CLAIM_3 = " מבוססת על "
+CLAIM_4 = "מתווה שכתב... בני גנץ"
+assert CLAIM_1 + CLAIM_2 + CLAIM_3 + CLAIM_4 + "." == \
+    "הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על מתווה שכתב... בני גנץ."
 ANS_T   = "אמת"
 ANS_F   = "שקר"
 # v4.3 CHANGE 1 — the source chip is GONE from the claim card.
@@ -104,29 +110,22 @@ a:hover{color:#0f2894}
 .deco{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .deco g{display:none}
 
-/* ---- HUD v3: [coins] .......... [topic + steps] .......... [map][avatar] ---- */
+/* ---- HUD v4: [coins] ............ [topic] ............ [map][avatar] ---- */
 .hud{position:relative;z-index:4;flex:none;min-height:46px;display:flex;align-items:center;
   justify-content:space-between;gap:8px}
 .hud-coins{display:flex;align-items:center;gap:7px;flex:none}
 .coin-glyph{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:50%}
 .coin-num{font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;font-size:20px;line-height:1}
 .hud-mid{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
-.topic-title{font-size:12.5px;font-weight:700;line-height:1.2;white-space:nowrap;padding:3px 0}
-/* v4.7 CHANGE D, progress variant 1 — the stories bar. Pinned to the frame's top edge
-   above the HUD, 3 segments, the first filled. Hidden unless the frame carries .pr-bar;
-   .pr-none renders neither bar nor dots. Both variants suppress the dots, so a frame
-   never shows two progress indicators. Styled per lane below even though only lane 3
-   renders the comparison, so switching lanes is a class change, not new CSS. */
-.storybar{display:none;position:relative;z-index:5;flex:none;gap:4px;height:4px;
-  margin:-12px -16px 10px;padding:0 12px}   /* out through the frame's 12/16 padding */
-.storybar .seg{flex:1;height:100%;border-radius:2px;background:currentColor;opacity:.26}
-.storybar .seg-on{opacity:1}
-.pr-bar .storybar{display:flex}
-.pr-bar .steps,.pr-none .steps{display:none}
-/* three step dots = the three beats of the round; the pile behind the card is those same three */
-.steps{display:flex;align-items:center;gap:5px}
-.step{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.32;display:block}
-.step-on{opacity:1;width:17px;border-radius:4px}
+/* v5.0 — the centre-top topic title was 12.5px and read as a caption rather than as
+   the thing naming the round. Each lane sets its own size below. */
+.topic-title{font-size:16px;font-weight:700;line-height:1.2;white-space:nowrap;padding:3px 0}
+/* v4.8 — no progress indicator. The dots and the stories bar are both gone: the card
+   pile IS the progress, three cards behind the hero and one leaving per beat. Dots
+   under the content read as the carousel/onboarding convention — "swipe sideways to
+   browse pages" — and in this game a sideways swipe is an answer, so that was the
+   wrong signal at the exact moment the player is learning what a swipe does. A bar
+   above the HUD said the same thing the pile already says. */
 .hud-you{display:flex;align-items:center;gap:6px;flex:none}
 /* v4.7 CHANGE D — map button and avatar are one control size: 40x40, same shape
    language inside each lane. The button stays a 44px target: ::after bleeds the hit
@@ -157,12 +156,18 @@ a:hover{color:#0f2894}
 .art-clip{display:none;position:absolute;width:26px;height:58px;fill:none;stroke:currentColor;
   stroke-width:3.4;stroke-linecap:round}
 .sticker{display:none}
+.clip-wire,.clip-binder{display:none}
+.cb-body{fill:currentColor;stroke:none}
+.cb-lip,.cb-arm{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.doc-stamp{display:none;position:absolute;z-index:6;pointer-events:none;fill:none;
+  stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.st-ring{stroke-width:3.4}
 /* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
    from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
   font-size:36px;line-height:1.04;text-wrap:balance}
 .claim-text{margin-top:10px;font-size:16px;line-height:1.5;font-weight:700;text-wrap:balance}
-.hl{background:none;color:inherit}
+.hl,.hl2{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
    the direction now lives on the arrow inside each button (.ans-arrow). */
 /* ---- OPTIONAL, OFF BY DEFAULT: set VERIFY_MARK = True to render ----------
@@ -215,12 +220,17 @@ BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
           <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
         </filter>
         <filter id="co-%LANE%-%TOPICID%" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="7" result="grown"></feMorphology>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
           <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
       <g class="deco-ghosts">
@@ -234,8 +244,6 @@ BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
       </g>
     </svg>
 
-    <div class="storybar" aria-hidden="true"><i class="seg seg-on"></i><i class="seg"></i><i class="seg"></i></div>
-
     <header class="hud">
       <div class="hud-coins">
         <span class="coin-glyph" aria-hidden="true"></span>
@@ -243,7 +251,6 @@ BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
       </div>
       <div class="hud-mid">
         <span class="topic-title">%TOPIC%</span>
-        <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
       </div>
       <div class="hud-you">
         <button type="button" class="map-btn" aria-label="%MAP%">
@@ -264,12 +271,13 @@ BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
         </div>
         <article class="card claim">
           <span class="sticker">%BILLDATE%</span>
+          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">%ART%</span>
-            <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
+            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
           </div>
           <h2 class="issue-title">%TITLE%</h2>
-          <p class="claim-text">%CLAIM_A%<mark class="hl">%CLAIM_B%</mark>.</p>
+          <p class="claim-text">%CLAIM_1%<mark class="hl2">%CLAIM_2%</mark>%CLAIM_3%<mark class="hl">%CLAIM_4%</mark>.</p>
 %VERIFY%        </article>
       </div>
       <div class="answers">
@@ -314,13 +322,20 @@ LANES.append(dict(
   dispnote=" · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת",
   # v4.3 CHANGE 3 — lane 1 renders ONE frame, not two: the branches sticker and the
   # religion highlighter in a single sample.
-  frames=[dict(file="Main.dc.html", label=TOPICS["religion"]),
-          dict(file="MainLongTitle.dc.html", label=TOPICS["religion"],
+  frames=[dict(file="Main.dc.html", label=TOPICS["religion"], var="clip-steel"),
+          dict(file="MainLongTitle.dc.html", label=TOPICS["religion"], var="clip-steel",
                title=LONGTITLE, note=LONGNOTE, row=1),
           # the punctuation worst case, and the only frame where .px-punct is visible
           # inside a title rather than in the caption specimen
-          dict(file="MainPunct.dc.html", label=TOPICS["religion"],
-               title=PUNCTTITLE, note=PUNCTNOTE, row=2)],
+          dict(file="MainPunct.dc.html", label=TOPICS["religion"], var="clip-steel",
+               title=PUNCTTITLE, note=PUNCTNOTE, row=2),
+          # v4.9 — the pop pass, rendered BESIDE the current lane 1 rather than
+          # replacing it, so the two can be compared before anything is decided
+          dict(file="MainPop.dc.html", label=TOPICS["religion"], var="pop clip-steel", x_extra=480,
+               note=" · וריאנט: התערבויות מוגברות"),
+          # v5.0 (4) — the two clip options, same frame otherwise
+          dict(file="MainClipBinder.dc.html", label=TOPICS["religion"], var="clip-binder-on",
+               row=2, x_extra=480, note=" · חומרה ב׳: קליפס בולדוג במקום אטב")],
   he="טופס מודבק", en="Defaced Paperwork",
   tokens="""<!--
   LANE 1 · Defaced Paperwork
@@ -384,15 +399,27 @@ LANES.append(dict(
 
 .lane1 .frame{background:#241F1A;color:#1A1714}
 .lane1 .frame-bg{background:#241F1A}
-.lane1 .frame-bg::after{content:"";position:absolute;inset:0;opacity:.45;
-  background-image:repeating-conic-gradient(rgba(255,255,255,.05) 0 25%,transparent 0 50%);
-  background-size:4px 4px}
-.lane1 .coin-glyph{background:var(--t2);border-radius:0;box-shadow:inset 0 0 0 2px #1A1714}
+/* v5.0 (2) — the desk was a flat brown with a faint 4px checker. It now carries a
+   stipple: two dot grids at different pitches, one light one dark, offset from each
+   other so the grain reads as printed dither rather than as a regular screen. Kept
+   low-contrast on purpose — the paper has to stay the brightest thing in the frame. */
+.lane1 .frame-bg::after{content:"";position:absolute;inset:0;opacity:.55;
+  background-image:
+    radial-gradient(rgba(255,255,255,.10) .6px,transparent .7px),
+    radial-gradient(rgba(0,0,0,.34) .6px,transparent .7px),
+    repeating-conic-gradient(rgba(255,255,255,.035) 0 25%,transparent 0 50%);
+  background-size:5px 5px,3px 3px,4px 4px;
+  background-position:0 0,1px 2px,0 0}
+/* v5.0 (1) — the token-shaped square becomes a struck coin. The relief is the same
+   construction the cut v1 "State Medal" lane used: an off-centre radial for the field
+   so the light has a direction, then a light inset at the top and a dark inset at the
+   bottom for the rim, then a hard outer ring for the milled edge. */
+.lane1 .coin-glyph{border-radius:50%;background:
+  radial-gradient(circle at 33% 27%,#D8B978,#A8843C 56%,#6E5423);
+  box-shadow:inset 0 2px 2.5px rgba(255,255,255,.6),inset 0 -2.5px 4px rgba(0,0,0,.55),
+             0 0 0 1.5px #5A4520,0 1px 0 rgba(0,0,0,.5)}
 .lane1 .coin-num{color:#D9D2C0;font-family:'BibushChunky',system-ui,sans-serif;font-size:23px}
-.lane1 .topic-title{color:#C0B393;letter-spacing:.14em;font-size:11px;text-transform:none}
-.lane1 .steps{color:#C0B393}
-.lane1 .storybar{color:#C0B393}
-.lane1 .storybar .seg{border-radius:0;box-shadow:inset 0 0 0 1px rgba(26,23,20,.5)}
+.lane1 .topic-title{color:#D3C7A8;letter-spacing:.1em;font-size:15px;text-transform:none}
 /* v4.7 CHANGE D — the two icon buttons are a matched pair of square document stamps:
    same 40x40 box, same manila fill, same 2px rule, same ink. */
 .lane1 .map-btn{color:#1A1714;border-radius:0;background:#C0B393;
@@ -405,7 +432,8 @@ LANES.append(dict(
    desk, so each back gets its own document colour and its own edge: cream, the pale
    lavender-pink of a fingerprint hand-out, the pale blue of an ID record. The front
    card stays neutral manila — the colour is around and behind it, never on it. */
-.lane1 .pile-card{box-shadow:inset 0 0 0 1px #8E8264,0 2px 0 rgba(0,0,0,.55)}
+.lane1 .pile-card{box-shadow:inset 0 0 0 1px #8E8264,0 3px 0 rgba(0,0,0,.55),
+  0 10px 18px rgba(0,0,0,.45)}
 .lane1 .pile-card::before{content:"";position:absolute;top:-13px;width:96px;height:14px;
   background:inherit;box-shadow:inset 0 0 0 1px #8E8264}
 .lane1 .pile-1{background:#E4DCC4}
@@ -421,8 +449,11 @@ LANES.append(dict(
    A coloured tab is document furniture, it sits behind the card so it can never touch
    content, and it belongs to no topic and no verdict. */
 .lane1 .pile-2::before{background:#2F7D74;box-shadow:inset 0 0 0 1px #215A54}
+/* v5.0 (3) — deeper, longer shadows so the stack reads as lying ON the desk rather
+   than printed into it: a contact edge, a mid drop, and a long soft cast. */
 .lane1 .card{background:#D9D2C0;padding-right:36px;
-  box-shadow:inset 0 0 0 1px #A79C81,0 4px 0 rgba(0,0,0,.6),0 20px 30px rgba(0,0,0,.5)}
+  box-shadow:inset 0 0 0 1px #A79C81,0 5px 0 rgba(0,0,0,.6),
+             0 16px 22px rgba(0,0,0,.5),0 34px 52px rgba(0,0,0,.42)}
 /* INTERVENTION 1 — one slapped die-cut sticker, carrying the topic colour.
    v4.2 FIX 1(a): it now carries document furniture — the bill's own date stamp,
    data.js issues[r1].bill_date. Ink flips to --on-t1 so the stamp clears AA on
@@ -478,12 +509,42 @@ LANES.append(dict(
 .lane1 .art-emoji{font-size:186px;rotate:-2.5deg;
   filter:grayscale(1) contrast(1.7) brightness(1.02)
          drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
-.lane1.topic-merged .art-emoji{filter:grayscale(1) contrast(1.7) brightness(1.02)
-  url(#co-lane1-merged) drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
-/* the one saturated accent, used on one thin stroke: a coated-wire clip in muted red.
-   It belongs to the document world, never to a topic and never to a verdict.
-   It now sits ON the photo's edge — it is what holds the cut-out down. */
-.lane1 .art-clip{display:block;color:#A8443C;top:34px;left:88px;rotate:14deg;z-index:3}
+/* v5.0 (6) — the cut-out was reading as a crisp vector icon inside a wide cream frame.
+   The margin drops 7px -> 4px so it stops looking like a mount, and the image itself is
+   now printed rather than drawn: a fine turbulence tone multiplied into it inside the
+   filter gives it grain, and a fraction of a pixel of blur takes the vector edge off.
+   NOTE: the ID-photo reference image did not come through with the brief, so this is
+   built from the general look of a grainy printed ID photograph rather than from the
+   specific screenshot — worth a look before it is called done. */
+.lane1.topic-merged .art-emoji{filter:grayscale(1) contrast(1.5) brightness(1.04)
+  url(#co-lane1-merged) blur(.35px) drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
+/* v5.0 (4) — the red wire clip goes. Two replacements ship as separate frames so they
+   can be compared; both are steel rather than coloured, which frees the lane's one
+   saturated accent to move to the stamp below.
+     (a) .clip-steel  — the same wire clip in plain steel: quieter, and it stops
+                        competing with the date sticker for the eye
+     (b) .clip-binder — a bulldog clip: more visual weight and more obviously a piece
+                        of office hardware, at the cost of covering more of the photo */
+.lane1 .art-clip{display:block;width:38px;height:60px;top:30px;left:82px;rotate:12deg;z-index:3}
+.lane1 .clip-wire{color:#9AA0A8}
+.lane1 .clip-wire path{stroke-width:3.4}
+.lane1.clip-steel .clip-wire{display:block}
+.lane1.clip-binder-on .art-clip{width:54px;height:80px;top:16px;left:96px;rotate:9deg}
+.lane1.clip-binder-on .clip-binder{display:block;color:#3E434A}
+.lane1.clip-binder-on .cb-lip{stroke:#767D86}
+.lane1.clip-binder-on .cb-arm{stroke:#AEB4BC}
+
+/* v5.0 (5) — one more piece of document furniture: a rubber stamp, glyph only. It takes
+   over the muted red the clip gave up, so the lane still has exactly one saturated
+   accent. Deliberately generic: a plain seven-branch menorah, no text, no ring legend,
+   no reproduction of any actual seal — a period mark, not a forged one. It sits on the
+   manila beside the photo, clear of every piece of type. */
+/* the strip of bare manila to the left of the photo is the only place on this card
+   that is clear of every piece of type; measured, not guessed. */
+.lane1 .doc-stamp{display:block;width:56px;height:56px;left:4px;top:180px;
+  color:#A8443C;opacity:.6;rotate:-13deg}
+.lane1 .st-ring{stroke-width:3}
+.lane1 .st-glyph{stroke-width:2.9}
 .lane1 .issue-title{font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:66px;
   line-height:.98;margin-top:12px;color:#1A1714}
 .lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5}
@@ -492,6 +553,45 @@ LANES.append(dict(
   opacity:.999;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;
   mix-blend-mode:multiply}
 %TITLESTEPS%
+/* ---- v4.9 POP PASS (.pop) — the vandalism layer gets louder; the DOCUMENT does not.
+   Desk, manila, file tints, deckled cut-out, punch holes, binder margin, type: all
+   untouched. Only interventions 1, 2 and 3 are pushed, and no fifth is added — the
+   energy is meant to read as someone who got their hands on this paper, which is a
+   question of how hard the existing marks were made, not how many there are.
+
+   The convergence guard, because lane 3 is one column away:
+     · the sticker is NOT brightened. It already runs #4A6BD6 and lane 3's rim is
+       #3D5BFF — a brighter blue here would have walked straight into that lane. It
+       gets size and angle instead.
+     · the first attempt enlarged it with lane 3's own construction: a 5px pure-white
+       edge over a hard zero-blur offset shadow. At label size that read as document
+       furniture; at 132x52 it read as a lane 3 sticker, which is the exact failure
+       this pass exists to avoid. Both tells are now gone — the edge is the cut-out's
+       cream stock #EDE8DA, and the shadow is soft and diffuse like everything else
+       lying on this desk. Nothing in lane 1 carries a pure-white die-cut edge.
+     · the one new colour is a highlighter green, a colour lane 3 does not own, and it
+       arrives as a marker stroke rather than a fill.
+   The two lanes stay apart on construction, not just on hue.                        */
+.lane1.pop{--hl2:#C2D98F}
+/* 1 — the date sticker: same blue, slapped on harder. 96x38 -> 132x52, deeper angle,
+       thicker white edge, a hard shadow that reads as a thing sitting proud of paper */
+.lane1.pop .sticker{min-width:132px;height:52px;padding:0 16px;top:-24px;left:-12px;
+  border-width:4px;border-color:#EDE8DA;rotate:-16deg;font-size:15px;letter-spacing:.01em;
+  box-shadow:0 4px 11px rgba(0,0,0,.42)}
+/* 2 — a second marker swipe, in a second colour, on the year. Green because the gold
+       is spoken for and because no highlighter in lane 3 exists to be confused with */
+.lane1.pop .hl2{background:linear-gradient(98deg,rgba(0,0,0,0) 0,var(--hl2) 2%,var(--hl2) 97%,rgba(0,0,0,0) 100%);
+  opacity:.999;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;
+  mix-blend-mode:multiply}
+/* the gold swipe gets the same harder hand: it overshoots its words the way a real
+   marker does, rather than stopping neatly at them */
+.lane1.pop .hl{background:linear-gradient(101deg,rgba(0,0,0,0) 0,var(--hl) 1%,var(--hl) 99%,rgba(0,0,0,0) 100%);
+  padding:2px 5px 3px}
+/* 3 — the tape stops being polite: opaque, aged, wider, with the dull sheen of a
+       strip pressed down by hand */
+.lane1.pop .card::before{width:128px;height:34px;top:-16px;right:-30px;rotate:34deg;
+  background:linear-gradient(96deg,rgba(226,215,178,.88),rgba(206,197,166,.92) 55%,rgba(228,219,186,.86));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.28)}
 .lane1 .ans{background:#EDE8DA;color:#1A1714;border-radius:0;
   font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:27px;
   box-shadow:inset 0 0 0 2px #1A1714,4px 4px 0 rgba(0,0,0,.55)}
@@ -537,14 +637,16 @@ LANES.append(dict(
 .lane2 .frame-bg{background:#E8E6E1}
 .lane2 .coin-glyph{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
 .lane2 .coin-num{color:#1A1A1A}
-.lane2 .topic-title{color:#4A4A46;font-size:10.5px;letter-spacing:.19em;padding:4px 0}
-.lane2 .steps{color:var(--t2)}
-/* v4.7 CHANGE D — lane 2's two icon buttons already shared a language (white disc,
-   1.5px rule); they now share a size too. Nothing else needed here. */
-.lane2 .storybar{color:var(--t2)}
-.lane2 .map-btn{color:#1A1A1A;background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .topic-title{color:#3A3A36;font-size:15px;letter-spacing:.1em;padding:4px 0}
+/* v5.0 — a 1.5px black ring on both icon buttons was the loudest chrome in the lane,
+   against a card whose own edge is a 1px #DDD9D0 hairline. The ring goes; what separates
+   them from the ground now is a warm-neutral fill one step off the frame plus a hairline
+   and a soft drop, which is the same weight as everything else here. */
+.lane2 .map-btn{color:#1A1A1A;background:#F6F4EF;
+  box-shadow:inset 0 0 0 1px #DCD8D0,0 1px 2px rgba(26,26,26,.13)}
 .lane2 .map-btn:focus-visible{outline:3px solid #C9A227;outline-offset:2px}
-.lane2 .avatar{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .avatar{background:#F6F4EF;
+  box-shadow:inset 0 0 0 1px #DCD8D0,0 1px 2px rgba(26,26,26,.13)}
 .lane2 .avatar-sil{fill:#B9B5AC}
 /* pile: two from the topic family + one neutral */
 .lane2 .pile-card{border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
@@ -583,13 +685,9 @@ LANES.append(dict(
   frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"]),
           dict(file="StickersLongTitle.dc.html", tid="religion", label=TOPICS["religion"],
                title=LONGTITLE, note=LONGNOTE, row=1),
-          # v4.7 CHANGE D — the two progress variants, same content, differing only in
-          # how the round's position is shown. Lane 3 carries the comparison because it
-          # has the most HUD to sit above and the most visible dots to lose.
-          dict(file="StickersStoryBar.dc.html", tid="religion", label=TOPICS["religion"],
-               var="pr-bar", row=2, note=" · התקדמות א׳: פס סטוריז בקצה העליון"),
-          dict(file="StickersNoDots.dc.html", tid="religion", label=TOPICS["religion"],
-               var="pr-none", row=2, note=" · התקדמות ב׳: בלי מחוון, הערימה נושאת אותו")],
+],
+  # the two progress variants were compared here; variant 2 won and became the default
+  # for every lane, so neither the comparison frames nor the bar exist any more.
   # a three-line comparison frame lived here; three lines was ruled out — at 36px, the
   # only size that is genuinely three lines and still fits, it bought 2px of headline
   # over the two-line setting and cost a line.
@@ -637,37 +735,18 @@ LANES.append(dict(
    Kept as texture, not deleted: outline dropped, opacity halved, and the shape that sits
    in the button zone redrawn as a torn edge so nothing down there has control geometry. */
 .lane3 .deco .deco-ghosts{display:block;fill:#C6C4BC;stroke:none;opacity:.34}
-/* HUD: a flat band, one sticker accent only (the topic title).
-   v4.2 FIX 4 — the solid black bar read as browser chrome. It is now a bleached strip of
-   the pole itself: same grain, same colour family, lightened, with a hairline bottom rule
-   so it still reads as a band. Opaque rather than translucent so the card can never show
-   through it. Content flips to near-black (11.0:1 on #C9C7C1, down from 15.4:1). Still flat, still one
-   sticker accent, plain avatar circle, plain step dots. */
-.lane3 .hud{background:#C9C7C1;margin:-12px -16px 0;padding:10px 16px;min-height:60px;
-  overflow:hidden;box-shadow:inset 0 -1.5px 0 rgba(0,0,0,.22)}
-.lane3 .hud::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background-image:
-    radial-gradient(rgba(0,0,0,.5) .5px,transparent .6px),
-    radial-gradient(rgba(255,255,255,.55) .5px,transparent .6px),
-    repeating-linear-gradient(89deg,rgba(0,0,0,.05) 0 1px,transparent 1px 4px);
-  background-size:3px 3px,7px 7px,100% 100%;background-position:0 0,2px 3px,0 0}
+/* HUD: no band at all. One sticker accent only (the topic title), the coin, and the two
+   icon buttons, all sitting directly on the pole. Near-black on #B3B1A9 is 8.8:1. */
+/* v5.0 — the HUD was a bleached band with its own grain and a hairline under it, so it
+   read as a separate surface with a seam where the card area began. The band is gone:
+   the frame's own pole texture now runs unbroken behind the HUD and the cards, and the
+   only things sitting on it are the chip, the coin and the two icon buttons. */
+.lane3 .hud{background:none;box-shadow:none;min-height:60px}
 .lane3 .coin-glyph{background:var(--t1);box-shadow:inset 0 0 0 2px #000}
 .lane3 .coin-num{color:#131310}
 .lane3 .topic-title{background:var(--t1);color:var(--on-t1);border:3px solid #fff;border-radius:999px;
-  padding:4px 13px;rotate:-2.5deg;font-weight:900;
+  padding:5px 15px;rotate:-2.5deg;font-weight:900;font-size:16.5px;
   box-shadow:0 0 0 1.5px rgba(0,0,0,.3),0 3px 0 rgba(0,0,0,.42)}
-.lane3 .steps{color:#131310}
-.lane3 .storybar{color:#131310;height:6px}
-/* lane 3's HUD pulls itself up 12px to bleed as a band; with the bar above it that
-   pull would swallow the bar, so the bar takes the bleed instead. */
-.lane3.pr-bar .hud{margin-top:0}
-.lane3.pr-bar .storybar{margin:-12px -16px 10px}
-/* opacity on the pole grey left segments 2 and 3 almost invisible; the lane's own
-   grammar does it better — white pills with a dark rule, the spent one filled solid */
-.lane3 .storybar{gap:5px}
-.lane3 .storybar .seg{border-radius:3px;background:#FFFFFF;opacity:1;
-  box-shadow:inset 0 0 0 2px rgba(19,19,16,.30)}
-.lane3 .storybar .seg-on{background:#131310;box-shadow:none}
 /* v4.7 CHANGE D — the map button was bare next to a filled avatar. Both are now the
    same 40x40 dark disc with the same light glyph; the avatar keeps the topic ring on
    top of that, which is what marks it as the player rather than a control. */
@@ -737,7 +816,8 @@ def frames_of(lane):
     for f in lane["frames"]:
         d = dict(tid=f.get("tid", "merged"), label=f.get("label", TOPICS["religion"]),
                  file=f["file"], var=f.get("var", ""), note=f.get("note", ""),
-                 title=f.get("title", TITLE), row=f.get("row", 0))
+                 title=f.get("title", TITLE), row=f.get("row", 0),
+                 x_extra=f.get("x_extra", 0))
         out.append(d)
     return out
 
@@ -763,7 +843,8 @@ def build():
                     .replace("%COINS%", COINS).replace("%TOPIC%", tlabel)
                     .replace("%TITLE%", bibush_title(fr["title"])
                                           if lane["cls"] == "lane1" else esc(fr["title"]))
-                    .replace("%CLAIM_A%", CLAIM_A).replace("%CLAIM_B%", CLAIM_B)
+                    .replace("%CLAIM_1%", CLAIM_1).replace("%CLAIM_2%", CLAIM_2)
+                    .replace("%CLAIM_3%", CLAIM_3).replace("%CLAIM_4%", CLAIM_4)
                     .replace("%ANS_T%", ANS_T).replace("%ANS_F%", ANS_F)
                     .replace("%VERIFY%", VERIFY_HTML if VERIFY_MARK else "")
                     .replace("%ART%", ART).replace("%MAP%", MAP)
@@ -793,7 +874,7 @@ def build():
     arts = []
     for fname, lane, fr in boards:
         col = LANES.index(lane)
-        arts.append({"file": fname, "x": (len(LANES) - 1 - col) * 480,
+        arts.append({"file": fname, "x": (len(LANES) - 1 - col) * 480 + fr["x_extra"],
                      "y": fr["row"] * 1010, "w": 390, "h": 930,
                      "title": "%s · %s · %s%s" % (lane["n"], lane["he"], lane["en"],
                                                   fr["note"] or " — " + fr["label"])})

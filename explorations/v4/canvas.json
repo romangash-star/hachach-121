@@ -25,6 +25,22 @@
       "title": "1 · טופס מודבק · Defaced Paperwork · מקרה קצה: פיסוק שחסר ב-Bibush, מצויר בקופסאות CSS"
     },
     {
+      "file": "MainPop.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 930,
+      "title": "1 · טופס מודבק · Defaced Paperwork · וריאנט: התערבויות מוגברות"
+    },
+    {
+      "file": "MainClipBinder.dc.html",
+      "x": 1440,
+      "y": 2020,
+      "w": 390,
+      "h": 930,
+      "title": "1 · טופס מודבק · Defaced Paperwork · חומרה ב׳: קליפס בולדוג במקום אטב"
+    },
+    {
       "file": "NytGames.dc.html",
       "x": 480,
       "y": 0,
@@ -55,22 +71,6 @@
       "w": 390,
       "h": 930,
       "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · מקרה קצה: הכותרת הארוכה ביותר"
-    },
-    {
-      "file": "StickersStoryBar.dc.html",
-      "x": 0,
-      "y": 2020,
-      "w": 390,
-      "h": 930,
-      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · התקדמות א׳: פס סטוריז בקצה העליון"
-    },
-    {
-      "file": "StickersNoDots.dc.html",
-      "x": 0,
-      "y": 2020,
-      "w": 390,
-      "h": 930,
-      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · התקדמות ב׳: בלי מחוון, הערימה נושאת אותו"
     }
   ],
   "launch": {

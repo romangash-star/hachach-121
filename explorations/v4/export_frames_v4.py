@@ -20,15 +20,15 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 W, H = 390, 780
 
 NAMES = {
-    "Main.dc.html":              "lane1-defaced-paperwork",
+    "Main.dc.html":              "lane1-defaced-paperwork-clip-a-steel",
     "MainLongTitle.dc.html":     "lane1-defaced-paperwork-longtitle",
     "MainPunct.dc.html":         "lane1-defaced-paperwork-punctuation",
+    "MainPop.dc.html":           "lane1-defaced-paperwork-pop",
+    "MainClipBinder.dc.html":    "lane1-defaced-paperwork-clip-b-binder",
     "NytGames.dc.html":          "lane2-nyt-games",
     "NytGamesLongTitle.dc.html": "lane2-nyt-games-longtitle",
     "Stickers.dc.html":          "lane3-stickers",
     "StickersLongTitle.dc.html": "lane3-stickers-longtitle",
-    "StickersStoryBar.dc.html":  "lane3-stickers-progress-a-storybar",
-    "StickersNoDots.dc.html":    "lane3-stickers-progress-b-none",
 }
 
 SHIM = """

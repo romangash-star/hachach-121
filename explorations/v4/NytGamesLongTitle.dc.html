@@ -43,29 +43,22 @@ a:hover{color:#0f2894}
 .deco{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .deco g{display:none}
 
-/* ---- HUD v3: [coins] .......... [topic + steps] .......... [map][avatar] ---- */
+/* ---- HUD v4: [coins] ............ [topic] ............ [map][avatar] ---- */
 .hud{position:relative;z-index:4;flex:none;min-height:46px;display:flex;align-items:center;
   justify-content:space-between;gap:8px}
 .hud-coins{display:flex;align-items:center;gap:7px;flex:none}
 .coin-glyph{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:50%}
 .coin-num{font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;font-size:20px;line-height:1}
 .hud-mid{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
-.topic-title{font-size:12.5px;font-weight:700;line-height:1.2;white-space:nowrap;padding:3px 0}
-/* v4.7 CHANGE D, progress variant 1 — the stories bar. Pinned to the frame's top edge
-   above the HUD, 3 segments, the first filled. Hidden unless the frame carries .pr-bar;
-   .pr-none renders neither bar nor dots. Both variants suppress the dots, so a frame
-   never shows two progress indicators. Styled per lane below even though only lane 3
-   renders the comparison, so switching lanes is a class change, not new CSS. */
-.storybar{display:none;position:relative;z-index:5;flex:none;gap:4px;height:4px;
-  margin:-12px -16px 10px;padding:0 12px}   /* out through the frame's 12/16 padding */
-.storybar .seg{flex:1;height:100%;border-radius:2px;background:currentColor;opacity:.26}
-.storybar .seg-on{opacity:1}
-.pr-bar .storybar{display:flex}
-.pr-bar .steps,.pr-none .steps{display:none}
-/* three step dots = the three beats of the round; the pile behind the card is those same three */
-.steps{display:flex;align-items:center;gap:5px}
-.step{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.32;display:block}
-.step-on{opacity:1;width:17px;border-radius:4px}
+/* v5.0 — the centre-top topic title was 12.5px and read as a caption rather than as
+   the thing naming the round. Each lane sets its own size below. */
+.topic-title{font-size:16px;font-weight:700;line-height:1.2;white-space:nowrap;padding:3px 0}
+/* v4.8 — no progress indicator. The dots and the stories bar are both gone: the card
+   pile IS the progress, three cards behind the hero and one leaving per beat. Dots
+   under the content read as the carousel/onboarding convention — "swipe sideways to
+   browse pages" — and in this game a sideways swipe is an answer, so that was the
+   wrong signal at the exact moment the player is learning what a swipe does. A bar
+   above the HUD said the same thing the pile already says. */
 .hud-you{display:flex;align-items:center;gap:6px;flex:none}
 /* v4.7 CHANGE D — map button and avatar are one control size: 40x40, same shape
    language inside each lane. The button stays a 44px target: ::after bleeds the hit
@@ -96,12 +89,18 @@ a:hover{color:#0f2894}
 .art-clip{display:none;position:absolute;width:26px;height:58px;fill:none;stroke:currentColor;
   stroke-width:3.4;stroke-linecap:round}
 .sticker{display:none}
+.clip-wire,.clip-binder{display:none}
+.cb-body{fill:currentColor;stroke:none}
+.cb-lip,.cb-arm{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.doc-stamp{display:none;position:absolute;z-index:6;pointer-events:none;fill:none;
+  stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.st-ring{stroke-width:3.4}
 /* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
    from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
   font-size:36px;line-height:1.04;text-wrap:balance}
 .claim-text{margin-top:10px;font-size:16px;line-height:1.5;font-weight:700;text-wrap:balance}
-.hl{background:none;color:inherit}
+.hl,.hl2{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
    the direction now lives on the arrow inside each button (.ans-arrow). */
 /* ---- OPTIONAL, OFF BY DEFAULT: set VERIFY_MARK = True to render ----------
@@ -151,14 +150,16 @@ a:hover{color:#0f2894}
 .lane2 .frame-bg{background:#E8E6E1}
 .lane2 .coin-glyph{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
 .lane2 .coin-num{color:#1A1A1A}
-.lane2 .topic-title{color:#4A4A46;font-size:10.5px;letter-spacing:.19em;padding:4px 0}
-.lane2 .steps{color:var(--t2)}
-/* v4.7 CHANGE D — lane 2's two icon buttons already shared a language (white disc,
-   1.5px rule); they now share a size too. Nothing else needed here. */
-.lane2 .storybar{color:var(--t2)}
-.lane2 .map-btn{color:#1A1A1A;background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .topic-title{color:#3A3A36;font-size:15px;letter-spacing:.1em;padding:4px 0}
+/* v5.0 — a 1.5px black ring on both icon buttons was the loudest chrome in the lane,
+   against a card whose own edge is a 1px #DDD9D0 hairline. The ring goes; what separates
+   them from the ground now is a warm-neutral fill one step off the frame plus a hairline
+   and a soft drop, which is the same weight as everything else here. */
+.lane2 .map-btn{color:#1A1A1A;background:#F6F4EF;
+  box-shadow:inset 0 0 0 1px #DCD8D0,0 1px 2px rgba(26,26,26,.13)}
 .lane2 .map-btn:focus-visible{outline:3px solid #C9A227;outline-offset:2px}
-.lane2 .avatar{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
+.lane2 .avatar{background:#F6F4EF;
+  box-shadow:inset 0 0 0 1px #DCD8D0,0 1px 2px rgba(26,26,26,.13)}
 .lane2 .avatar-sil{fill:#B9B5AC}
 /* pile: two from the topic family + one neutral */
 .lane2 .pile-card{border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
@@ -215,12 +216,17 @@ a:hover{color:#0f2894}
           <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
         </filter>
         <filter id="co-lane2-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="7" result="grown"></feMorphology>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
           <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
       <g class="deco-ghosts">
@@ -234,8 +240,6 @@ a:hover{color:#0f2894}
       </g>
     </svg>
 
-    <div class="storybar" aria-hidden="true"><i class="seg seg-on"></i><i class="seg"></i><i class="seg"></i></div>
-
     <header class="hud">
       <div class="hud-coins">
         <span class="coin-glyph" aria-hidden="true"></span>
@@ -243,7 +247,6 @@ a:hover{color:#0f2894}
       </div>
       <div class="hud-mid">
         <span class="topic-title">מי מחליט פה?</span>
-        <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
       </div>
       <div class="hud-you">
         <button type="button" class="map-btn" aria-label="מפה">
@@ -264,12 +267,13 @@ a:hover{color:#0f2894}
         </div>
         <article class="card claim">
           <span class="sticker">11 ביוני 2024</span>
+          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
+            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
           </div>
           <h2 class="issue-title">מדינה פלסטינית: התנגדות עקרונית</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
+          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
         </article>
       </div>
       <div class="answers">
