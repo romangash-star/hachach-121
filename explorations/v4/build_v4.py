@@ -133,7 +133,7 @@ a:hover{color:#0f2894}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 """
 
-BODY = """<div class="stage %LANE% topic-%TOPICID%">
+BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">%NUM%</span>
     <span class="cap-he">%HE%</span>
@@ -242,26 +242,44 @@ LANES = []
 
 # ---------------------------------------------------------------- lane 1
 LANES.append(dict(
-  n="1", file="Main.dc.html", cls="lane1", dispnote=" · תצוגה: Bibush Chunky",
+  n="1", file="Main.dc.html", cls="lane1",
+  dispnote=" · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת",
+  # v4.3 CHANGE 3 — lane 1 renders ONE frame, not two: the branches sticker and the
+  # religion highlighter in a single sample.
+  frames=[dict(file="Main.dc.html", label=TOPICS["religion"])],
   he="טופס מודבק", en="Defaced Paperwork",
   tokens="""<!--
   LANE 1 · Defaced Paperwork
-  palette   : desk #241F1A · paper #D9D2C0 · ink #1A1714 · manila #C0B393 · ochre stamp #B07A1E
+  palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
+              · file-tab manila #C0B393 · accent muted red #A8443C
   type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in system face for body
-  texture   : one — office document: hard rules, dashed rules, file tabs, zero radii
-  BOLDNESS  : the Bibush Chunky title at 60px — it takes a third of the card on its own
+  texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
+  BOLDNESS  : the Bibush Chunky title at 66px — it takes a third of the card on its own
+  ARTIFACTS : four, counted — paperclip · tape · highlighter · two punched filing holes
   TOPIC     : religion #ffd23f/#ffb800 -> #F2C230/#8A6A18   (highlighter gold, deep manila)
               branches #2b4cff/#1a3acc -> #4A6BD6/#25376B   (mimeograph blue, carbon deep)
+              rendered as ONE merged frame: blue sticker + gold highlighter
 -->""",
   css="""/* LANE 1 · Defaced Paperwork
-   palette   : desk #241F1A · paper #D9D2C0 · ink #1A1714 · manila #C0B393 · ochre #B07A1E
+   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
+               · file-tab manila #C0B393 · accent muted red #A8443C
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
-   texture   : one — office document: hard rules, dashed rules, file tabs, zero radii
-   BOLDNESS  : the Bibush Chunky title at 60px, taking a third of the card on its own
+   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
+   BOLDNESS  : the Bibush Chunky title at 66px, taking a third of the card on its own
+   ARTIFACTS : four, counted — paperclip · tape · highlighter · two punched filing holes
    TOPIC old->new : religion #ffd23f/#ffb800 -> #F2C230/#8A6A18 (highlighter gold, deep manila)
-                    branches #2b4cff/#1a3acc -> #4A6BD6/#25376B (mimeograph blue, carbon deep) */
+                    branches #2b4cff/#1a3acc -> #4A6BD6/#25376B (mimeograph blue, carbon deep)
+
+   v4.3 CHANGE 3 — the per-topic mechanism below is INTACT and unchanged; lane 1 simply
+   renders one frame instead of two. .topic-religion and .topic-branches are still here,
+   still correct, and still what a religion or a branches round would use: switch
+   frames= in the lane dict back to both topics and the two frames return as they were.
+   .topic-merged is the sample only — the branches sticker (--t1 mimeograph blue) with
+   the religion highlighter (--hl gold), so one frame shows both tokens at once. It is a
+   specimen, not a reachable game state. */
 .lane1.topic-religion{--t1:#F2C230;--t2:#8A6A18;--hl:#F7DC7A;--on-t1:#1A1714}
 .lane1.topic-branches{--t1:#4A6BD6;--t2:#25376B;--hl:#AEC4F2;--on-t1:#FFFFFF}
+.lane1.topic-merged{--t1:#4A6BD6;--t2:#25376B;--hl:#F7DC7A;--on-t1:#FFFFFF}
 
 /* Bibush Chunky covers Hebrew letters + digits only. Missing: - / " ׳ ״ .
    Checked against data.js: 4 of the 16 real issue titles break, and ONLY on - and / .
@@ -305,7 +323,7 @@ LANES.append(dict(
 .lane1 .pile-1::before{right:26px}
 .lane1 .pile-2::before{right:132px}
 .lane1 .pile-3::before{right:230px}
-.lane1 .card{background:#D9D2C0;
+.lane1 .card{background:#D9D2C0;padding-right:36px;
   box-shadow:inset 0 0 0 1px #A79C81,0 4px 0 rgba(0,0,0,.6),0 20px 30px rgba(0,0,0,.5)}
 /* INTERVENTION 1 — one slapped die-cut sticker, carrying the topic colour.
    v4.2 FIX 1(a): it now carries document furniture — the bill's own date stamp,
@@ -320,15 +338,42 @@ LANES.append(dict(
 .lane1 .card::before{content:"";position:absolute;top:-13px;right:-24px;width:104px;height:29px;
   rotate:36deg;background:linear-gradient(96deg,rgba(238,238,228,.52),rgba(214,216,204,.66));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);z-index:5}
+/* INTERVENTION 4 — v4.3 CHANGE 3: two punched filing holes down the binder margin.
+   Chosen over the staple, the torn corner, the coffee ring and the fold crease because
+   it is the only candidate that proves the card is a physical sheet LYING ON the desk:
+   the desk colour is what you see through the holes, so the artifact reads as depth
+   rather than as another mark added on top. It is also the only one that cannot touch
+   content — a punch lives in the margin by definition, which is why the card grew a
+   36px binder margin on its leading (right, RTL) edge to hold it. Neutral, document
+   native, nothing defaced, nothing crossed out. Two holes, one counted artifact. */
+.lane1 .card::after{content:"";position:absolute;right:8px;top:161px;width:20px;height:147px;
+  z-index:6;pointer-events:none;background-repeat:no-repeat;background-size:20px 20px;
+  /* two holes, 147px apart on the standard two-hole pitch. Each is a dark disc (the desk,
+     seen through the sheet) sat on a slightly offset pale disc, so the lit bottom-right
+     lip of the cut paper shows — that lip is what makes it read as punched rather than
+     printed. Layers paint front to back: hole, lip, hole, lip. */
+  background-position:50% 0,50% 0,50% 100%,50% 100%;
+  background-image:
+    radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
+    radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%),
+    radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
+    radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%)}
+
 /* art: high-contrast duotone document photo, paperclipped.
    v4.2 FIX 3 — the space the swipe hints used to hold goes here: the plate grows
    126 -> 244px and the duotone with it. Lane 1's freed space went to ART. */
 /* v4.3 CHANGE 1 — the source chip's 49px goes to the photo plate, not to a gap */
-.lane1 .art{flex:1;min-height:244px;background:#C0B393;
+/* v4.3 CHANGE 3, palette — Papers, Please is not a brown game: it is tinted papers on a
+   brown desk. The plate was #C0B393, the same manila as the card under it, so the two
+   read as one sheet. It is now its own pale document blue; the desk and the manila card
+   are untouched, and the contrast comes from the papers being different colours. */
+.lane1 .art{flex:1;min-height:244px;background:#BFC9D6;
   box-shadow:inset 0 0 0 2px #1A1714;margin-top:10px}
 .lane1 .art-emoji{font-size:136px;filter:grayscale(1) brightness(1.08) contrast(9);
   mix-blend-mode:multiply}
-.lane1 .art-clip{display:block;color:#3A332B;top:-10px;left:64px;rotate:9deg}
+/* the one saturated accent, used on one thin stroke: a coated-wire clip in muted red.
+   It belongs to the document world, never to a topic and never to a verdict. */
+.lane1 .art-clip{display:block;color:#A8443C;top:-10px;left:64px;rotate:9deg}
 .lane1 .issue-title{font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:66px;
   line-height:.98;margin-top:12px;color:#1A1714}
 .lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5}
@@ -345,6 +390,8 @@ LANES.append(dict(
 LANES.append(dict(
   n="2", file="NytGames.dc.html", cls="lane2", dispnote="",
   he="משחקי עיתון", en="NYT Games",
+  # v4.4 CHANGE A — one frame, mixed pile
+  frames=[dict(file="NytGames.dc.html", tid="branches", label=TOPICS["branches"])],
   tokens="""<!--
   LANE 2 · NYT Games
   palette   : warm grey #E8E6E1 · paper #FDFDFB · ink #1A1A1A · rule #DDD9D0 · neutral back #CFCBC2
@@ -363,8 +410,16 @@ LANES.append(dict(
    TOPIC old->new : religion #ffd23f/#ffb800 -> #EE9F3C/#C7701D  (warm orange, pushed off the
                       #C9A227 surprise amber so the verdict colour stays unmistakable)
                     branches #2b4cff/#1a3acc -> #6AA9E0/#4A6FB5  (games sky, deep sky) */
-.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2}
-.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3}
+/* v4.4 CHANGE A — the pile stops carrying the topic and becomes one fixed mixed set.
+   THE TOPIC TOKEN NOW LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+       background on .card, via --card.
+   Everything else in the card region that the topic used to tint (the pile backs, the
+   art disc) is now a lane constant, so 8 topics x 2 rounds still differ round to round
+   without the whole frame recolouring. --t1/--t2 stay defined and stay correct: they
+   are what the HUD topic chip, coin and avatar ring read. --tint is retained but
+   unused, so the old per-topic disc can be restored in one line. */
+.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2;--card:#FDF4E6}
+.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3;--card:#EFF4FB}
 .lane2 .frame{background:#E8E6E1;color:#1A1A1A;padding:12px 20px 24px}
 .lane2 .frame-bg{background:#E8E6E1}
 .lane2 .coin-glyph{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
@@ -377,14 +432,19 @@ LANES.append(dict(
 .lane2 .avatar-sil{fill:#B9B5AC}
 /* pile: two from the topic family + one neutral */
 .lane2 .pile-card{border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
-.lane2 .pile-1{background:var(--t1)}
-.lane2 .pile-2{background:#CFCBC2}
-.lane2 .pile-3{background:var(--t2)}
-.lane2 .card{background:#FDFDFB;border-radius:6px;padding:14px 22px 16px;
+/* the merged pile: the two topic families the board was comparing, plus the neutral
+   that was already there. Chosen over inventing a new palette because a deck of
+   different-coloured puzzle backs IS the NYT Games idiom, and warm / cool / neutral in
+   rotation reads as three different puzzles rather than three copies of one. Fixed —
+   identical in every round. */
+.lane2 .pile-1{background:#EE9F3C}
+.lane2 .pile-2{background:#6AA9E0}
+.lane2 .pile-3{background:#CFCBC2}
+.lane2 .card{background:var(--card);border-radius:6px;padding:14px 22px 16px;
   box-shadow:0 0 0 1px #DDD9D0,0 12px 28px rgba(0,0,0,.16)}
 .lane2 .art{min-height:96px}
 .lane2 .art::before{content:"";position:absolute;width:172px;height:172px;border-radius:50%;
-  background:var(--tint)}
+  background:#E7E3DA}   /* lane constant now: the topic lives on --card */
 .lane2 .art-emoji{position:relative;font-size:100px;filter:grayscale(1) brightness(0)}
 /* BOLDNESS: poster type.
    v4.2 FIX 3 — lane 2's freed space went to TYPE, which is where this lane's
@@ -400,6 +460,12 @@ LANES.append(dict(
 LANES.append(dict(
   n="3", file="Stickers.dc.html", cls="lane3", dispnote="",
   he="תרבות סטיקרים", en="Israeli Sticker Culture",
+  # v4.4 CHANGE A — one frame, mixed pile, plus one extra artboard that differs ONLY
+  # in the אמת/שקר fill, so the two button options can be compared side by side.
+  frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"],
+               note=" · כפתורים א׳: טורקיז מרוכך"),
+          dict(file="StickersAltButtons.dc.html", tid="religion", label=TOPICS["religion"],
+               var="btn-b", note=" · כפתורים ב׳: לבן עם קו טורקיז")],
   tokens="""<!--
   LANE 3 · Israeli Sticker Culture
   palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
@@ -421,8 +487,14 @@ LANES.append(dict(
               the card and breaking out over its top edge
    TOPIC old->new : religion #ffd23f/#ffb800 -> #FFD60A/#FF8A00 (sticker yellow, sticker orange)
                     branches #2b4cff/#1a3acc -> #3D5BFF/#1E36B8 (electric blue, deep blue) */
-.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000}
-.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff}
+/* v4.4 CHANGE A — as in lane 2: the pile is a fixed mixed set and
+   THE TOPIC TOKEN LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+       background on .card, via --card.
+   The die-cut sticker's registration rim, which carried the topic in v4.3, becomes a
+   lane constant (--rim) so the card region has one topic-keyed surface, not two. */
+.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000;--card:#FFF3CE}
+.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff;--card:#E6EDFF}
+.lane3{--rim:#3D5BFF}
 .lane3 .frame{background:#B3B1A9;color:#000}
 .lane3 .frame-bg{background:#B3B1A9}
 /* the pole: ghost remnants sit under two grains at different scales */
@@ -463,10 +535,13 @@ LANES.append(dict(
 .lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
 .lane3 .avatar-sil{fill:#CFCDC4}
 .lane3 .pile-card{border:5px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.42)}
-.lane3 .pile-1{background:var(--t1);transform:translateY(-11px) rotate(-3.4deg)}
-.lane3 .pile-2{background:#FF3B6B;transform:translateY(-20px) rotate(4.6deg)}
-.lane3 .pile-3{background:var(--t2);transform:translateY(-29px) rotate(-7deg)}
-.lane3 .card{background:#fff;border:7px solid #fff;rotate:-1.4deg;overflow:visible;
+/* the merged pile: warm red + warm orange against the lane's electric blue. Fixed —
+   identical in every round. Sticker yellow is deliberately NOT in the pile: the front
+   card is now pale warm yellow, and a yellow back behind it would flatten the stack. */
+.lane3 .pile-1{background:#FF3B6B;transform:translateY(-11px) rotate(-3.4deg)}
+.lane3 .pile-2{background:#3D5BFF;transform:translateY(-20px) rotate(4.6deg)}
+.lane3 .pile-3{background:#FF8A00;transform:translateY(-29px) rotate(-7deg)}
+.lane3 .card{background:var(--card);border:7px solid #fff;rotate:-1.4deg;overflow:visible;
   padding:0 18px 16px;box-shadow:0 7px 0 rgba(0,0,0,.42),0 16px 26px rgba(0,0,0,.28)}
 /* BOLDNESS — v4.3 CHANGE 2: the helmet is a die-cut sticker stuck ON the card.
    The coloured rounded square is gone. The white cut edge now follows the HELMET'S
@@ -478,7 +553,7 @@ LANES.append(dict(
      SourceGraphic (the flat black helmet) on top.
    A CSS drop-shadow underneath lifts it off the white card. Nothing here is
    verdict-capable: the topic colour touches the sticker rim and nothing else. */
-.lane3 .dc-tint{flood-color:var(--t1);flood-opacity:1}
+.lane3 .dc-tint{flood-color:var(--rim);flood-opacity:1}
 .lane3 .dc-cut{flood-color:#fff;flood-opacity:1}
 .lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
 .lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
@@ -499,23 +574,49 @@ LANES.append(dict(
 .lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
   max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-.lane3 .ans{background:#2EC4B6;color:#000;border:5px solid #fff;border-radius:16px;
+/* v4.4 CHANGE A — the אמת/שקר buttons drop in intensity: full-saturation teal was
+   competing with the sticker for the loudest thing on the card. Two options ship side
+   by side, differing ONLY in the button fill; everything else in the two artboards is
+   identical. In both, the two buttons are identical to each other and the direction is
+   carried by the arrow alone. Neither reads a topic token.
+   OPTION A (default) — the same teal, softened, with a dark teal label: 8.7:1. */
+.lane3 .ans{background:#A9E3DC;color:#0B3B36;border:5px solid #fff;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
+/* OPTION B (.btn-b) — white fill with the teal moved to a die-cut edge, echoing the
+   sticker's own construction: 12.3:1. */
+.lane3.btn-b .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}"""))
 
 # =========================================================================
+def frames_of(lane):
+    """Every frame a lane renders, as dicts: tid, label, file, var, note.
+    v4.4 CHANGE A — all three lanes now render ONE frame each, so a frame names its
+    own file rather than deriving it from a topic. `var` is an extra stage class for
+    a side-by-side variant (lane 3's button options); `note` annotates the caption."""
+    out = []
+    for f in lane["frames"]:
+        d = dict(tid=f.get("tid", "merged"), label=f.get("label", TOPICS["religion"]),
+                 file=f["file"], var=f.get("var", ""), note=f.get("note", ""))
+        out.append(d)
+    return out
+
 def build():
     shared = SHARED.replace("%FONT%", FONT)
     boards = []
     for lane in LANES:
-        for tid, tlabel in TOPICS.items():
-            fname = lane["file"] if tid == "religion" else lane["file"].replace(".dc.html", "Branches.dc.html")
+        for fr in frames_of(lane):
+            tid, tlabel, fname = fr["tid"], fr["label"], fr["file"]
+            # a frame must render a topic the lane actually defines tokens for: an
+            # undefined --card silently drops .card's background and the pile shows
+            # through. Caught once the hard way; asserted from now on.
+            assert ".%s.topic-%s{" % (lane["cls"], tid) in lane["css"], (lane["cls"], tid)
             body = (BODY
                     .replace("%LANE%", lane["cls"]).replace("%TOPICID%", tid)
+                    .replace("%VARCLS%", (" " + fr["var"]) if fr["var"] else "")
                     .replace("%NUM%", lane["n"]).replace("%HE%", lane["he"]).replace("%EN%", lane["en"])
-                    .replace("%DISPNOTE%", lane["dispnote"])
+                    .replace("%DISPNOTE%", lane["dispnote"] + fr["note"])
                     .replace("%COINS%", COINS).replace("%TOPIC%", tlabel).replace("%TITLE%", TITLE)
                     .replace("%CLAIM_A%", CLAIM_A).replace("%CLAIM_B%", CLAIM_B)
                     .replace("%ANS_T%", ANS_T).replace("%ANS_F%", ANS_F)
@@ -526,20 +627,21 @@ def build():
                     .replace("%LANECSS%", lane["css"].replace("%BIBUSHFONT%", BIBUSH))
                     .replace("%BODY%", body))
             (OUT / fname).write_text(page, encoding="utf-8")
-            boards.append((fname, lane, tid, tlabel))
+            boards.append((fname, lane, fr))
 
-    # religion row on top, branches row below; lane 1 on the right (RTL reading)
+    # v4.4 CHANGE A — every lane is one frame now, so the board is a single row,
+    # lane 1 on the right (RTL reading order)
     arts = []
-    for fname, lane, tid, tlabel in boards:
-        col = LANES.index(lane)
-        arts.append({"file": fname, "x": (len(LANES) - 1 - col) * 480,
-                     "y": 0 if tid == "religion" else 1010, "w": 390, "h": 930,
-                     "title": "%s · %s · %s — %s" % (lane["n"], lane["he"], lane["en"], tlabel)})
+    n = len(boards)
+    for i, (fname, lane, fr) in enumerate(boards):
+        arts.append({"file": fname, "x": (n - 1 - i) * 480, "y": 0, "w": 390, "h": 930,
+                     "title": "%s · %s · %s%s" % (lane["n"], lane["he"], lane["en"],
+                                                  fr["note"] or " — " + fr["label"])})
     (OUT / "canvas.json").write_text(
         json.dumps({"artboards": arts, "launch": {"view": "canvas"}}, ensure_ascii=False, indent=2),
         encoding="utf-8")
     for f, *_ in boards:
-        print("%s  %6.1f KB" % (f.ljust(26), (OUT / f).stat().st_size / 1024))
+        print("%s  %6.1f KB" % (f.ljust(28), (OUT / f).stat().st_size / 1024))
 
 if __name__ == "__main__":
     build()

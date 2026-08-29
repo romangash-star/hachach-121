@@ -100,14 +100,25 @@ a:hover{color:#0f2894}
 
 .row{display:flex;flex-direction:row;gap:26px;padding:22px;align-items:flex-start}
 /* LANE 1 · Defaced Paperwork
-   palette   : desk #241F1A · paper #D9D2C0 · ink #1A1714 · manila #C0B393 · ochre #B07A1E
+   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
+               · file-tab manila #C0B393 · accent muted red #A8443C
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
-   texture   : one — office document: hard rules, dashed rules, file tabs, zero radii
-   BOLDNESS  : the Bibush Chunky title at 60px, taking a third of the card on its own
+   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
+   BOLDNESS  : the Bibush Chunky title at 66px, taking a third of the card on its own
+   ARTIFACTS : four, counted — paperclip · tape · highlighter · two punched filing holes
    TOPIC old->new : religion #ffd23f/#ffb800 -> #F2C230/#8A6A18 (highlighter gold, deep manila)
-                    branches #2b4cff/#1a3acc -> #4A6BD6/#25376B (mimeograph blue, carbon deep) */
+                    branches #2b4cff/#1a3acc -> #4A6BD6/#25376B (mimeograph blue, carbon deep)
+
+   v4.3 CHANGE 3 — the per-topic mechanism below is INTACT and unchanged; lane 1 simply
+   renders one frame instead of two. .topic-religion and .topic-branches are still here,
+   still correct, and still what a religion or a branches round would use: switch
+   frames= in the lane dict back to both topics and the two frames return as they were.
+   .topic-merged is the sample only — the branches sticker (--t1 mimeograph blue) with
+   the religion highlighter (--hl gold), so one frame shows both tokens at once. It is a
+   specimen, not a reachable game state. */
 .lane1.topic-religion{--t1:#F2C230;--t2:#8A6A18;--hl:#F7DC7A;--on-t1:#1A1714}
 .lane1.topic-branches{--t1:#4A6BD6;--t2:#25376B;--hl:#AEC4F2;--on-t1:#FFFFFF}
+.lane1.topic-merged{--t1:#4A6BD6;--t2:#25376B;--hl:#F7DC7A;--on-t1:#FFFFFF}
 
 /* Bibush Chunky covers Hebrew letters + digits only. Missing: - / " ׳ ״ .
    Checked against data.js: 4 of the 16 real issue titles break, and ONLY on - and / .
@@ -151,7 +162,7 @@ a:hover{color:#0f2894}
 .lane1 .pile-1::before{right:26px}
 .lane1 .pile-2::before{right:132px}
 .lane1 .pile-3::before{right:230px}
-.lane1 .card{background:#D9D2C0;
+.lane1 .card{background:#D9D2C0;padding-right:36px;
   box-shadow:inset 0 0 0 1px #A79C81,0 4px 0 rgba(0,0,0,.6),0 20px 30px rgba(0,0,0,.5)}
 /* INTERVENTION 1 — one slapped die-cut sticker, carrying the topic colour.
    v4.2 FIX 1(a): it now carries document furniture — the bill's own date stamp,
@@ -166,15 +177,42 @@ a:hover{color:#0f2894}
 .lane1 .card::before{content:"";position:absolute;top:-13px;right:-24px;width:104px;height:29px;
   rotate:36deg;background:linear-gradient(96deg,rgba(238,238,228,.52),rgba(214,216,204,.66));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);z-index:5}
+/* INTERVENTION 4 — v4.3 CHANGE 3: two punched filing holes down the binder margin.
+   Chosen over the staple, the torn corner, the coffee ring and the fold crease because
+   it is the only candidate that proves the card is a physical sheet LYING ON the desk:
+   the desk colour is what you see through the holes, so the artifact reads as depth
+   rather than as another mark added on top. It is also the only one that cannot touch
+   content — a punch lives in the margin by definition, which is why the card grew a
+   36px binder margin on its leading (right, RTL) edge to hold it. Neutral, document
+   native, nothing defaced, nothing crossed out. Two holes, one counted artifact. */
+.lane1 .card::after{content:"";position:absolute;right:8px;top:161px;width:20px;height:147px;
+  z-index:6;pointer-events:none;background-repeat:no-repeat;background-size:20px 20px;
+  /* two holes, 147px apart on the standard two-hole pitch. Each is a dark disc (the desk,
+     seen through the sheet) sat on a slightly offset pale disc, so the lit bottom-right
+     lip of the cut paper shows — that lip is what makes it read as punched rather than
+     printed. Layers paint front to back: hole, lip, hole, lip. */
+  background-position:50% 0,50% 0,50% 100%,50% 100%;
+  background-image:
+    radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
+    radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%),
+    radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
+    radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%)}
+
 /* art: high-contrast duotone document photo, paperclipped.
    v4.2 FIX 3 — the space the swipe hints used to hold goes here: the plate grows
    126 -> 244px and the duotone with it. Lane 1's freed space went to ART. */
 /* v4.3 CHANGE 1 — the source chip's 49px goes to the photo plate, not to a gap */
-.lane1 .art{flex:1;min-height:244px;background:#C0B393;
+/* v4.3 CHANGE 3, palette — Papers, Please is not a brown game: it is tinted papers on a
+   brown desk. The plate was #C0B393, the same manila as the card under it, so the two
+   read as one sheet. It is now its own pale document blue; the desk and the manila card
+   are untouched, and the contrast comes from the papers being different colours. */
+.lane1 .art{flex:1;min-height:244px;background:#BFC9D6;
   box-shadow:inset 0 0 0 2px #1A1714;margin-top:10px}
 .lane1 .art-emoji{font-size:136px;filter:grayscale(1) brightness(1.08) contrast(9);
   mix-blend-mode:multiply}
-.lane1 .art-clip{display:block;color:#3A332B;top:-10px;left:64px;rotate:9deg}
+/* the one saturated accent, used on one thin stroke: a coated-wire clip in muted red.
+   It belongs to the document world, never to a topic and never to a verdict. */
+.lane1 .art-clip{display:block;color:#A8443C;top:-10px;left:64px;rotate:9deg}
 .lane1 .issue-title{font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:66px;
   line-height:.98;margin-top:12px;color:#1A1714}
 .lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5}
@@ -195,8 +233,16 @@ a:hover{color:#0f2894}
    TOPIC old->new : religion #ffd23f/#ffb800 -> #EE9F3C/#C7701D  (warm orange, pushed off the
                       #C9A227 surprise amber so the verdict colour stays unmistakable)
                     branches #2b4cff/#1a3acc -> #6AA9E0/#4A6FB5  (games sky, deep sky) */
-.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2}
-.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3}
+/* v4.4 CHANGE A — the pile stops carrying the topic and becomes one fixed mixed set.
+   THE TOPIC TOKEN NOW LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+       background on .card, via --card.
+   Everything else in the card region that the topic used to tint (the pile backs, the
+   art disc) is now a lane constant, so 8 topics x 2 rounds still differ round to round
+   without the whole frame recolouring. --t1/--t2 stay defined and stay correct: they
+   are what the HUD topic chip, coin and avatar ring read. --tint is retained but
+   unused, so the old per-topic disc can be restored in one line. */
+.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2;--card:#FDF4E6}
+.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3;--card:#EFF4FB}
 .lane2 .frame{background:#E8E6E1;color:#1A1A1A;padding:12px 20px 24px}
 .lane2 .frame-bg{background:#E8E6E1}
 .lane2 .coin-glyph{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
@@ -209,14 +255,19 @@ a:hover{color:#0f2894}
 .lane2 .avatar-sil{fill:#B9B5AC}
 /* pile: two from the topic family + one neutral */
 .lane2 .pile-card{border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
-.lane2 .pile-1{background:var(--t1)}
-.lane2 .pile-2{background:#CFCBC2}
-.lane2 .pile-3{background:var(--t2)}
-.lane2 .card{background:#FDFDFB;border-radius:6px;padding:14px 22px 16px;
+/* the merged pile: the two topic families the board was comparing, plus the neutral
+   that was already there. Chosen over inventing a new palette because a deck of
+   different-coloured puzzle backs IS the NYT Games idiom, and warm / cool / neutral in
+   rotation reads as three different puzzles rather than three copies of one. Fixed —
+   identical in every round. */
+.lane2 .pile-1{background:#EE9F3C}
+.lane2 .pile-2{background:#6AA9E0}
+.lane2 .pile-3{background:#CFCBC2}
+.lane2 .card{background:var(--card);border-radius:6px;padding:14px 22px 16px;
   box-shadow:0 0 0 1px #DDD9D0,0 12px 28px rgba(0,0,0,.16)}
 .lane2 .art{min-height:96px}
 .lane2 .art::before{content:"";position:absolute;width:172px;height:172px;border-radius:50%;
-  background:var(--tint)}
+  background:#E7E3DA}   /* lane constant now: the topic lives on --card */
 .lane2 .art-emoji{position:relative;font-size:100px;filter:grayscale(1) brightness(0)}
 /* BOLDNESS: poster type.
    v4.2 FIX 3 — lane 2's freed space went to TYPE, which is where this lane's
@@ -236,8 +287,14 @@ a:hover{color:#0f2894}
               the card and breaking out over its top edge
    TOPIC old->new : religion #ffd23f/#ffb800 -> #FFD60A/#FF8A00 (sticker yellow, sticker orange)
                     branches #2b4cff/#1a3acc -> #3D5BFF/#1E36B8 (electric blue, deep blue) */
-.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000}
-.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff}
+/* v4.4 CHANGE A — as in lane 2: the pile is a fixed mixed set and
+   THE TOPIC TOKEN LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+       background on .card, via --card.
+   The die-cut sticker's registration rim, which carried the topic in v4.3, becomes a
+   lane constant (--rim) so the card region has one topic-keyed surface, not two. */
+.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000;--card:#FFF3CE}
+.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff;--card:#E6EDFF}
+.lane3{--rim:#3D5BFF}
 .lane3 .frame{background:#B3B1A9;color:#000}
 .lane3 .frame-bg{background:#B3B1A9}
 /* the pole: ghost remnants sit under two grains at different scales */
@@ -278,10 +335,13 @@ a:hover{color:#0f2894}
 .lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
 .lane3 .avatar-sil{fill:#CFCDC4}
 .lane3 .pile-card{border:5px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.42)}
-.lane3 .pile-1{background:var(--t1);transform:translateY(-11px) rotate(-3.4deg)}
-.lane3 .pile-2{background:#FF3B6B;transform:translateY(-20px) rotate(4.6deg)}
-.lane3 .pile-3{background:var(--t2);transform:translateY(-29px) rotate(-7deg)}
-.lane3 .card{background:#fff;border:7px solid #fff;rotate:-1.4deg;overflow:visible;
+/* the merged pile: warm red + warm orange against the lane's electric blue. Fixed —
+   identical in every round. Sticker yellow is deliberately NOT in the pile: the front
+   card is now pale warm yellow, and a yellow back behind it would flatten the stack. */
+.lane3 .pile-1{background:#FF3B6B;transform:translateY(-11px) rotate(-3.4deg)}
+.lane3 .pile-2{background:#3D5BFF;transform:translateY(-20px) rotate(4.6deg)}
+.lane3 .pile-3{background:#FF8A00;transform:translateY(-29px) rotate(-7deg)}
+.lane3 .card{background:var(--card);border:7px solid #fff;rotate:-1.4deg;overflow:visible;
   padding:0 18px 16px;box-shadow:0 7px 0 rgba(0,0,0,.42),0 16px 26px rgba(0,0,0,.28)}
 /* BOLDNESS — v4.3 CHANGE 2: the helmet is a die-cut sticker stuck ON the card.
    The coloured rounded square is gone. The white cut edge now follows the HELMET'S
@@ -293,7 +353,7 @@ a:hover{color:#0f2894}
      SourceGraphic (the flat black helmet) on top.
    A CSS drop-shadow underneath lifts it off the white card. Nothing here is
    verdict-capable: the topic colour touches the sticker rim and nothing else. */
-.lane3 .dc-tint{flood-color:var(--t1);flood-opacity:1}
+.lane3 .dc-tint{flood-color:var(--rim);flood-opacity:1}
 .lane3 .dc-cut{flood-color:#fff;flood-opacity:1}
 .lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
 .lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
@@ -314,19 +374,28 @@ a:hover{color:#0f2894}
 .lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
   max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-.lane3 .ans{background:#2EC4B6;color:#000;border:5px solid #fff;border-radius:16px;
+/* v4.4 CHANGE A — the אמת/שקר buttons drop in intensity: full-saturation teal was
+   competing with the sticker for the loudest thing on the card. Two options ship side
+   by side, differing ONLY in the button fill; everything else in the two artboards is
+   identical. In both, the two buttons are identical to each other and the direction is
+   carried by the arrow alone. Neither reads a topic token.
+   OPTION A (default) — the same teal, softened, with a dark teal label: 8.7:1. */
+.lane3 .ans{background:#A9E3DC;color:#0B3B36;border:5px solid #fff;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
+/* OPTION B (.btn-b) — white fill with the teal moved to a die-cut edge, echoing the
+   sticker's own construction: 12.3:1. */
+.lane3.btn-b .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
 </style></head>
 <body>
-<div class="row"><div class="stage lane1 topic-religion">
+<div class="row"><div class="stage lane1 topic-merged">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">1</span>
     <span class="cap-he">טופס מודבק</span>
     <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
@@ -334,7 +403,7 @@ a:hover{color:#0f2894}
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
-        <filter id="dc-lane1-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+        <filter id="dc-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
           <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
           <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
           <feFlood class="dc-tint" result="f2"></feFlood>
@@ -363,240 +432,6 @@ a:hover{color:#0f2894}
       </div>
       <div class="hud-mid">
         <span class="topic-title">דת ומדינה</span>
-        <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
-          </div>
-          <h2 class="issue-title">חוק הגיוס</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane2 topic-religion">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">2</span>
-    <span class="cap-he">משחקי עיתון</span>
-    <span class="cap-en" dir="ltr">NYT Games</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane2-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-        <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
-          </div>
-          <h2 class="issue-title">חוק הגיוס</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane3 topic-religion">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">3</span>
-    <span class="cap-he">תרבות סטיקרים</span>
-    <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-        <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
-          </div>
-          <h2 class="issue-title">חוק הגיוס</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div></div>
-<div class="row"><div class="stage lane1 topic-branches">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">1</span>
-    <span class="cap-he">טופס מודבק</span>
-    <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: מי מחליט פה? · תצוגה: Bibush Chunky</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane1-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">מי מחליט פה?</span>
         <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
       </div>
       <div class="hud-you">
@@ -711,12 +546,12 @@ a:hover{color:#0f2894}
     </div>
   </div>
 </div>
-<div class="stage lane3 topic-branches">
+<div class="stage lane3 topic-religion">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">3</span>
     <span class="cap-he">תרבות סטיקרים</span>
     <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: מי מחליט פה?</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · כפתורים א׳: טורקיז מרוכך</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
@@ -724,7 +559,7 @@ a:hover{color:#0f2894}
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
-        <filter id="dc-lane3-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+        <filter id="dc-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
           <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
           <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
           <feFlood class="dc-tint" result="f2"></feFlood>
@@ -752,7 +587,85 @@ a:hover{color:#0f2894}
         <span class="coin-num">240</span>
       </div>
       <div class="hud-mid">
-        <span class="topic-title">מי מחליט פה?</span>
+        <span class="topic-title">דת ומדינה</span>
+        <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
+      </div>
+      <div class="hud-you">
+        <button type="button" class="map-btn" aria-label="מפה">
+          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
+        </button>
+        <div class="avatar" aria-hidden="true">
+          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
+        </div>
+      </div>
+    </header>
+
+    <div class="deck">
+      <div class="stack">
+        <div class="pile" aria-hidden="true">
+          <div class="pile-card pile-3"></div>
+          <div class="pile-card pile-2"></div>
+          <div class="pile-card pile-1"></div>
+        </div>
+        <article class="card claim">
+          <span class="sticker">11 ביוני 2024</span>
+          <div class="art" aria-hidden="true">
+            <span class="art-emoji">🪖</span>
+            <svg class="art-clip" viewBox="0 0 28 60"><path d="M18 18v28a6.5 6.5 0 0 1-13 0V15a10 10 0 0 1 20 0v34"></path></svg>
+          </div>
+          <h2 class="issue-title">חוק הגיוס</h2>
+          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
+        </article>
+      </div>
+      <div class="answers">
+        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
+        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="stage lane3 topic-religion btn-b">
+  <header class="caption" dir="rtl" lang="he">
+    <span class="cap-num">3</span>
+    <span class="cap-he">תרבות סטיקרים</span>
+    <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · כפתורים ב׳: לבן עם קו טורקיז</span>
+    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
+  </header>
+
+  <div class="frame" dir="rtl" lang="he">
+    <div class="frame-bg"></div>
+    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
+      <g class="deco-ghosts">
+        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
+        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
+        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
+        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
+        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
+        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
+        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
+      </g>
+    </svg>
+
+    <header class="hud">
+      <div class="hud-coins">
+        <span class="coin-glyph" aria-hidden="true"></span>
+        <span class="coin-num">240</span>
+      </div>
+      <div class="hud-mid">
+        <span class="topic-title">דת ומדינה</span>
         <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
       </div>
       <div class="hud-you">
@@ -789,4 +702,5 @@ a:hover{color:#0f2894}
     </div>
   </div>
 </div></div>
+<div class="row"></div>
 </body></html>

@@ -15,9 +15,9 @@ import json, pathlib
 OUT  = pathlib.Path(__file__).resolve().parent
 PAGE = OUT / "final-three-121.html"
 TAG  = '<script type="application/json" id="appifact-doc">'
-FILES = ["Main.dc.html", "MainBranches.dc.html", "NytGames.dc.html",
-         "NytGamesBranches.dc.html", "Stickers.dc.html", "StickersBranches.dc.html",
-         "canvas.json"]
+# v4.4 CHANGE A — one frame per lane, plus lane 3's second button option.
+FILES = ["Main.dc.html", "NytGames.dc.html", "Stickers.dc.html",
+         "StickersAltButtons.dc.html", "canvas.json"]
 
 def dump(doc):
     # the canvas writes compact JSON, non-ASCII literal, and escapes only "<"
@@ -30,11 +30,15 @@ def repack():
     j = page.index("</script>", i)
     doc = json.loads(page[i:j])
 
-    assert set(doc["content"]["files"]) == set(FILES), sorted(doc["content"]["files"])
+    stale = [f for f in doc["content"]["files"] if f not in FILES]
+    for f in stale:
+        del doc["content"]["files"][f]
+    missing = [f for f in FILES if not (OUT / f).exists()]
+    assert not missing, missing
     changed = []
     for f in FILES:
         new = (OUT / f).read_text(encoding="utf-8")
-        if doc["content"]["files"][f] != new:
+        if doc["content"]["files"].get(f) != new:
             changed.append(f)
             doc["content"]["files"][f] = new
 
@@ -43,6 +47,8 @@ def repack():
           % (PAGE.stat().st_size / 1024, len(changed), len(FILES)))
     for f in changed:
         print("   ", f)
+    for f in stale:
+        print("    removed", f)
 
 if __name__ == "__main__":
     repack()

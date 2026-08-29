@@ -123,8 +123,14 @@ a:hover{color:#0f2894}
               the card and breaking out over its top edge
    TOPIC old->new : religion #ffd23f/#ffb800 -> #FFD60A/#FF8A00 (sticker yellow, sticker orange)
                     branches #2b4cff/#1a3acc -> #3D5BFF/#1E36B8 (electric blue, deep blue) */
-.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000}
-.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff}
+/* v4.4 CHANGE A — as in lane 2: the pile is a fixed mixed set and
+   THE TOPIC TOKEN LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+       background on .card, via --card.
+   The die-cut sticker's registration rim, which carried the topic in v4.3, becomes a
+   lane constant (--rim) so the card region has one topic-keyed surface, not two. */
+.lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000;--card:#FFF3CE}
+.lane3.topic-branches{--t1:#3D5BFF;--t2:#1E36B8;--on-t1:#fff;--card:#E6EDFF}
+.lane3{--rim:#3D5BFF}
 .lane3 .frame{background:#B3B1A9;color:#000}
 .lane3 .frame-bg{background:#B3B1A9}
 /* the pole: ghost remnants sit under two grains at different scales */
@@ -165,10 +171,13 @@ a:hover{color:#0f2894}
 .lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
 .lane3 .avatar-sil{fill:#CFCDC4}
 .lane3 .pile-card{border:5px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.42)}
-.lane3 .pile-1{background:var(--t1);transform:translateY(-11px) rotate(-3.4deg)}
-.lane3 .pile-2{background:#FF3B6B;transform:translateY(-20px) rotate(4.6deg)}
-.lane3 .pile-3{background:var(--t2);transform:translateY(-29px) rotate(-7deg)}
-.lane3 .card{background:#fff;border:7px solid #fff;rotate:-1.4deg;overflow:visible;
+/* the merged pile: warm red + warm orange against the lane's electric blue. Fixed —
+   identical in every round. Sticker yellow is deliberately NOT in the pile: the front
+   card is now pale warm yellow, and a yellow back behind it would flatten the stack. */
+.lane3 .pile-1{background:#FF3B6B;transform:translateY(-11px) rotate(-3.4deg)}
+.lane3 .pile-2{background:#3D5BFF;transform:translateY(-20px) rotate(4.6deg)}
+.lane3 .pile-3{background:#FF8A00;transform:translateY(-29px) rotate(-7deg)}
+.lane3 .card{background:var(--card);border:7px solid #fff;rotate:-1.4deg;overflow:visible;
   padding:0 18px 16px;box-shadow:0 7px 0 rgba(0,0,0,.42),0 16px 26px rgba(0,0,0,.28)}
 /* BOLDNESS — v4.3 CHANGE 2: the helmet is a die-cut sticker stuck ON the card.
    The coloured rounded square is gone. The white cut edge now follows the HELMET'S
@@ -180,7 +189,7 @@ a:hover{color:#0f2894}
      SourceGraphic (the flat black helmet) on top.
    A CSS drop-shadow underneath lifts it off the white card. Nothing here is
    verdict-capable: the topic colour touches the sticker rim and nothing else. */
-.lane3 .dc-tint{flood-color:var(--t1);flood-opacity:1}
+.lane3 .dc-tint{flood-color:var(--rim);flood-opacity:1}
 .lane3 .dc-cut{flood-color:#fff;flood-opacity:1}
 .lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
 .lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
@@ -201,8 +210,17 @@ a:hover{color:#0f2894}
 .lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
   max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-.lane3 .ans{background:#2EC4B6;color:#000;border:5px solid #fff;border-radius:16px;
+/* v4.4 CHANGE A — the אמת/שקר buttons drop in intensity: full-saturation teal was
+   competing with the sticker for the loudest thing on the card. Two options ship side
+   by side, differing ONLY in the button fill; everything else in the two artboards is
+   identical. In both, the two buttons are identical to each other and the direction is
+   carried by the arrow alone. Neither reads a topic token.
+   OPTION A (default) — the same teal, softened, with a dark teal label: 8.7:1. */
+.lane3 .ans{background:#A9E3DC;color:#0B3B36;border:5px solid #fff;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
+/* OPTION B (.btn-b) — white fill with the teal moved to a die-cut edge, echoing the
+   sticker's own construction: 12.3:1. */
+.lane3.btn-b .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
@@ -213,7 +231,7 @@ a:hover{color:#0f2894}
     <span class="cap-num">3</span>
     <span class="cap-he">תרבות סטיקרים</span>
     <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · כפתורים א׳: טורקיז מרוכך</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 

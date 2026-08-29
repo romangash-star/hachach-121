@@ -7,11 +7,7 @@ import build_v4 as B
 OUT = B.OUT
 shared = B.SHARED.replace("%FONT%", B.FONT)
 styles, stages, seen = [], [], set()
-order = []
-for lane in B.LANES:
-    for tid in ("religion", "branches"):
-        f = lane["file"] if tid == "religion" else lane["file"].replace(".dc.html", "Branches.dc.html")
-        order.append((f, lane, tid))
+order = [(fr["file"], lane, fr["tid"]) for lane in B.LANES for fr in B.frames_of(lane)]
 for f, lane, tid in order:
     src = (OUT / f).read_text(encoding="utf-8")
     if lane["cls"] not in seen:
@@ -19,7 +15,7 @@ for f, lane, tid in order:
         seen.add(lane["cls"])
     stages.append(re.search(r'(<div class="stage .*?)\n</x-dc>', src, re.S).group(1))
 
-rows = [stages[0], stages[2], stages[4]], [stages[1], stages[3], stages[5]]
+rows = stages, []   # v4.4 CHANGE A — one frame per lane: a single row
 page = """<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">

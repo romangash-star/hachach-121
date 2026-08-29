@@ -7,12 +7,15 @@
 <body>
 <!--
   LANE 1 · Defaced Paperwork
-  palette   : desk #241F1A · paper #D9D2C0 · ink #1A1714 · manila #C0B393 · ochre stamp #B07A1E
+  palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
+              · file-tab manila #C0B393 · accent muted red #A8443C
   type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in system face for body
-  texture   : one — office document: hard rules, dashed rules, file tabs, zero radii
-  BOLDNESS  : the Bibush Chunky title at 60px — it takes a third of the card on its own
+  texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
+  BOLDNESS  : the Bibush Chunky title at 66px — it takes a third of the card on its own
+  ARTIFACTS : four, counted — paperclip · tape · highlighter · two punched filing holes
   TOPIC     : religion #ffd23f/#ffb800 -> #F2C230/#8A6A18   (highlighter gold, deep manila)
               branches #2b4cff/#1a3acc -> #4A6BD6/#25376B   (mimeograph blue, carbon deep)
+              rendered as ONE merged frame: blue sticker + gold highlighter
 -->
 <x-dc>
 <helmet>
@@ -112,14 +115,25 @@ a:hover{color:#0f2894}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 
 /* LANE 1 · Defaced Paperwork
-   palette   : desk #241F1A · paper #D9D2C0 · ink #1A1714 · manila #C0B393 · ochre #B07A1E
+   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
+               · file-tab manila #C0B393 · accent muted red #A8443C
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
-   texture   : one — office document: hard rules, dashed rules, file tabs, zero radii
-   BOLDNESS  : the Bibush Chunky title at 60px, taking a third of the card on its own
+   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
+   BOLDNESS  : the Bibush Chunky title at 66px, taking a third of the card on its own
+   ARTIFACTS : four, counted — paperclip · tape · highlighter · two punched filing holes
    TOPIC old->new : religion #ffd23f/#ffb800 -> #F2C230/#8A6A18 (highlighter gold, deep manila)
-                    branches #2b4cff/#1a3acc -> #4A6BD6/#25376B (mimeograph blue, carbon deep) */
+                    branches #2b4cff/#1a3acc -> #4A6BD6/#25376B (mimeograph blue, carbon deep)
+
+   v4.3 CHANGE 3 — the per-topic mechanism below is INTACT and unchanged; lane 1 simply
+   renders one frame instead of two. .topic-religion and .topic-branches are still here,
+   still correct, and still what a religion or a branches round would use: switch
+   frames= in the lane dict back to both topics and the two frames return as they were.
+   .topic-merged is the sample only — the branches sticker (--t1 mimeograph blue) with
+   the religion highlighter (--hl gold), so one frame shows both tokens at once. It is a
+   specimen, not a reachable game state. */
 .lane1.topic-religion{--t1:#F2C230;--t2:#8A6A18;--hl:#F7DC7A;--on-t1:#1A1714}
 .lane1.topic-branches{--t1:#4A6BD6;--t2:#25376B;--hl:#AEC4F2;--on-t1:#FFFFFF}
+.lane1.topic-merged{--t1:#4A6BD6;--t2:#25376B;--hl:#F7DC7A;--on-t1:#FFFFFF}
 
 /* Bibush Chunky covers Hebrew letters + digits only. Missing: - / " ׳ ״ .
    Checked against data.js: 4 of the 16 real issue titles break, and ONLY on - and / .
@@ -163,7 +177,7 @@ a:hover{color:#0f2894}
 .lane1 .pile-1::before{right:26px}
 .lane1 .pile-2::before{right:132px}
 .lane1 .pile-3::before{right:230px}
-.lane1 .card{background:#D9D2C0;
+.lane1 .card{background:#D9D2C0;padding-right:36px;
   box-shadow:inset 0 0 0 1px #A79C81,0 4px 0 rgba(0,0,0,.6),0 20px 30px rgba(0,0,0,.5)}
 /* INTERVENTION 1 — one slapped die-cut sticker, carrying the topic colour.
    v4.2 FIX 1(a): it now carries document furniture — the bill's own date stamp,
@@ -178,15 +192,42 @@ a:hover{color:#0f2894}
 .lane1 .card::before{content:"";position:absolute;top:-13px;right:-24px;width:104px;height:29px;
   rotate:36deg;background:linear-gradient(96deg,rgba(238,238,228,.52),rgba(214,216,204,.66));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);z-index:5}
+/* INTERVENTION 4 — v4.3 CHANGE 3: two punched filing holes down the binder margin.
+   Chosen over the staple, the torn corner, the coffee ring and the fold crease because
+   it is the only candidate that proves the card is a physical sheet LYING ON the desk:
+   the desk colour is what you see through the holes, so the artifact reads as depth
+   rather than as another mark added on top. It is also the only one that cannot touch
+   content — a punch lives in the margin by definition, which is why the card grew a
+   36px binder margin on its leading (right, RTL) edge to hold it. Neutral, document
+   native, nothing defaced, nothing crossed out. Two holes, one counted artifact. */
+.lane1 .card::after{content:"";position:absolute;right:8px;top:161px;width:20px;height:147px;
+  z-index:6;pointer-events:none;background-repeat:no-repeat;background-size:20px 20px;
+  /* two holes, 147px apart on the standard two-hole pitch. Each is a dark disc (the desk,
+     seen through the sheet) sat on a slightly offset pale disc, so the lit bottom-right
+     lip of the cut paper shows — that lip is what makes it read as punched rather than
+     printed. Layers paint front to back: hole, lip, hole, lip. */
+  background-position:50% 0,50% 0,50% 100%,50% 100%;
+  background-image:
+    radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
+    radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%),
+    radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
+    radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%)}
+
 /* art: high-contrast duotone document photo, paperclipped.
    v4.2 FIX 3 — the space the swipe hints used to hold goes here: the plate grows
    126 -> 244px and the duotone with it. Lane 1's freed space went to ART. */
 /* v4.3 CHANGE 1 — the source chip's 49px goes to the photo plate, not to a gap */
-.lane1 .art{flex:1;min-height:244px;background:#C0B393;
+/* v4.3 CHANGE 3, palette — Papers, Please is not a brown game: it is tinted papers on a
+   brown desk. The plate was #C0B393, the same manila as the card under it, so the two
+   read as one sheet. It is now its own pale document blue; the desk and the manila card
+   are untouched, and the contrast comes from the papers being different colours. */
+.lane1 .art{flex:1;min-height:244px;background:#BFC9D6;
   box-shadow:inset 0 0 0 2px #1A1714;margin-top:10px}
 .lane1 .art-emoji{font-size:136px;filter:grayscale(1) brightness(1.08) contrast(9);
   mix-blend-mode:multiply}
-.lane1 .art-clip{display:block;color:#3A332B;top:-10px;left:64px;rotate:9deg}
+/* the one saturated accent, used on one thin stroke: a coated-wire clip in muted red.
+   It belongs to the document world, never to a topic and never to a verdict. */
+.lane1 .art-clip{display:block;color:#A8443C;top:-10px;left:64px;rotate:9deg}
 .lane1 .issue-title{font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:66px;
   line-height:.98;margin-top:12px;color:#1A1714}
 .lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5}
@@ -200,12 +241,12 @@ a:hover{color:#0f2894}
 .lane1 .ans:focus-visible{outline:3px solid #EDE8DA;outline-offset:4px}
   </style>
 </helmet>
-<div class="stage lane1 topic-religion">
+<div class="stage lane1 topic-merged">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">1</span>
     <span class="cap-he">טופס מודבק</span>
     <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
@@ -213,7 +254,7 @@ a:hover{color:#0f2894}
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
-        <filter id="dc-lane1-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+        <filter id="dc-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
           <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
           <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
           <feFlood class="dc-tint" result="f2"></feFlood>

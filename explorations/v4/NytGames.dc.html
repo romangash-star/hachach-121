@@ -120,8 +120,16 @@ a:hover{color:#0f2894}
    TOPIC old->new : religion #ffd23f/#ffb800 -> #EE9F3C/#C7701D  (warm orange, pushed off the
                       #C9A227 surprise amber so the verdict colour stays unmistakable)
                     branches #2b4cff/#1a3acc -> #6AA9E0/#4A6FB5  (games sky, deep sky) */
-.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2}
-.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3}
+/* v4.4 CHANGE A — the pile stops carrying the topic and becomes one fixed mixed set.
+   THE TOPIC TOKEN NOW LIVES ON EXACTLY ONE PROPERTY IN THE CARD REGION:
+       background on .card, via --card.
+   Everything else in the card region that the topic used to tint (the pile backs, the
+   art disc) is now a lane constant, so 8 topics x 2 rounds still differ round to round
+   without the whole frame recolouring. --t1/--t2 stay defined and stay correct: they
+   are what the HUD topic chip, coin and avatar ring read. --tint is retained but
+   unused, so the old per-topic disc can be restored in one line. */
+.lane2.topic-religion{--t1:#EE9F3C;--t2:#C7701D;--tint:#F7DEC2;--card:#FDF4E6}
+.lane2.topic-branches{--t1:#6AA9E0;--t2:#4A6FB5;--tint:#CFE1F3;--card:#EFF4FB}
 .lane2 .frame{background:#E8E6E1;color:#1A1A1A;padding:12px 20px 24px}
 .lane2 .frame-bg{background:#E8E6E1}
 .lane2 .coin-glyph{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
@@ -134,14 +142,19 @@ a:hover{color:#0f2894}
 .lane2 .avatar-sil{fill:#B9B5AC}
 /* pile: two from the topic family + one neutral */
 .lane2 .pile-card{border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
-.lane2 .pile-1{background:var(--t1)}
-.lane2 .pile-2{background:#CFCBC2}
-.lane2 .pile-3{background:var(--t2)}
-.lane2 .card{background:#FDFDFB;border-radius:6px;padding:14px 22px 16px;
+/* the merged pile: the two topic families the board was comparing, plus the neutral
+   that was already there. Chosen over inventing a new palette because a deck of
+   different-coloured puzzle backs IS the NYT Games idiom, and warm / cool / neutral in
+   rotation reads as three different puzzles rather than three copies of one. Fixed —
+   identical in every round. */
+.lane2 .pile-1{background:#EE9F3C}
+.lane2 .pile-2{background:#6AA9E0}
+.lane2 .pile-3{background:#CFCBC2}
+.lane2 .card{background:var(--card);border-radius:6px;padding:14px 22px 16px;
   box-shadow:0 0 0 1px #DDD9D0,0 12px 28px rgba(0,0,0,.16)}
 .lane2 .art{min-height:96px}
 .lane2 .art::before{content:"";position:absolute;width:172px;height:172px;border-radius:50%;
-  background:var(--tint)}
+  background:#E7E3DA}   /* lane constant now: the topic lives on --card */
 .lane2 .art-emoji{position:relative;font-size:100px;filter:grayscale(1) brightness(0)}
 /* BOLDNESS: poster type.
    v4.2 FIX 3 — lane 2's freed space went to TYPE, which is where this lane's
@@ -154,12 +167,12 @@ a:hover{color:#0f2894}
 .lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}
   </style>
 </helmet>
-<div class="stage lane2 topic-religion">
+<div class="stage lane2 topic-branches">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">2</span>
     <span class="cap-he">משחקי עיתון</span>
     <span class="cap-en" dir="ltr">NYT Games</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: מי מחליט פה?</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
@@ -167,7 +180,7 @@ a:hover{color:#0f2894}
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
-        <filter id="dc-lane2-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+        <filter id="dc-lane2-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
           <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
           <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
           <feFlood class="dc-tint" result="f2"></feFlood>
@@ -195,7 +208,7 @@ a:hover{color:#0f2894}
         <span class="coin-num">240</span>
       </div>
       <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
+        <span class="topic-title">מי מחליט פה?</span>
         <span class="steps" aria-hidden="true"><i class="step step-on"></i><i class="step"></i><i class="step"></i></span>
       </div>
       <div class="hud-you">
