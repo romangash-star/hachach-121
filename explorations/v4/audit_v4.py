@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 JS = r"""
 const SEL = '.art,.art-emoji,.issue-title,.claim-text,.ans-true,.ans-false,.topic-title,' +
-            '.coin-num,.coin-glyph,.avatar,.map-btn,.sticker,.doc-stamp,.art-clip';
+            '.coin-num,.coin-glyph,.avatar,.map-btn,.sticker,.art-clip';
 const st = document.querySelector('.stage');
 const R = e => e.getBoundingClientRect();
 const gap = (a, b) => +(Math.max(R(a).left, R(b).left) - Math.min(R(a).right, R(b).right)).toFixed(1);

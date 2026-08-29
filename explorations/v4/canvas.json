@@ -1,44 +1,12 @@
 {
   "artboards": [
     {
-      "file": "Main.dc.html",
-      "x": 960,
-      "y": 0,
+      "file": "VintageKnesset.dc.html",
+      "x": 940,
+      "y": -2,
       "w": 390,
       "h": 930,
-      "title": "1 · טופס מודבק · Defaced Paperwork — דת ומדינה"
-    },
-    {
-      "file": "MainLongTitle.dc.html",
-      "x": 960,
-      "y": 1010,
-      "w": 390,
-      "h": 930,
-      "title": "1 · טופס מודבק · Defaced Paperwork · מקרה קצה: הכותרת הארוכה ביותר"
-    },
-    {
-      "file": "MainPunct.dc.html",
-      "x": 960,
-      "y": 2020,
-      "w": 390,
-      "h": 930,
-      "title": "1 · טופס מודבק · Defaced Paperwork · מקרה קצה: פיסוק שחסר ב-Bibush, מצויר בקופסאות CSS"
-    },
-    {
-      "file": "MainPop.dc.html",
-      "x": 1440,
-      "y": 0,
-      "w": 390,
-      "h": 930,
-      "title": "1 · טופס מודבק · Defaced Paperwork · וריאנט: התערבויות מוגברות"
-    },
-    {
-      "file": "MainClipBinder.dc.html",
-      "x": 1440,
-      "y": 2020,
-      "w": 390,
-      "h": 930,
-      "title": "1 · טופס מודבק · Defaced Paperwork · חומרה ב׳: קליפס בולדוג במקום אטב"
+      "title": "1 · כנסת של פעם · Vintage Knesset — דת ומדינה"
     },
     {
       "file": "NytGames.dc.html",
@@ -49,28 +17,12 @@
       "title": "2 · משחקי עיתון · NYT Games — מי מחליט פה?"
     },
     {
-      "file": "NytGamesLongTitle.dc.html",
-      "x": 480,
-      "y": 1010,
-      "w": 390,
-      "h": 930,
-      "title": "2 · משחקי עיתון · NYT Games · מקרה קצה: הכותרת הארוכה ביותר"
-    },
-    {
       "file": "Stickers.dc.html",
-      "x": 0,
-      "y": 0,
+      "x": 2,
+      "y": 1,
       "w": 390,
       "h": 930,
       "title": "3 · תרבות סטיקרים · Israeli Sticker Culture — דת ומדינה"
-    },
-    {
-      "file": "StickersLongTitle.dc.html",
-      "x": 0,
-      "y": 1010,
-      "w": 390,
-      "h": 930,
-      "title": "3 · תרבות סטיקרים · Israeli Sticker Culture · מקרה קצה: הכותרת הארוכה ביותר"
     }
   ],
   "launch": {

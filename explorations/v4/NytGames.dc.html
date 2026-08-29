@@ -92,9 +92,6 @@ a:hover{color:#0f2894}
 .clip-wire,.clip-binder{display:none}
 .cb-body{fill:currentColor;stroke:none}
 .cb-lip,.cb-arm{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
-.doc-stamp{display:none;position:absolute;z-index:6;pointer-events:none;fill:none;
-  stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.st-ring{stroke-width:3.4}
 /* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
    from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
@@ -187,8 +184,13 @@ a:hover{color:#0f2894}
 .lane2.ts-66 .issue-title{font-size:66px}
 .lane2.ts-50 .issue-title{font-size:50px}
 .lane2.ts-38 .issue-title{font-size:38px}
-.lane2 .ans{background:#FDFDFB;border:1.5px solid #1A1A1A;border-radius:3px;color:#1A1A1A;font-size:21px;
-  letter-spacing:.02em;box-shadow:0 3px 0 #1A1A1A}
+/* v5.1 — the 1.5px black stroke and the hard black 3px drop were the heaviest marks
+   in a lane whose card sits on a 1px #DDD9D0 hairline and a soft shadow. The button now
+   uses the card's own construction: same hairline weight, same soft drop. The word is
+   what carries it. Both buttons stay one rule, so they cannot drift apart. */
+.lane2 .ans{background:#FFFFFF;border:1px solid #D9D5CC;border-radius:4px;color:#1A1A1A;
+  font-size:21px;letter-spacing:.02em;
+  box-shadow:0 1px 2px rgba(26,26,26,.10),0 4px 10px rgba(26,26,26,.07)}
 .lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}
   </style>
 </helmet>
@@ -221,11 +223,12 @@ a:hover{color:#0f2894}
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feTurbulence type="turbulence" baseFrequency="0.62" numOctaves="1" seed="11" result="tone"></feTurbulence>
           <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="discrete" tableValues="0 0 0.28 0.5 0.72 1"></feFuncA></feComponentTransfer>
           <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="inked"></feBlend>
+          <feGaussianBlur in="inked" stdDeviation="0.45" result="printed"></feGaussianBlur>
           <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
@@ -267,7 +270,6 @@ a:hover{color:#0f2894}
         </div>
         <article class="card claim">
           <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">🪖</span>
             <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>

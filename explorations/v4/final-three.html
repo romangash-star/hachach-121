@@ -78,9 +78,6 @@ a:hover{color:#0f2894}
 .clip-wire,.clip-binder{display:none}
 .cb-body{fill:currentColor;stroke:none}
 .cb-lip,.cb-arm{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
-.doc-stamp{display:none;position:absolute;z-index:6;pointer-events:none;fill:none;
-  stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.st-ring{stroke-width:3.4}
 /* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
    from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
@@ -183,8 +180,8 @@ a:hover{color:#0f2894}
   radial-gradient(circle at 33% 27%,#D8B978,#A8843C 56%,#6E5423);
   box-shadow:inset 0 2px 2.5px rgba(255,255,255,.6),inset 0 -2.5px 4px rgba(0,0,0,.55),
              0 0 0 1.5px #5A4520,0 1px 0 rgba(0,0,0,.5)}
-.lane1 .coin-num{color:#D9D2C0;font-family:'BibushChunky',system-ui,sans-serif;font-size:23px}
-.lane1 .topic-title{color:#D3C7A8;letter-spacing:.1em;font-size:15px;text-transform:none}
+.lane1 .coin-num{color:#D9D2C0;font-family:'BibushChunky',system-ui,sans-serif;font-size:26px}
+.lane1 .topic-title{color:#D3C7A8;letter-spacing:.1em;font-size:18px;text-transform:none}
 /* v4.7 CHANGE D — the two icon buttons are a matched pair of square document stamps:
    same 40x40 box, same manila fill, same 2px rule, same ink. */
 .lane1 .map-btn{color:#1A1714;border-radius:0;background:#C0B393;
@@ -209,6 +206,11 @@ a:hover{color:#0f2894}
    #BFC9D6 photo plate; the plate is gone, so the reason is gone and the lighter
    ID-record blue returns. Nothing on the card is that colour any more. */
 .lane1 .pile-3{background:#B8C3D2}
+/* v5.3 (2c) — an archive/registry tab behind everything: wider, squarer and duller
+   than the three coloured file tabs, so it reads as the box the file came out of
+   rather than as a fourth document. */
+.lane1 .pile-3::after{content:"";position:absolute;top:-21px;right:14px;width:132px;height:22px;
+  background:#8A8069;box-shadow:inset 0 0 0 1px #6E6552,inset 0 2px 0 rgba(255,255,255,.16)}
 .lane1 .pile-3::before{right:230px}
 /* the second saturated accent, used once: one folder in the file is tabbed muted teal.
    A coloured tab is document furniture, it sits behind the card so it can never touch
@@ -216,18 +218,54 @@ a:hover{color:#0f2894}
 .lane1 .pile-2::before{background:#2F7D74;box-shadow:inset 0 0 0 1px #215A54}
 /* v5.0 (3) — deeper, longer shadows so the stack reads as lying ON the desk rather
    than printed into it: a contact edge, a mid drop, and a long soft cast. */
-.lane1 .card{background:#D9D2C0;padding-right:36px;
+/* v5.3 (1) — the watermark becomes a REPEATING security pattern: a plain colonnade
+   tiled at 48px across the front card, the way an official form carries a ground.
+   NOT the Knesset's own mark. That mark is a trademark, and stamping a real official
+   emblem across the document would claim an authenticity this thing does not have —
+   the same reason the invented session-number stamp was refused. What is used is the
+   generic architectural form only, and the columns here are deliberately UNIFORM
+   rather than stepped: the stepping is the distinctive part of the real mark, so the
+   motif stays a portico, which any parliament or courthouse in the world has.
+   Still a background LAYER on the card, so it sits behind the photo, title and claim
+   by construction. The menorah stamp is untouched — that is a separate element. */
+/* v5.3 (2a) — a ruled margin down the binder edge, the way government stationery is
+   printed: one hairline, inside the 36px margin the punch holes already live in. */
+/* v5.3 (2b) — foxing and toning, on the front card and not only on the backs: three
+   broad off-centre washes at very low alpha so the sheet ages unevenly. Both pseudo-
+   elements on this card are already spoken for (tape and punch holes), so these ride
+   in the background stack, listed ABOVE the watermark and below the printed rule —
+   background layers paint first-listed on top. */
+.lane1 .card{background:
+    linear-gradient(#8E8264,#8E8264) calc(100% - 30px) 0/1px 100% no-repeat,
+    radial-gradient(70% 48% at 12% 8%,rgba(150,124,74,.10),transparent 70%),
+    radial-gradient(58% 40% at 92% 62%,rgba(138,110,64,.09),transparent 72%),
+    radial-gradient(46% 34% at 34% 96%,rgba(120,96,56,.07),transparent 74%),
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2048%2048%27%3E%3Cpath%20d%3D%27M3%2041h42%20M3%2015h42%20M24%206l21%209H3z%20M9%2015v26%20M16.5%2015v26%20M24%2015v26%20M31.5%2015v26%20M39%2015v26%27%20fill%3D%27none%27%20stroke%3D%27%238E8264%27%20stroke-opacity%3D%270.06%27%20stroke-width%3D%271.5%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E") 0 0/48px 48px repeat,#D9D2C0;padding-right:36px;
   box-shadow:inset 0 0 0 1px #A79C81,0 5px 0 rgba(0,0,0,.6),
              0 16px 22px rgba(0,0,0,.5),0 34px 52px rgba(0,0,0,.42)}
-/* INTERVENTION 1 — one slapped die-cut sticker, carrying the topic colour.
-   v4.2 FIX 1(a): it now carries document furniture — the bill's own date stamp,
-   data.js issues[r1].bill_date. Ink flips to --on-t1 so the stamp clears AA on
-   both topic frames (gold 10.7:1 on ink, blue 4.8:1 on white). */
+
+/* INTERVENTION 1 — v5.3 (3): the date label, reworked twice over.
+   FONT: Bibush Chunky, so it belongs to the title's typographic world instead of a
+   generic rounded sans. Checked the cmap: «11 ביוני 2024» is Hebrew letters, digits
+   and spaces only — all present — so .px-punct is not needed here. It would be, the
+   moment a date with a slash or hyphen appears.
+   TREATMENT: it was a clean rounded pill, which reads as a UI badge. It is now an aged
+   paper label — rectangular, barely rotated, the topic colour knocked back under a
+   cream wash so it looks faded rather than freshly printed, a faded ink keyline with a
+   second hairline inside it the way a revenue stamp is ruled, darkening toward the
+   edges where a stuck label ages first, and a soft shadow instead of a hard one.
+   NOT perforated: at 38px tall the scallops would be about 2px across and would read
+   as noise rather than as a stamp edge. Said, not forced. */
 .lane1 .sticker{display:flex;align-items:center;justify-content:center;position:absolute;
-  top:-17px;left:-16px;z-index:6;min-width:96px;height:38px;padding:0 13px;
-  border-radius:999px;background:var(--t1);color:var(--on-t1);border:4px solid #fff;rotate:-13deg;
-  box-shadow:0 3px 0 rgba(0,0,0,.45);
-  font-size:12px;font-weight:800;letter-spacing:.02em;line-height:1;white-space:nowrap}
+  top:-8px;left:2px;z-index:6;min-width:88px;height:39px;padding:0 11px;
+  border-radius:2px;rotate:-3.5deg;
+  background:
+    radial-gradient(120% 90% at 50% 40%,rgba(237,232,218,.30),rgba(120,96,56,.30) 96%),
+    linear-gradient(rgba(237,232,218,.42),rgba(237,232,218,.30)),var(--t1);
+  color:var(--on-t1);border:2px solid rgba(56,48,34,.55);
+  box-shadow:inset 0 0 0 1px rgba(237,232,218,.55),0 3px 7px rgba(0,0,0,.34);
+  font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;
+  font-size:15px;letter-spacing:.01em;line-height:1;white-space:nowrap}
 /* INTERVENTION 3 — one strip of tape across the opposite corner */
 .lane1 .card::before{content:"";position:absolute;top:-13px;right:-24px;width:104px;height:29px;
   rotate:36deg;background:linear-gradient(96deg,rgba(238,238,228,.52),rgba(214,216,204,.66));
@@ -274,15 +312,23 @@ a:hover{color:#0f2894}
 .lane1 .art-emoji{font-size:186px;rotate:-2.5deg;
   filter:grayscale(1) contrast(1.7) brightness(1.02)
          drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
-/* v5.0 (6) — the cut-out was reading as a crisp vector icon inside a wide cream frame.
-   The margin drops 7px -> 4px so it stops looking like a mount, and the image itself is
-   now printed rather than drawn: a fine turbulence tone multiplied into it inside the
-   filter gives it grain, and a fraction of a pixel of blur takes the vector edge off.
-   NOTE: the ID-photo reference image did not come through with the brief, so this is
-   built from the general look of a grainy printed ID photograph rather than from the
-   specific screenshot — worth a look before it is called done. */
-.lane1.topic-merged .art-emoji{filter:grayscale(1) contrast(1.5) brightness(1.04)
-  url(#co-lane1-merged) blur(.35px) drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
+/* v5.1 (2) — a period FILE PHOTOGRAPH, not an illustration and not a flat graphic.
+   The flat/pixelated route was explicitly rejected because it converges on lane 3, so
+   everything here pushes the other way, toward something photographed and reproduced:
+     grayscale -> contrast(.82) brightness(1.16)   the tonal range collapses the way an
+       old newsprint reproduction does: no true black, no true white
+     sepia(.62) saturate(1.12) hue-rotate(-6deg)   a warm archival cast rather than a
+       neutral black-and-white, so it sits with the manila instead of on top of it
+     inside the filter, the grain is now POSTERISED (feFuncA discrete) rather than
+       linear, which breaks it into hard specks — newsprint ink, not video noise — and
+       a 0.45 blur runs after it so the specks read as printed dots rather than pixels
+     blur(.55px) outside the filter for the soft focus of a photographed object
+   A true halftone screen needs a dot tile, which SVG filters cannot build without an
+   external image, so this is the newsprint-grain half of the brief's "halftone dot
+   pattern or newsprint grain" rather than a real screen. */
+.lane1.topic-merged .art-emoji{filter:grayscale(1) contrast(.82) brightness(1.16)
+  sepia(.62) saturate(1.12) hue-rotate(-6deg)
+  url(#co-lane1-merged) blur(.55px) drop-shadow(2px 5px 7px rgba(26,23,20,.38))}
 /* v5.0 (4) — the red wire clip goes. Two replacements ship as separate frames so they
    can be compared; both are steel rather than coloured, which frees the lane's one
    saturated accent to move to the stamp below.
@@ -291,10 +337,12 @@ a:hover{color:#0f2894}
      (b) .clip-binder — a bulldog clip: more visual weight and more obviously a piece
                         of office hardware, at the cost of covering more of the photo */
 .lane1 .art-clip{display:block;width:38px;height:60px;top:30px;left:82px;rotate:12deg;z-index:3}
-.lane1 .clip-wire{color:#9AA0A8}
+.lane1 .clip-wire{color:#9B968D}
 .lane1 .clip-wire path{stroke-width:3.4}
 .lane1.clip-steel .clip-wire{display:block}
-.lane1.clip-binder-on .art-clip{width:54px;height:80px;top:16px;left:96px;rotate:9deg}
+/* v5.3 (2d) — angle only, 9deg -> 14deg, to read as handled rather than placed. The
+   left/top are the hand-set values from the canvas and are untouched. */
+.lane1.clip-binder-on .art-clip{width:54px;height:80px;top:-4px;left:114px;rotate:14deg}
 .lane1.clip-binder-on .clip-binder{display:block;color:#3E434A}
 .lane1.clip-binder-on .cb-lip{stroke:#767D86}
 .lane1.clip-binder-on .cb-arm{stroke:#AEB4BC}
@@ -304,15 +352,16 @@ a:hover{color:#0f2894}
    accent. Deliberately generic: a plain seven-branch menorah, no text, no ring legend,
    no reproduction of any actual seal — a period mark, not a forged one. It sits on the
    manila beside the photo, clear of every piece of type. */
-/* the strip of bare manila to the left of the photo is the only place on this card
-   that is clear of every piece of type; measured, not guessed. */
-.lane1 .doc-stamp{display:block;width:56px;height:56px;left:4px;top:180px;
-  color:#A8443C;opacity:.6;rotate:-13deg}
-.lane1 .st-ring{stroke-width:3}
-.lane1 .st-glyph{stroke-width:2.9}
+/* ---- v5.2/v5.4: edits made on the canvas, folded back in as generated CSS ---------
+   Everything here was set by hand on the published board and is reproduced so it
+   survives a rebuild. v5.4 removes the menorah stamp entirely — element, glyph and
+   rules — at the author's instruction, with no replacement accent. Lane 1 therefore
+   runs without a saturated accent: the muted teal file tab behind the stack and the
+   blue date label are the only chromatic notes left, and that is deliberate.      */
 .lane1 .issue-title{font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:66px;
   line-height:.98;margin-top:12px;color:#1A1714}
-.lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5}
+.lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5;
+  text-align:center;font-size:20px}
 /* INTERVENTION 2 — one highlighter swipe, in the topic colour */
 .lane1 .hl{background:linear-gradient(104deg,rgba(0,0,0,0) 0,var(--hl) 1.5%,var(--hl) 98%,rgba(0,0,0,0) 100%);
   opacity:.999;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;
@@ -360,9 +409,12 @@ a:hover{color:#0f2894}
 .lane1.pop .card::before{width:128px;height:34px;top:-16px;right:-30px;rotate:34deg;
   background:linear-gradient(96deg,rgba(226,215,178,.88),rgba(206,197,166,.92) 55%,rgba(228,219,186,.86));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.28)}
+/* v5.1 — kept as ruled document furniture, turned down: the rule goes 2px -> 1.5px and
+   from full ink #1A1714 to #6E6555, and the hard offset drops 4px -> 2px at half the
+   alpha. The lane still reads as hard-ruled; it just stops shouting. */
 .lane1 .ans{background:#EDE8DA;color:#1A1714;border-radius:0;
   font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:27px;
-  box-shadow:inset 0 0 0 2px #1A1714,4px 4px 0 rgba(0,0,0,.55)}
+  box-shadow:inset 0 0 0 1.5px #6E6555,2px 2px 0 rgba(0,0,0,.28)}
 .lane1 .ans:focus-visible{outline:3px solid #EDE8DA;outline-offset:4px}
 
 /* LANE 2 · NYT Games
@@ -424,8 +476,13 @@ a:hover{color:#0f2894}
 .lane2.ts-66 .issue-title{font-size:66px}
 .lane2.ts-50 .issue-title{font-size:50px}
 .lane2.ts-38 .issue-title{font-size:38px}
-.lane2 .ans{background:#FDFDFB;border:1.5px solid #1A1A1A;border-radius:3px;color:#1A1A1A;font-size:21px;
-  letter-spacing:.02em;box-shadow:0 3px 0 #1A1A1A}
+/* v5.1 — the 1.5px black stroke and the hard black 3px drop were the heaviest marks
+   in a lane whose card sits on a 1px #DDD9D0 hairline and a soft shadow. The button now
+   uses the card's own construction: same hairline weight, same soft drop. The word is
+   what carries it. Both buttons stay one rule, so they cannot drift apart. */
+.lane2 .ans{background:#FFFFFF;border:1px solid #D9D5CC;border-radius:4px;color:#1A1A1A;
+  font-size:21px;letter-spacing:.02em;
+  box-shadow:0 1px 2px rgba(26,26,26,.10),0 4px 10px rgba(26,26,26,.07)}
 .lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}
 
 /* LANE 3 · Israeli Sticker Culture
@@ -476,7 +533,9 @@ a:hover{color:#0f2894}
    top of that, which is what marks it as the player rather than a control. */
 .lane3 .map-btn{color:#CFCDC4;background:#2E2C26}
 .lane3 .map-btn:focus-visible{outline:3px solid #131310;outline-offset:2px}
-.lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
+/* v5.2 — the ring is gone: the profile button needs no treatment the map button
+   does not have. Both are now the same plain dark disc. */
+.lane3 .avatar{background:#2E2C26}
 .lane3 .avatar-sil{fill:#CFCDC4}
 .lane3 .pile-card{border:5px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.42)}
 /* the merged pile: warm red + warm orange against the lane's electric blue. Fixed —
@@ -502,10 +561,14 @@ a:hover{color:#0f2894}
 .lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
 .lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
 .lane3 .art-emoji::before{content:"🪖";display:block;font-size:216px;line-height:1;
-  filter:grayscale(1) brightness(0) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-.lane3.topic-religion .art-emoji::before{filter:grayscale(1) brightness(0)
+  filter:contrast(1.12) saturate(1.18) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
+/* v5.4 — direction B won: the helmet is a glossy PHOTOGRAPH inside the die-cut, not a
+   flat black knock-out. It deliberately does not borrow lane 1's treatment — lane 1 is
+   matte, grainy, sepia and deckled; this stays glossy, coloured, clean and hard-cut —
+   so the two lanes read as different worlds. The white cut edge and rim are unchanged. */
+.lane3.topic-religion .art-emoji::before{filter:contrast(1.12) saturate(1.18)
   url(#dc-lane3-religion) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-.lane3.topic-branches .art-emoji::before{filter:grayscale(1) brightness(0)
+.lane3.topic-branches .art-emoji::before{filter:contrast(1.12) saturate(1.18)
   url(#dc-lane3-branches) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
 /* the title + claim block is centred in what the sticker leaves, and both grow into
    the space the source chip freed: title 46 -> 58px, claim 17 -> 19px.
@@ -531,105 +594,17 @@ a:hover{color:#0f2894}
    approved proportions exactly; below it the border and padding come in so
    the long titles are not paying 38px of chrome out of 290px of card. */
 .lane3:is(.ts-44,.ts-34) .issue-title{border-width:3px;padding:4px 8px 6px}
-.lane3 .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6;border-radius:16px;
-  box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
+/* v5.1 — the die-cut edge stays, at 5px -> 3px, and the hard drop goes 5px -> 3px at
+   .28 instead of .48. Still a cut sticker, no longer the loudest object in the frame. */
+.lane3 .ans{background:#FFFFFF;color:#0B3B36;border:3px solid #2EC4B6;border-radius:16px;
+  box-shadow:0 3px 0 rgba(0,0,0,.28);font-size:24px}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
+
 </style></head>
 <body>
-<div class="row"><div class="stage lane1 topic-merged ts-66 clip-steel">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">1</span>
-    <span class="cap-he">טופס מודבק</span>
-    <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-        <filter id="co-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
-          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
-          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
-          <feFlood class="co-stock" result="stock"></feFlood>
-          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
-          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
-          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
-          </div>
-          <h2 class="issue-title">חוק הגיוס</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane2 topic-branches ts-66">
+<div class="row"><div class="stage lane2 topic-branches ts-66">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">2</span>
     <span class="cap-he">משחקי עיתון</span>
@@ -658,11 +633,12 @@ a:hover{color:#0f2894}
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feTurbulence type="turbulence" baseFrequency="0.62" numOctaves="1" seed="11" result="tone"></feTurbulence>
           <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="discrete" tableValues="0 0 0.28 0.5 0.72 1"></feFuncA></feComponentTransfer>
           <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="inked"></feBlend>
+          <feGaussianBlur in="inked" stdDeviation="0.45" result="printed"></feGaussianBlur>
           <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
@@ -704,7 +680,6 @@ a:hover{color:#0f2894}
         </div>
         <article class="card claim">
           <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">🪖</span>
             <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
@@ -749,11 +724,12 @@ a:hover{color:#0f2894}
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feTurbulence type="turbulence" baseFrequency="0.62" numOctaves="1" seed="11" result="tone"></feTurbulence>
           <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="discrete" tableValues="0 0 0.28 0.5 0.72 1"></feFuncA></feComponentTransfer>
           <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="inked"></feBlend>
+          <feGaussianBlur in="inked" stdDeviation="0.45" result="printed"></feGaussianBlur>
           <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
@@ -795,7 +771,6 @@ a:hover{color:#0f2894}
         </div>
         <article class="card claim">
           <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">🪖</span>
             <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
@@ -811,12 +786,13 @@ a:hover{color:#0f2894}
     </div>
   </div>
 </div></div>
-<div class="row"><div class="stage lane1 topic-merged ts-34 clip-steel">
+<div class="row"></div>
+<div class="row"><div class="stage lane1 topic-merged ts-66 clip-binder-on">
   <header class="caption" dir="rtl" lang="he">
     <span class="cap-num">1</span>
     <span class="cap-he">טופס מודבק</span>
     <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת · מקרה קצה: הכותרת הארוכה ביותר</span>
+    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת</span>
     <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
   </header>
 
@@ -840,11 +816,12 @@ a:hover{color:#0f2894}
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feTurbulence type="turbulence" baseFrequency="0.62" numOctaves="1" seed="11" result="tone"></feTurbulence>
           <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="discrete" tableValues="0 0 0.28 0.5 0.72 1"></feFuncA></feComponentTransfer>
           <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="inked"></feBlend>
+          <feGaussianBlur in="inked" stdDeviation="0.45" result="printed"></feGaussianBlur>
           <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
@@ -886,462 +863,6 @@ a:hover{color:#0f2894}
         </div>
         <article class="card claim">
           <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
-          </div>
-          <h2 class="issue-title">מדינה פלסטינית: התנגדות עקרונית</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane2 topic-branches ts-38">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">2</span>
-    <span class="cap-he">משחקי עיתון</span>
-    <span class="cap-en" dir="ltr">NYT Games</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: מי מחליט פה? · מקרה קצה: הכותרת הארוכה ביותר</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane2-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-        <filter id="co-lane2-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
-          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
-          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
-          <feFlood class="co-stock" result="stock"></feFlood>
-          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
-          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
-          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">מי מחליט פה?</span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
-          </div>
-          <h2 class="issue-title">מדינה פלסטינית: התנגדות עקרונית</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane3 topic-religion ts-34">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">3</span>
-    <span class="cap-he">תרבות סטיקרים</span>
-    <span class="cap-en" dir="ltr">Israeli Sticker Culture</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · מקרה קצה: הכותרת הארוכה ביותר</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-        <filter id="co-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
-          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
-          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
-          <feFlood class="co-stock" result="stock"></feFlood>
-          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
-          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
-          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
-          </div>
-          <h2 class="issue-title">מדינה פלסטינית: התנגדות עקרונית</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div></div>
-<div class="row"><div class="stage lane1 topic-merged ts-50 clip-steel">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">1</span>
-    <span class="cap-he">טופס מודבק</span>
-    <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת · מקרה קצה: פיסוק שחסר ב-Bibush, מצויר בקופסאות CSS</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-        <filter id="co-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
-          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
-          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
-          <feFlood class="co-stock" result="stock"></feFlood>
-          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
-          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
-          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
-          </div>
-          <h2 class="issue-title">ועדת חקירה ל<i class="px-punct px-hyphen"></i><wbr><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane1 topic-merged ts-66 pop clip-steel">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">1</span>
-    <span class="cap-he">טופס מודבק</span>
-    <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת · וריאנט: התערבויות מוגברות</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-        <filter id="co-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
-          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
-          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
-          <feFlood class="co-stock" result="stock"></feFlood>
-          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
-          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
-          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
-          <div class="art" aria-hidden="true">
-            <span class="art-emoji">🪖</span>
-            <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
-          </div>
-          <h2 class="issue-title">חוק הגיוס</h2>
-          <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה <mark class="hl2">ב-2024</mark> מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-        </article>
-      </div>
-      <div class="answers">
-        <button type="button" class="ans ans-true"><span class="ans-word">אמת</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-        <button type="button" class="ans ans-false"><span class="ans-word">שקר</span><svg class="ans-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="stage lane1 topic-merged ts-66 clip-binder-on">
-  <header class="caption" dir="rtl" lang="he">
-    <span class="cap-num">1</span>
-    <span class="cap-he">טופס מודבק</span>
-    <span class="cap-en" dir="ltr">Defaced Paperwork</span>
-    <span class="cap-meta">טקסט: פונט זמני · נושא: דת ומדינה · תצוגה: Bibush Chunky · מדבקה כחולה + מרקר זהב במסגרת אחת · חומרה ב׳: קליפס בולדוג במקום אטב</span>
-    <span class="cap-spec"><b>BIBUSH CHUNKY · פיסוק חסר, מוחלף בקופסאות CSS</b><span class="spec-line">ועדת חקירה ל<i class="px-punct px-hyphen"></i><span dir="ltr">7<i class="px-punct px-slash"></i>10</span></span></span>
-  </header>
-
-  <div class="frame" dir="rtl" lang="he">
-    <div class="frame-bg"></div>
-    <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <filter id="dc-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
-          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
-          <feFlood class="dc-tint" result="f2"></feFlood>
-          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
-          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
-          <feFlood class="dc-cut" result="f1"></feFlood>
-          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
-          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-        </filter>
-        <filter id="co-lane1-merged" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
-          <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="grown"></feMorphology>
-          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
-          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
-          <feFlood class="co-stock" result="stock"></feFlood>
-          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
-          <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
-          <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
-          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
-        </filter>
-      </defs>
-      <g class="deco-ghosts">
-        <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
-        <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
-        <ellipse cx="76" cy="404" rx="74" ry="34" transform="rotate(-11 76 404)"></ellipse>
-        <rect x="216" y="546" width="152" height="62" rx="11" transform="rotate(-4 292 577)"></rect>
-        <rect x="18" y="648" width="120" height="44" rx="6" transform="rotate(6 78 670)"></rect>
-        <ellipse cx="302" cy="62" rx="58" ry="25" transform="rotate(8 302 62)"></ellipse>
-        <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
-      </g>
-    </svg>
-
-    <header class="hud">
-      <div class="hud-coins">
-        <span class="coin-glyph" aria-hidden="true"></span>
-        <span class="coin-num">240</span>
-      </div>
-      <div class="hud-mid">
-        <span class="topic-title">דת ומדינה</span>
-      </div>
-      <div class="hud-you">
-        <button type="button" class="map-btn" aria-label="מפה">
-          <svg class="map-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.6 9 4l6 2.6L21 4v13.4L15 20l-6-2.6L3 20z"></path><path d="M9 4v13.4M15 6.6V20"></path></svg>
-        </button>
-        <div class="avatar" aria-hidden="true">
-          <svg class="avatar-sil" viewBox="0 0 64 64"><circle cx="32" cy="25" r="12"></circle><path d="M8 60c0-13 10.8-19.5 24-19.5S56 47 56 60Z"></path></svg>
-        </div>
-      </div>
-    </header>
-
-    <div class="deck">
-      <div class="stack">
-        <div class="pile" aria-hidden="true">
-          <div class="pile-card pile-3"></div>
-          <div class="pile-card pile-2"></div>
-          <div class="pile-card pile-1"></div>
-        </div>
-        <article class="card claim">
-          <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">🪖</span>
             <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>

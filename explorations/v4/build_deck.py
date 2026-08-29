@@ -20,7 +20,8 @@ PAGE = HERE / "final-three-121.html"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 W, H, SCALE = 390, 780, 2
 
-FRAMES = [("Main.dc.html", "lane1"), ("NytGames.dc.html", "lane2"), ("Stickers.dc.html", "lane3")]
+FRAMES = [("VintageKnesset.dc.html", "lane1"), ("NytGames.dc.html", "lane2"),
+          ("Stickers.dc.html", "lane3")]
 
 SHIM = """
 class DCLogic {}
@@ -65,12 +66,15 @@ def render_frames():
 # The deck's prose is English. Two things stay Hebrew because they are names, not copy:
 # the style titles, and everything inside the screens themselves.
 DIRECTIONS = [
- dict(lane="lane1", n="1", he="טופס מודבק", en="Defaced Paperwork", blocks=[
+ dict(lane="lane1", n="1", he="כנסת של פעם", en="Vintage Knesset", blocks=[
   ("What it is",
    "The screen is a paper case file on a desk. The claim sits on a manila card inside a "
-   "folder of differently tinted sheets; the issue image is a photograph trimmed to its "
-   "own outline and held down with a paperclip; someone has already been over the page "
-   "with a highlighter and a strip of tape."),
+   "folder of differently tinted sheets, over a faintly printed colonnade ground, with a "
+   "ruled margin down its binder edge and the uneven toning of a sheet that has been "
+   "around a while. The issue image is a period photograph trimmed to its own outline "
+   "and held down with a bulldog clip. Someone has been over the page with a highlighter "
+   "and a strip of tape, and the bill's own date is stuck to the corner on a faded "
+   "label."),
   ("Why it fits",
    "The game's material is real Knesset records — bill texts, dates, votes. This "
    "direction makes the record itself the visual material, so the interface is the "
@@ -80,7 +84,10 @@ DIRECTIONS = [
   ("References",
    "Papers, Please (Lucas Pope, 2013) — its document world, and the brown desk with "
    "differently tinted papers on it. The display face is Bibush, a Hebrew pixel "
-   "typeface, used at headline size only."),
+   "typeface, used for the headline and the date label. The repeating background is a "
+   "plain portico, drawn on purpose rather than borrowed: the Knesset's own emblem is a "
+   "trademark, and a real official mark printed across the page would claim an "
+   "authenticity this game does not have."),
   ("The risk",
    "The most expensive direction to produce: every round needs an image treated as a "
    "cut-out and an artifact layer repositioned for it. Bibush is also missing the "
@@ -109,9 +116,9 @@ DIRECTIONS = [
  ]),
  dict(lane="lane3", n="3", he="תרבות סטיקרים", en="Israeli Sticker Culture", blocks=[
   ("What it is",
-   "A sticker on a pole. The image is die-cut to its own silhouette with a white "
-   "margin, the headline sits in a black slogan box, and a deck of mixed-colour backs "
-   "sits behind it."),
+   "A sticker on a pole: a glossy photograph die-cut to its own silhouette with a thick "
+   "white margin, a headline in a black slogan box, and a deck of mixed-colour backs "
+   "behind it."),
   ("Why it fits",
    "It borrows an Israeli street language this audience meets daily — stickers on "
    "bumpers, on poles, at bus stops. It makes a civic subject feel local rather than "
@@ -131,11 +138,11 @@ DIRECTIONS = [
 ]
 
 OPEN = [
- ("Direction 1 — decision pending",
-  "There is also a pop variant of direction 1, in which the marks on the document are "
-  "pushed harder: a larger date sticker, a second highlighter swipe in green, and "
-  "opaque tape. This deck shows the current version rather than the variant, because "
-  "the choice between them has not been made yet."),
+ ("Screens are current",
+  "Each screen here is a direct capture of the board as it stands, not a mock-up of it. "
+  "Where a direction had competing variants — two clip treatments, two palettes for "
+  "direction 3, a louder pass at direction 1 — those have been decided and the losing "
+  "versions removed, so what is shown is the only version that exists."),
  ("Bibush typeface",
   "Licence unknown. Sketch use only — it cannot go to production as it stands."),
  ("Unverified reference",

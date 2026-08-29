@@ -95,9 +95,6 @@ a:hover{color:#0f2894}
 .clip-wire,.clip-binder{display:none}
 .cb-body{fill:currentColor;stroke:none}
 .cb-lip,.cb-arm{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
-.doc-stamp{display:none;position:absolute;z-index:6;pointer-events:none;fill:none;
-  stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.st-ring{stroke-width:3.4}
 /* v4.4 — a title may take two lines, balanced. The size that keeps it to two comes
    from the per-lane .ts-* rung the stage carries; see TITLE_STEPS. */
 .issue-title{margin-top:4px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
@@ -179,7 +176,9 @@ a:hover{color:#0f2894}
    top of that, which is what marks it as the player rather than a control. */
 .lane3 .map-btn{color:#CFCDC4;background:#2E2C26}
 .lane3 .map-btn:focus-visible{outline:3px solid #131310;outline-offset:2px}
-.lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
+/* v5.2 — the ring is gone: the profile button needs no treatment the map button
+   does not have. Both are now the same plain dark disc. */
+.lane3 .avatar{background:#2E2C26}
 .lane3 .avatar-sil{fill:#CFCDC4}
 .lane3 .pile-card{border:5px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,.42)}
 /* the merged pile: warm red + warm orange against the lane's electric blue. Fixed —
@@ -205,10 +204,14 @@ a:hover{color:#0f2894}
 .lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
 .lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
 .lane3 .art-emoji::before{content:"🪖";display:block;font-size:216px;line-height:1;
-  filter:grayscale(1) brightness(0) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-.lane3.topic-religion .art-emoji::before{filter:grayscale(1) brightness(0)
+  filter:contrast(1.12) saturate(1.18) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
+/* v5.4 — direction B won: the helmet is a glossy PHOTOGRAPH inside the die-cut, not a
+   flat black knock-out. It deliberately does not borrow lane 1's treatment — lane 1 is
+   matte, grainy, sepia and deckled; this stays glossy, coloured, clean and hard-cut —
+   so the two lanes read as different worlds. The white cut edge and rim are unchanged. */
+.lane3.topic-religion .art-emoji::before{filter:contrast(1.12) saturate(1.18)
   url(#dc-lane3-religion) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
-.lane3.topic-branches .art-emoji::before{filter:grayscale(1) brightness(0)
+.lane3.topic-branches .art-emoji::before{filter:contrast(1.12) saturate(1.18)
   url(#dc-lane3-branches) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
 /* the title + claim block is centred in what the sticker leaves, and both grow into
    the space the source chip freed: title 46 -> 58px, claim 17 -> 19px.
@@ -234,11 +237,14 @@ a:hover{color:#0f2894}
    approved proportions exactly; below it the border and padding come in so
    the long titles are not paying 38px of chrome out of 290px of card. */
 .lane3:is(.ts-44,.ts-34) .issue-title{border-width:3px;padding:4px 8px 6px}
-.lane3 .ans{background:#FFFFFF;color:#0B3B36;border:5px solid #2EC4B6;border-radius:16px;
-  box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
+/* v5.1 — the die-cut edge stays, at 5px -> 3px, and the hard drop goes 5px -> 3px at
+   .28 instead of .48. Still a cut sticker, no longer the loudest object in the frame. */
+.lane3 .ans{background:#FFFFFF;color:#0B3B36;border:3px solid #2EC4B6;border-radius:16px;
+  box-shadow:0 3px 0 rgba(0,0,0,.28);font-size:24px}
 .lane3 .ans-true{rotate:-1.8deg}
 .lane3 .ans-false{rotate:1.8deg}
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
+
   </style>
 </helmet>
 <div class="stage lane3 topic-religion ts-58">
@@ -270,11 +276,12 @@ a:hover{color:#0f2894}
           <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
           <feFlood class="co-stock" result="stock"></feFlood>
           <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
-          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="1" seed="11" result="tone"></feTurbulence>
+          <feTurbulence type="turbulence" baseFrequency="0.62" numOctaves="1" seed="11" result="tone"></feTurbulence>
           <feColorMatrix in="tone" type="saturate" values="0" result="toneg"></feColorMatrix>
-          <feComponentTransfer in="toneg" result="grain"><feFuncA type="linear" slope="0.42" intercept="0"></feFuncA></feComponentTransfer>
+          <feComponentTransfer in="toneg" result="grain"><feFuncA type="discrete" tableValues="0 0 0.28 0.5 0.72 1"></feFuncA></feComponentTransfer>
           <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainin"></feComposite>
-          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="printed"></feBlend>
+          <feBlend in="SourceGraphic" in2="grainin" mode="multiply" result="inked"></feBlend>
+          <feGaussianBlur in="inked" stdDeviation="0.45" result="printed"></feGaussianBlur>
           <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="printed"></feMergeNode></feMerge>
         </filter>
       </defs>
@@ -316,7 +323,6 @@ a:hover{color:#0f2894}
         </div>
         <article class="card claim">
           <span class="sticker">11 ביוני 2024</span>
-          <svg class="doc-stamp" viewBox="0 0 64 64" aria-hidden="true"><circle class="st-ring" cx="32" cy="32" r="28"></circle><g class="st-glyph"><path d="M32 17v29"></path><path d="M24 46h16"></path><path d="M27 50h10"></path><path d="M14 22a18 16 0 0 0 36 0"></path><path d="M20 22a12 12 0 0 0 24 0"></path><path d="M26 22a6 7 0 0 0 12 0"></path><path d="M14 22v-5"></path><path d="M20 22v-5"></path><path d="M26 22v-5"></path><path d="M38 22v-5"></path><path d="M44 22v-5"></path><path d="M50 22v-5"></path></g></svg>
           <div class="art" aria-hidden="true">
             <span class="art-emoji">🪖</span>
             <svg class="art-clip" viewBox="0 0 40 64"><g class="clip-wire"><path d="M24 20v28a6.5 6.5 0 0 1-13 0V17a10 10 0 0 1 20 0v34"></path></g><g class="clip-binder"><path class="cb-body" d="M6 28h28l-5 30H11z"></path><path class="cb-lip" d="M7 33h26"></path><path class="cb-arm" d="M13 28C10 14 20 9 21 20"></path><path class="cb-arm" d="M27 28C30 14 20 9 19 20"></path></g></svg>
