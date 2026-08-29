@@ -45,8 +45,6 @@ TITLE_STEPS = json.loads((pathlib.Path(__file__).resolve().parent / "title-steps
 LADDER = {"lane1": [66, 50, 34],
           "lane2": [66, 50, 38],
           "lane3": [58, 44, 34]}
-# rungs that exist in CSS but are never assigned by measurement — one-off comparisons
-EXTRA_RUNGS = {"lane3": [36]}
 
 FONT   = base64.b64encode((ROOT / "fonts" / "SimplerPro_HLAR-Black.woff2").read_bytes()).decode()
 BIBUSH = base64.b64encode((ROOT / "fonts" / "BibushChunky.v1.0.otf").read_bytes()).decode()
@@ -540,17 +538,10 @@ LANES.append(dict(
   # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
   frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"]),
           dict(file="StickersLongTitle.dc.html", tid="religion", label=TOPICS["religion"],
-               title=LONGTITLE, note=LONGNOTE, row=1),
-          # One-off comparison, not part of the ladder: the worst-case title on three
-          # lines. Asked for at ~48px, but 48px is four lines here and overflows the
-          # card by 31px — this title is four words and no two adjacent words share a
-          # line above 35px, so the count goes 4 -> 2 and skips 3 almost entirely.
-          # 36px is the only size that is genuinely three lines and still fits, which
-          # is 2px more than the two-line setting the ladder already gives it.
-          # Delete this frame and EXTRA_RUNGS once the question is settled.
-          dict(file="StickersThreeLine.dc.html", tid="religion", label=TOPICS["religion"],
-               title=LONGTITLE, step=36, row=2,
-               note=" · השוואה חד־פעמית: שלוש שורות ב-36px")],
+               title=LONGTITLE, note=LONGNOTE, row=1)],
+  # a three-line comparison frame lived here; three lines was ruled out — at 36px, the
+  # only size that is genuinely three lines and still fits, it bought 2px of headline
+  # over the two-line setting and cost a line.
   tokens="""<!--
   LANE 3 · Israeli Sticker Culture
   palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
@@ -681,7 +672,7 @@ def frames_of(lane):
     for f in lane["frames"]:
         d = dict(tid=f.get("tid", "merged"), label=f.get("label", TOPICS["religion"]),
                  file=f["file"], var=f.get("var", ""), note=f.get("note", ""),
-                 title=f.get("title", TITLE), row=f.get("row", 0), step=f.get("step"))
+                 title=f.get("title", TITLE), row=f.get("row", 0))
         out.append(d)
     return out
 
@@ -697,7 +688,7 @@ def build():
             assert ".%s.topic-%s{" % (lane["cls"], tid) in lane["css"], (lane["cls"], tid)
             # the rung this title was measured into; the stage carries it so the
             # markup skeleton stays identical frame to frame
-            step = fr["step"] or TITLE_STEPS[lane["cls"]][fr["title"]]
+            step = TITLE_STEPS[lane["cls"]][fr["title"]]
             classes = " ".join(x for x in ("ts-%d" % step, fr["var"]) if x)
             body = (BODY
                     .replace("%LANE%", lane["cls"]).replace("%TOPICID%", tid)
@@ -715,11 +706,10 @@ def build():
             cls = lane["cls"]
             rungs = "/* v4.5 — measured title ladder for this lane; see measure_titles.py */\n" + \
                     "\n".join(".%s.ts-%d .issue-title{font-size:%dpx}" % (cls, f, f)
-                               for f in sorted(LADDER[cls] + EXTRA_RUNGS.get(cls, []), reverse=True))
+                               for f in LADDER[cls])
             trim = lane.get("rung_trim")
             if trim:
-                low = [f for f in sorted(LADDER[cls] + EXTRA_RUNGS.get(cls, []), reverse=True)
-                       if f < trim["keep_above"]]
+                low = [f for f in LADDER[cls] if f < trim["keep_above"]]
                 rungs += ("\n/* the box itself gives ground at the low rungs. The top rung keeps the\n"
                           "   approved proportions exactly; below it the border and padding come in so\n"
                           "   the long titles are not paying %dpx of chrome out of %dpx of card. */\n"

@@ -18,7 +18,7 @@ for f, lane, tid in order:
 # v4.4 — r1 row on top, longest-real-title row below
 rows = [[], [], []]
 for (f, lane, tid), st in zip(order, stages):
-    rows[1 if "LongTitle" in f else (2 if ("Punct" in f or "ThreeLine" in f) else 0)].append(st)
+    rows[1 if "LongTitle" in f else (2 if "Punct" in f else 0)].append(st)
 page = """<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
