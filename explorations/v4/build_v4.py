@@ -38,9 +38,15 @@ def bibush_title(t):
 
 TITLE_STEPS = json.loads((pathlib.Path(__file__).resolve().parent / "title-steps.json")
                          .read_text(encoding="utf-8"))
-LADDER = {"lane1": [66, 58, 50, 44, 38, 34, 30],
-          "lane2": [66, 58, 50, 44, 38, 34],
-          "lane3": [58, 50, 44, 38, 34, 30]}
+# v4.5 — three rungs, not six. A headline that is 66px one round and 34px two rounds
+# later changes the card's character as you play; steadiness beats the extra loudness
+# on short titles. The top rung is where r1 already sat and does not move; the bottom
+# rung is the floor the six-rung measurement found, so nothing falls below its claim.
+LADDER = {"lane1": [66, 50, 34],
+          "lane2": [66, 50, 38],
+          "lane3": [58, 44, 34]}
+# rungs that exist in CSS but are never assigned by measurement — one-off comparisons
+EXTRA_RUNGS = {"lane3": [36]}
 
 FONT   = base64.b64encode((ROOT / "fonts" / "SimplerPro_HLAR-Black.woff2").read_bytes()).decode()
 BIBUSH = base64.b64encode((ROOT / "fonts" / "BibushChunky.v1.0.otf").read_bytes()).decode()
@@ -296,7 +302,7 @@ LANES.append(dict(
   tokens="""<!--
   LANE 1 · Defaced Paperwork
   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
+              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #9FB0C6
               · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
   type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in system face for body
   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
@@ -308,7 +314,7 @@ LANES.append(dict(
 -->""",
   css="""/* LANE 1 · Defaced Paperwork
    palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
+               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #9FB0C6
                · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
    texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
@@ -379,7 +385,10 @@ LANES.append(dict(
 .lane1 .pile-1::before{right:26px}
 .lane1 .pile-2{background:#D3C4CE}
 .lane1 .pile-2::before{right:132px}
-.lane1 .pile-3{background:#B8C3D2}
+/* v4.5 — the ID-record back was #B8C3D2, a shade off the #BFC9D6 photo plate, and the
+   two read as one sheet at the top of the frame. The BACK moves, not the plate: the
+   plate is content, the back is furniture. Same pale blue, dropped in value. */
+.lane1 .pile-3{background:#9FB0C6}
 .lane1 .pile-3::before{right:230px}
 /* the second saturated accent, used once: one folder in the file is tabbed muted teal.
    A coloured tab is document furniture, it sits behind the card so it can never touch
@@ -531,7 +540,17 @@ LANES.append(dict(
   # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
   frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"]),
           dict(file="StickersLongTitle.dc.html", tid="religion", label=TOPICS["religion"],
-               title=LONGTITLE, note=LONGNOTE, row=1)],
+               title=LONGTITLE, note=LONGNOTE, row=1),
+          # One-off comparison, not part of the ladder: the worst-case title on three
+          # lines. Asked for at ~48px, but 48px is four lines here and overflows the
+          # card by 31px — this title is four words and no two adjacent words share a
+          # line above 35px, so the count goes 4 -> 2 and skips 3 almost entirely.
+          # 36px is the only size that is genuinely three lines and still fits, which
+          # is 2px more than the two-line setting the ladder already gives it.
+          # Delete this frame and EXTRA_RUNGS once the question is settled.
+          dict(file="StickersThreeLine.dc.html", tid="religion", label=TOPICS["religion"],
+               title=LONGTITLE, step=36, row=2,
+               note=" · השוואה חד־פעמית: שלוש שורות ב-36px")],
   tokens="""<!--
   LANE 3 · Israeli Sticker Culture
   palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
@@ -662,7 +681,7 @@ def frames_of(lane):
     for f in lane["frames"]:
         d = dict(tid=f.get("tid", "merged"), label=f.get("label", TOPICS["religion"]),
                  file=f["file"], var=f.get("var", ""), note=f.get("note", ""),
-                 title=f.get("title", TITLE), row=f.get("row", 0))
+                 title=f.get("title", TITLE), row=f.get("row", 0), step=f.get("step"))
         out.append(d)
     return out
 
@@ -678,7 +697,7 @@ def build():
             assert ".%s.topic-%s{" % (lane["cls"], tid) in lane["css"], (lane["cls"], tid)
             # the rung this title was measured into; the stage carries it so the
             # markup skeleton stays identical frame to frame
-            step = TITLE_STEPS[lane["cls"]][fr["title"]]
+            step = fr["step"] or TITLE_STEPS[lane["cls"]][fr["title"]]
             classes = " ".join(x for x in ("ts-%d" % step, fr["var"]) if x)
             body = (BODY
                     .replace("%LANE%", lane["cls"]).replace("%TOPICID%", tid)
@@ -694,12 +713,13 @@ def build():
                     .replace("%ART%", ART).replace("%MAP%", MAP)
                     .replace("%BILLDATE%", BILLDATE))
             cls = lane["cls"]
-            rungs = "/* v4.4 — measured title ladder for this lane; see measure_titles.py */\n" + \
+            rungs = "/* v4.5 — measured title ladder for this lane; see measure_titles.py */\n" + \
                     "\n".join(".%s.ts-%d .issue-title{font-size:%dpx}" % (cls, f, f)
-                               for f in LADDER[cls])
+                               for f in sorted(LADDER[cls] + EXTRA_RUNGS.get(cls, []), reverse=True))
             trim = lane.get("rung_trim")
             if trim:
-                low = [f for f in LADDER[cls] if f < trim["keep_above"]]
+                low = [f for f in sorted(LADDER[cls] + EXTRA_RUNGS.get(cls, []), reverse=True)
+                       if f < trim["keep_above"]]
                 rungs += ("\n/* the box itself gives ground at the low rungs. The top rung keeps the\n"
                           "   approved proportions exactly; below it the border and padding come in so\n"
                           "   the long titles are not paying %dpx of chrome out of %dpx of card. */\n"

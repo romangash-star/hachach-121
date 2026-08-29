@@ -8,7 +8,7 @@
 <!--
   LANE 1 · Defaced Paperwork
   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
+              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #9FB0C6
               · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
   type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in system face for body
   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
@@ -119,7 +119,7 @@ a:hover{color:#0f2894}
 
 /* LANE 1 · Defaced Paperwork
    palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
+               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #9FB0C6
                · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
    texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
@@ -190,7 +190,10 @@ a:hover{color:#0f2894}
 .lane1 .pile-1::before{right:26px}
 .lane1 .pile-2{background:#D3C4CE}
 .lane1 .pile-2::before{right:132px}
-.lane1 .pile-3{background:#B8C3D2}
+/* v4.5 — the ID-record back was #B8C3D2, a shade off the #BFC9D6 photo plate, and the
+   two read as one sheet at the top of the frame. The BACK moves, not the plate: the
+   plate is content, the back is furniture. Same pale blue, dropped in value. */
+.lane1 .pile-3{background:#9FB0C6}
 .lane1 .pile-3::before{right:230px}
 /* the second saturated accent, used once: one folder in the file is tabbed muted teal.
    A coloured tab is document furniture, it sits behind the card so it can never touch
@@ -254,14 +257,10 @@ a:hover{color:#0f2894}
 .lane1 .hl{background:linear-gradient(104deg,rgba(0,0,0,0) 0,var(--hl) 1.5%,var(--hl) 98%,rgba(0,0,0,0) 100%);
   opacity:.999;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;
   mix-blend-mode:multiply}
-/* v4.4 — measured title ladder for this lane; see measure_titles.py */
+/* v4.5 — measured title ladder for this lane; see measure_titles.py */
 .lane1.ts-66 .issue-title{font-size:66px}
-.lane1.ts-58 .issue-title{font-size:58px}
 .lane1.ts-50 .issue-title{font-size:50px}
-.lane1.ts-44 .issue-title{font-size:44px}
-.lane1.ts-38 .issue-title{font-size:38px}
 .lane1.ts-34 .issue-title{font-size:34px}
-.lane1.ts-30 .issue-title{font-size:30px}
 .lane1 .ans{background:#EDE8DA;color:#1A1714;border-radius:0;
   font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:27px;
   box-shadow:inset 0 0 0 2px #1A1714,4px 4px 0 rgba(0,0,0,.55)}

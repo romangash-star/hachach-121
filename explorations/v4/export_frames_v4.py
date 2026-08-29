@@ -27,6 +27,7 @@ NAMES = {
     "NytGamesLongTitle.dc.html": "lane2-nyt-games-longtitle",
     "Stickers.dc.html":          "lane3-stickers",
     "StickersLongTitle.dc.html": "lane3-stickers-longtitle",
+    "StickersThreeLine.dc.html": "lane3-stickers-threeline",
 }
 
 SHIM = """

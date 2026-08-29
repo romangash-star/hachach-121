@@ -22,9 +22,9 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # the ladder per lane. Every rung must stay >= that lane's claim size: a title set
 # smaller than the sentence under it is not a title.
 LADDERS = {
-    "lane1": dict(file="Main.dc.html",     steps=[66, 58, 50, 44, 38, 34, 30], claim=16),
-    "lane2": dict(file="NytGames.dc.html", steps=[66, 58, 50, 44, 38, 34],     claim=19),
-    "lane3": dict(file="Stickers.dc.html", steps=[58, 50, 44, 38, 34, 30],     claim=20),
+    "lane1": dict(file="Main.dc.html",     steps=[66, 50, 34], claim=16),
+    "lane2": dict(file="NytGames.dc.html", steps=[66, 50, 38], claim=19),
+    "lane3": dict(file="Stickers.dc.html", steps=[58, 44, 34], claim=20),
 }
 MAX_LINES = 2
 
