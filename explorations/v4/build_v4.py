@@ -112,13 +112,28 @@ a:hover{color:#0f2894}
 .coin-num{font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;font-size:20px;line-height:1}
 .hud-mid{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
 .topic-title{font-size:12.5px;font-weight:700;line-height:1.2;white-space:nowrap;padding:3px 0}
+/* v4.7 CHANGE D, progress variant 1 — the stories bar. Pinned to the frame's top edge
+   above the HUD, 3 segments, the first filled. Hidden unless the frame carries .pr-bar;
+   .pr-none renders neither bar nor dots. Both variants suppress the dots, so a frame
+   never shows two progress indicators. Styled per lane below even though only lane 3
+   renders the comparison, so switching lanes is a class change, not new CSS. */
+.storybar{display:none;position:relative;z-index:5;flex:none;gap:4px;height:4px;
+  margin:-12px -16px 10px;padding:0 12px}   /* out through the frame's 12/16 padding */
+.storybar .seg{flex:1;height:100%;border-radius:2px;background:currentColor;opacity:.26}
+.storybar .seg-on{opacity:1}
+.pr-bar .storybar{display:flex}
+.pr-bar .steps,.pr-none .steps{display:none}
 /* three step dots = the three beats of the round; the pile behind the card is those same three */
 .steps{display:flex;align-items:center;gap:5px}
 .step{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.32;display:block}
 .step-on{opacity:1;width:17px;border-radius:4px}
 .hud-you{display:flex;align-items:center;gap:6px;flex:none}
-.map-btn{width:44px;height:44px;flex:none;border:0;background:none;color:inherit;cursor:pointer;
-  display:grid;place-items:center;padding:0;border-radius:50%}
+/* v4.7 CHANGE D — map button and avatar are one control size: 40x40, same shape
+   language inside each lane. The button stays a 44px target: ::after bleeds the hit
+   area 2px past the visual box on every side, so the touch target never shrank. */
+.map-btn{position:relative;width:40px;height:40px;flex:none;border:0;background:none;
+  color:inherit;cursor:pointer;display:grid;place-items:center;padding:0;border-radius:50%}
+.map-btn::after{content:"";position:absolute;inset:-2px}
 .map-icon{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;
   stroke-linecap:round}
 .map-btn:focus-visible{outline:3px solid #0052ff;outline-offset:2px}
@@ -218,6 +233,8 @@ BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
         <path d="M156 730l124-9 5 24-6 22-31 5-26-7-31 8-25-5-9-16z" transform="rotate(-3 215 751)"></path>
       </g>
     </svg>
+
+    <div class="storybar" aria-hidden="true"><i class="seg seg-on"></i><i class="seg"></i><i class="seg"></i></div>
 
     <header class="hud">
       <div class="hud-coins">
@@ -374,7 +391,11 @@ LANES.append(dict(
 .lane1 .coin-num{color:#D9D2C0;font-family:'BibushChunky',system-ui,sans-serif;font-size:23px}
 .lane1 .topic-title{color:#C0B393;letter-spacing:.14em;font-size:11px;text-transform:none}
 .lane1 .steps{color:#C0B393}
-.lane1 .map-btn{color:#D9D2C0;border-radius:0;background:#3A332B;
+.lane1 .storybar{color:#C0B393}
+.lane1 .storybar .seg{border-radius:0;box-shadow:inset 0 0 0 1px rgba(26,23,20,.5)}
+/* v4.7 CHANGE D — the two icon buttons are a matched pair of square document stamps:
+   same 40x40 box, same manila fill, same 2px rule, same ink. */
+.lane1 .map-btn{color:#1A1714;border-radius:0;background:#C0B393;
   box-shadow:inset 0 0 0 2px #1A1714}
 .lane1 .map-btn:focus-visible{outline:3px solid #D9D2C0;outline-offset:3px}
 .lane1 .avatar{border-radius:0;background:#C0B393;box-shadow:inset 0 0 0 2px #1A1714}
@@ -518,6 +539,9 @@ LANES.append(dict(
 .lane2 .coin-num{color:#1A1A1A}
 .lane2 .topic-title{color:#4A4A46;font-size:10.5px;letter-spacing:.19em;padding:4px 0}
 .lane2 .steps{color:var(--t2)}
+/* v4.7 CHANGE D — lane 2's two icon buttons already shared a language (white disc,
+   1.5px rule); they now share a size too. Nothing else needed here. */
+.lane2 .storybar{color:var(--t2)}
 .lane2 .map-btn{color:#1A1A1A;background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
 .lane2 .map-btn:focus-visible{outline:3px solid #C9A227;outline-offset:2px}
 .lane2 .avatar{background:#FDFDFB;box-shadow:inset 0 0 0 1.5px #1A1A1A}
@@ -558,7 +582,14 @@ LANES.append(dict(
   # v4.4 CHANGE A — one frame, mixed pile; plus the longest real title as a stress frame
   frames=[dict(file="Stickers.dc.html", tid="religion", label=TOPICS["religion"]),
           dict(file="StickersLongTitle.dc.html", tid="religion", label=TOPICS["religion"],
-               title=LONGTITLE, note=LONGNOTE, row=1)],
+               title=LONGTITLE, note=LONGNOTE, row=1),
+          # v4.7 CHANGE D — the two progress variants, same content, differing only in
+          # how the round's position is shown. Lane 3 carries the comparison because it
+          # has the most HUD to sit above and the most visible dots to lose.
+          dict(file="StickersStoryBar.dc.html", tid="religion", label=TOPICS["religion"],
+               var="pr-bar", row=2, note=" · התקדמות א׳: פס סטוריז בקצה העליון"),
+          dict(file="StickersNoDots.dc.html", tid="religion", label=TOPICS["religion"],
+               var="pr-none", row=2, note=" · התקדמות ב׳: בלי מחוון, הערימה נושאת אותו")],
   # a three-line comparison frame lived here; three lines was ruled out — at 36px, the
   # only size that is genuinely three lines and still fits, it bought 2px of headline
   # over the two-line setting and cost a line.
@@ -626,7 +657,21 @@ LANES.append(dict(
   padding:4px 13px;rotate:-2.5deg;font-weight:900;
   box-shadow:0 0 0 1.5px rgba(0,0,0,.3),0 3px 0 rgba(0,0,0,.42)}
 .lane3 .steps{color:#131310}
-.lane3 .map-btn{color:#131310;background:none}
+.lane3 .storybar{color:#131310;height:6px}
+/* lane 3's HUD pulls itself up 12px to bleed as a band; with the bar above it that
+   pull would swallow the bar, so the bar takes the bleed instead. */
+.lane3.pr-bar .hud{margin-top:0}
+.lane3.pr-bar .storybar{margin:-12px -16px 10px}
+/* opacity on the pole grey left segments 2 and 3 almost invisible; the lane's own
+   grammar does it better — white pills with a dark rule, the spent one filled solid */
+.lane3 .storybar{gap:5px}
+.lane3 .storybar .seg{border-radius:3px;background:#FFFFFF;opacity:1;
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.30)}
+.lane3 .storybar .seg-on{background:#131310;box-shadow:none}
+/* v4.7 CHANGE D — the map button was bare next to a filled avatar. Both are now the
+   same 40x40 dark disc with the same light glyph; the avatar keeps the topic ring on
+   top of that, which is what marks it as the player rather than a control. */
+.lane3 .map-btn{color:#CFCDC4;background:#2E2C26}
 .lane3 .map-btn:focus-visible{outline:3px solid #131310;outline-offset:2px}
 .lane3 .avatar{background:#2E2C26;box-shadow:0 0 0 3px var(--t1)}
 .lane3 .avatar-sil{fill:#CFCDC4}

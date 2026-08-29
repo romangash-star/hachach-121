@@ -18,7 +18,8 @@ TAG  = '<script type="application/json" id="appifact-doc">'
 # v4.4 — three lanes x (r1 frame + longest-real-title stress frame).
 FILES = ["Main.dc.html", "MainLongTitle.dc.html", "MainPunct.dc.html",
          "NytGames.dc.html", "NytGamesLongTitle.dc.html",
-         "Stickers.dc.html", "StickersLongTitle.dc.html", "canvas.json"]
+         "Stickers.dc.html", "StickersLongTitle.dc.html",
+         "StickersStoryBar.dc.html", "StickersNoDots.dc.html", "canvas.json"]
 
 def dump(doc):
     # the canvas writes compact JSON, non-ASCII literal, and escapes only "<"

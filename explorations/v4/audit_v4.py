@@ -76,6 +76,21 @@ return JSON.stringify({
   cardToButtons: +(R(an).top - R(card).bottom).toFixed(1),
   buttonsW: +R(an).width.toFixed(0),
   minHitH: +Math.min(...[...st.querySelectorAll('.ans,.map-btn')].map(e => R(e).height)).toFixed(0),
+  /* the visual box is 40x40; the real target is hit-tested, because the extra 4px
+     comes from a ::after bleed that no bounding rect will show */
+  iconBoxes: (() => { const m = R(st.querySelector('.map-btn')), a = R(st.querySelector('.avatar'));
+    return {map: [Math.round(m.width), Math.round(m.height)],
+            avatar: [Math.round(a.width), Math.round(a.height)]}; })(),
+  mapHitTarget: (() => {
+    const b = st.querySelector('.map-btn'), r = R(b);
+    const cx = r.left + r.width/2, cy = r.top + r.height/2;
+    const probe = d => { const e = document.elementFromPoint(cx + d[0], cy + d[1]);
+      return !!(e && (e === b || b.contains(e))); };
+    const ok = [[-21.5,-21.5],[21.5,-21.5],[-21.5,21.5],[21.5,21.5]].every(probe);
+    return ok ? 44 : (([[-19.5,-19.5],[19.5,-19.5],[-19.5,19.5],[19.5,19.5]].every(probe)) ? 40 : 0);
+  })(),
+  progress: {bar: getComputedStyle(st.querySelector('.storybar')).display !== 'none',
+             dots: getComputedStyle(st.querySelector('.steps')).display !== 'none'},
   claimText: cl.textContent.trim()
 });
 """
