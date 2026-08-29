@@ -86,9 +86,14 @@ a:hover{color:#0f2894}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
    the direction now lives on the arrow inside each button (.ans-arrow). */
-.source{display:flex;align-items:center;gap:7px;font-size:12.5px;line-height:1.3;
-  margin-top:auto;padding-top:12px}
-.ico-link{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+/* ---- OPTIONAL, OFF BY DEFAULT: set VERIFY_MARK = True to render ----------
+   data.js carries verification:"verified" on this issue. A bare check in the
+   source chip's old slot signals "documented record" without naming an outlet.
+   Ships only if review accepts it; it needs a Hebrew aria-label first, and that
+   is a copy decision, not a build one - no copy is invented here.          */
+.verified{margin-top:auto;padding-top:12px;display:flex}
+.ico-check{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2.8;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 
 /* buttons ride with the card: same width, 8px gap, one object */
 .answers{position:relative;z-index:3;flex:none;width:340px;display:flex;gap:10px;margin-top:8px}
@@ -176,7 +181,8 @@ a:hover{color:#0f2894}
 /* art: high-contrast duotone document photo, paperclipped.
    v4.2 FIX 3 — the space the swipe hints used to hold goes here: the plate grows
    126 -> 244px and the duotone with it. Lane 1's freed space went to ART. */
-.lane1 .art{min-height:120px;flex:none;height:244px;background:#C0B393;
+/* v4.3 CHANGE 1 — the source chip's 49px goes to the photo plate, not to a gap */
+.lane1 .art{flex:1;min-height:244px;background:#C0B393;
   box-shadow:inset 0 0 0 2px #1A1714;margin-top:10px}
 .lane1 .art-emoji{font-size:136px;filter:grayscale(1) brightness(1.08) contrast(9);
   mix-blend-mode:multiply}
@@ -188,8 +194,6 @@ a:hover{color:#0f2894}
 .lane1 .hl{background:linear-gradient(104deg,rgba(0,0,0,0) 0,var(--hl) 1.5%,var(--hl) 98%,rgba(0,0,0,0) 100%);
   opacity:.999;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;
   mix-blend-mode:multiply}
-.lane1 .source{color:#332D22;font-weight:700;letter-spacing:.05em;font-size:11.5px;
-  border-top:1px dashed #8E8264;padding-top:10px}
 .lane1 .ans{background:#EDE8DA;color:#1A1714;border-radius:0;
   font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:27px;
   box-shadow:inset 0 0 0 2px #1A1714,4px 4px 0 rgba(0,0,0,.55)}
@@ -253,7 +257,6 @@ a:hover{color:#0f2894}
           </div>
           <h2 class="issue-title">חוק הגיוס</h2>
           <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-          <p class="source"><svg class="ico-link" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5a5 5 0 0 0 7.3.4l2.7-2.7a5 5 0 0 0-7-7l-1.5 1.4"></path><path d="M13.5 10.5a5 5 0 0 0-7.3-.4l-2.7 2.7a5 5 0 0 0 7 7l1.4-1.4"></path></svg><span class="source-name">ישראל היום</span></p>
         </article>
       </div>
       <div class="answers">

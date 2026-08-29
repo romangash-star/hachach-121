@@ -89,9 +89,14 @@ a:hover{color:#0f2894}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
    the direction now lives on the arrow inside each button (.ans-arrow). */
-.source{display:flex;align-items:center;gap:7px;font-size:12.5px;line-height:1.3;
-  margin-top:auto;padding-top:12px}
-.ico-link{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+/* ---- OPTIONAL, OFF BY DEFAULT: set VERIFY_MARK = True to render ----------
+   data.js carries verification:"verified" on this issue. A bare check in the
+   source chip's old slot signals "documented record" without naming an outlet.
+   Ships only if review accepts it; it needs a Hebrew aria-label first, and that
+   is a copy decision, not a build one - no copy is invented here.          */
+.verified{margin-top:auto;padding-top:12px;display:flex}
+.ico-check{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2.8;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 
 /* buttons ride with the card: same width, 8px gap, one object */
 .answers{position:relative;z-index:3;flex:none;width:340px;display:flex;gap:10px;margin-top:8px}
@@ -166,17 +171,17 @@ a:hover{color:#0f2894}
 /* BOLDNESS: the art sticker breaks out over the card's top edge.
    v4.2 FIX 3 — lane 3's freed space went to ART: the breakout sticker 196 -> 268px,
    which is this lane's stated boldness element. The title takes 2px of it. */
-.lane3 .art{flex:none;height:252px;margin-top:-44px;overflow:visible;z-index:4}
-.lane3 .art-emoji{width:268px;height:268px;display:grid;place-items:center;font-size:0;
+/* v4.3 CHANGE 1 — the source chip's 49px goes into the sticker, not to a gap */
+.lane3 .art{flex:1;min-height:252px;margin-top:-44px;overflow:visible;z-index:4}
+.lane3 .art-emoji{width:292px;height:292px;display:grid;place-items:center;font-size:0;
   background:var(--t1);border:8px solid #fff;border-radius:44px;rotate:-5deg;
   box-shadow:0 7px 0 rgba(0,0,0,.45),0 14px 22px rgba(0,0,0,.3)}
-.lane3 .art-emoji::before{content:"🪖";font-size:170px;line-height:1;
+.lane3 .art-emoji::before{content:"🪖";font-size:186px;line-height:1;
   filter:grayscale(1) brightness(0) invert(1) drop-shadow(0 3px 0 rgba(0,0,0,.4))}
 .lane3 .issue-title{background:#000;color:#fff;border:5px solid #fff;padding:6px 14px 9px;rotate:1.4deg;
   align-self:flex-start;font-size:46px;box-shadow:0 4px 0 rgba(0,0,0,.45);margin-top:16px}
 .lane3 .claim-text{margin-top:18px;font-size:17px;line-height:1.5;max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
-.lane3 .source{font-weight:800;padding-top:14px}
 .lane3 .ans{background:#2EC4B6;color:#000;border:5px solid #fff;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
 .lane3 .ans-true{rotate:-1.8deg}
@@ -241,7 +246,6 @@ a:hover{color:#0f2894}
           </div>
           <h2 class="issue-title">חוק הגיוס</h2>
           <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-          <p class="source"><svg class="ico-link" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5a5 5 0 0 0 7.3.4l2.7-2.7a5 5 0 0 0-7-7l-1.5 1.4"></path><path d="M13.5 10.5a5 5 0 0 0-7.3-.4l-2.7 2.7a5 5 0 0 0 7 7l1.4-1.4"></path></svg><span class="source-name">ישראל היום</span></p>
         </article>
       </div>
       <div class="answers">

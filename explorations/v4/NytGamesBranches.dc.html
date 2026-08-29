@@ -87,9 +87,14 @@ a:hover{color:#0f2894}
 .hl{background:none;color:inherit}
 /* v4.2 FIX 3 — the in-card swipe hints are gone. The buttons ARE the affordance;
    the direction now lives on the arrow inside each button (.ans-arrow). */
-.source{display:flex;align-items:center;gap:7px;font-size:12.5px;line-height:1.3;
-  margin-top:auto;padding-top:12px}
-.ico-link{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+/* ---- OPTIONAL, OFF BY DEFAULT: set VERIFY_MARK = True to render ----------
+   data.js carries verification:"verified" on this issue. A bare check in the
+   source chip's old slot signals "documented record" without naming an outlet.
+   Ships only if review accepts it; it needs a Hebrew aria-label first, and that
+   is a copy decision, not a build one - no copy is invented here.          */
+.verified{margin-top:auto;padding-top:12px;display:flex}
+.ico-check{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2.8;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 
 /* buttons ride with the card: same width, 8px gap, one object */
 .answers{position:relative;z-index:3;flex:none;width:340px;display:flex;gap:10px;margin-top:8px}
@@ -144,10 +149,6 @@ a:hover{color:#0f2894}
    takes what is left over, so the disc grows a little with it. */
 .lane2 .issue-title{font-size:66px;letter-spacing:-.03em;line-height:.94;margin-top:10px}
 .lane2 .claim-text{margin-top:14px;font-size:19px;line-height:1.42}
-.lane2 .source{padding-top:11px;border-top:1px solid #DDD9D0;font-size:14px;
-  font-weight:700;color:#1A1A1A}
-.lane2 .source .ico-link{width:15px;height:15px;color:#787C7E}
-.lane2 .source-name{border-bottom:2px solid #C9A227;padding-bottom:1px}
 .lane2 .ans{background:#FDFDFB;border:1.5px solid #1A1A1A;border-radius:3px;color:#1A1A1A;font-size:21px;
   letter-spacing:.02em;box-shadow:0 3px 0 #1A1A1A}
 .lane2 .ans:focus-visible{outline:3px solid #C9A227;outline-offset:3px}
@@ -210,7 +211,6 @@ a:hover{color:#0f2894}
           </div>
           <h2 class="issue-title">חוק הגיוס</h2>
           <p class="claim-text">הצעת חוק הגיוס שהקואליציה קידמה ב-2024 מבוססת על <mark class="hl">מתווה שכתב... בני גנץ</mark>.</p>
-          <p class="source"><svg class="ico-link" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5a5 5 0 0 0 7.3.4l2.7-2.7a5 5 0 0 0-7-7l-1.5 1.4"></path><path d="M13.5 10.5a5 5 0 0 0-7.3-.4l-2.7 2.7a5 5 0 0 0 7 7l1.4-1.4"></path></svg><span class="source-name">ישראל היום</span></p>
         </article>
       </div>
       <div class="answers">
