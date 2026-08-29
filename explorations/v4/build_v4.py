@@ -199,6 +199,14 @@ BODY = """<div class="stage %LANE% topic-%TOPICID%%VARCLS%">
           <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
           <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
         </filter>
+        <filter id="co-%LANE%-%TOPICID%" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="7" result="grown"></feMorphology>
+          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
+          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
+          <feFlood class="co-stock" result="stock"></feFlood>
+          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
+          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
       </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
@@ -299,8 +307,8 @@ LANES.append(dict(
   he="טופס מודבק", en="Defaced Paperwork",
   tokens="""<!--
   LANE 1 · Defaced Paperwork
-  palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #9FB0C6
+  palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · photo stock #EFE9DA
+              · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
               · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
   type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in system face for body
   texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
@@ -311,8 +319,8 @@ LANES.append(dict(
               rendered as ONE merged frame: blue sticker + gold highlighter
 -->""",
   css="""/* LANE 1 · Defaced Paperwork
-   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · pale-blue plate #BFC9D6
-               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #9FB0C6
+   palette   : desk #241F1A · manila card #D9D2C0 · ink #1A1714 · photo stock #EFE9DA
+               · mixed file backs: cream #E4DCC4 / lavender #D3C4CE / pale blue #B8C3D2
                · accents, one use each: muted red clip #A8443C · muted teal tab #2F7D74
    type      : Bibush Chunky display (title, אמת/שקר, coins); stand-in face for body
    texture   : one — office document: hard rules, file tabs, a binder margin, zero radii
@@ -383,10 +391,10 @@ LANES.append(dict(
 .lane1 .pile-1::before{right:26px}
 .lane1 .pile-2{background:#D3C4CE}
 .lane1 .pile-2::before{right:132px}
-/* v4.5 — the ID-record back was #B8C3D2, a shade off the #BFC9D6 photo plate, and the
-   two read as one sheet at the top of the frame. The BACK moves, not the plate: the
-   plate is content, the back is furniture. Same pale blue, dropped in value. */
-.lane1 .pile-3{background:#9FB0C6}
+/* v4.6 — the shift back. #9FB0C6 existed only to separate this back from the
+   #BFC9D6 photo plate; the plate is gone, so the reason is gone and the lighter
+   ID-record blue returns. Nothing on the card is that colour any more. */
+.lane1 .pile-3{background:#B8C3D2}
 .lane1 .pile-3::before{right:230px}
 /* the second saturated accent, used once: one folder in the file is tabbed muted teal.
    A coloured tab is document furniture, it sits behind the card so it can never touch
@@ -428,21 +436,33 @@ LANES.append(dict(
     radial-gradient(circle at 50% 47%,#241F1A 0 45%,transparent 46%),
     radial-gradient(circle at 54% 58%,#F0EBDD 0 50%,transparent 51%)}
 
-/* art: high-contrast duotone document photo, paperclipped.
-   v4.2 FIX 3 — the space the swipe hints used to hold goes here: the plate grows
-   126 -> 244px and the duotone with it. Lane 1's freed space went to ART. */
-/* v4.3 CHANGE 1 — the source chip's 49px goes to the photo plate, not to a gap */
-/* v4.3 CHANGE 3, palette — Papers, Please is not a brown game: it is tinted papers on a
-   brown desk. The plate was #C0B393, the same manila as the card under it, so the two
-   read as one sheet. It is now its own pale document blue; the desk and the manila card
-   are untouched, and the contrast comes from the papers being different colours. */
-.lane1 .art{flex:1;min-height:244px;background:#BFC9D6;
-  box-shadow:inset 0 0 0 2px #1A1714;margin-top:10px}
-.lane1 .art-emoji{font-size:136px;filter:grayscale(1) brightness(1.08) contrast(9);
-  mix-blend-mode:multiply}
+/* v4.6 CHANGE C — the framed photo plate is gone. The helmet is now a printed photo
+   trimmed to its own outline and laid on the manila.
+
+   It must NOT converge on lane 3's die-cut sticker, so every cue is a different word
+   for the same physicality:
+     lane 3  9px of hard bright white  · smooth cut · hard offset colour rim ·
+             flat black knock-out · 216px · a hard 5px shadow
+     lane 1  6px of cream photo stock  · DECKLED   · no rim ·
+             a grey photo with midtones · 186px · a soft diffuse shadow
+   The deckle is the detail that separates a cut photograph from a vinyl sticker, and
+   it is cheap: feTurbulence displaces the dilated alpha before it is flooded, so the
+   paper margin comes out ragged the way scissors and a guillotine leave it.
+   The contrast is deliberately down from contrast(9) to 1.7 — a photo has midtones; a
+   sticker is flat. The clip crosses the photo's edge, so the object reads as placed on
+   the document rather than printed into it. mix-blend-mode is gone with the plate:
+   there is no rectangle left to multiply into. */
+.lane1 .co-stock{flood-color:#EFE9DA;flood-opacity:1}
+.lane1 .art{flex:1;min-height:244px;margin-top:10px}
+.lane1 .art-emoji{font-size:186px;rotate:-2.5deg;
+  filter:grayscale(1) contrast(1.7) brightness(1.02)
+         drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
+.lane1.topic-merged .art-emoji{filter:grayscale(1) contrast(1.7) brightness(1.02)
+  url(#co-lane1-merged) drop-shadow(2px 5px 6px rgba(26,23,20,.42))}
 /* the one saturated accent, used on one thin stroke: a coated-wire clip in muted red.
-   It belongs to the document world, never to a topic and never to a verdict. */
-.lane1 .art-clip{display:block;color:#A8443C;top:-10px;left:64px;rotate:9deg}
+   It belongs to the document world, never to a topic and never to a verdict.
+   It now sits ON the photo's edge — it is what holds the cut-out down. */
+.lane1 .art-clip{display:block;color:#A8443C;top:34px;left:88px;rotate:14deg;z-index:3}
 .lane1 .issue-title{font-family:'BibushChunky',system-ui,sans-serif;font-weight:400;font-size:66px;
   line-height:.98;margin-top:12px;color:#1A1714}
 .lane1 .claim-text{color:#1A1714;margin-top:10px;line-height:1.5}

@@ -255,6 +255,14 @@ a:hover{color:#0f2894}
           <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
           <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
         </filter>
+        <filter id="co-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="7" result="grown"></feMorphology>
+          <feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="7" result="noise"></feTurbulence>
+          <feDisplacementMap in="grown" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" result="deckle"></feDisplacementMap>
+          <feFlood class="co-stock" result="stock"></feFlood>
+          <feComposite in="stock" in2="deckle" operator="in" result="paper"></feComposite>
+          <feMerge><feMergeNode in="paper"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
       </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
