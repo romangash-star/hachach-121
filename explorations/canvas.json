@@ -1,0 +1,55 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 2400,
+      "y": 0,
+      "w": 390,
+      "h": 880,
+      "title": "A · שידור · CRT × Twitch"
+    },
+    {
+      "file": "Stickers.dc.html",
+      "x": 1920,
+      "y": 0,
+      "w": 390,
+      "h": 880,
+      "title": "B · תרבות סטיקרים · Israeli Sticker Culture"
+    },
+    {
+      "file": "AcidType.dc.html",
+      "x": 1440,
+      "y": 0,
+      "w": 390,
+      "h": 880,
+      "title": "C · טיפוגרפי חומצי · Acid Typographic"
+    },
+    {
+      "file": "DefacedPaperwork.dc.html",
+      "x": 960,
+      "y": 0,
+      "w": 390,
+      "h": 880,
+      "title": "D · טופס מודבק · Defaced Paperwork"
+    },
+    {
+      "file": "StateKitsch.dc.html",
+      "x": 480,
+      "y": 0,
+      "w": 390,
+      "h": 880,
+      "title": "E · קיטש ממלכתי אפי · Epic State Kitsch"
+    },
+    {
+      "file": "NytGames.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 880,
+      "title": "F · משחקי עיתון · NYT Games"
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
