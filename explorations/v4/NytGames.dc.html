@@ -166,6 +166,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane2-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>

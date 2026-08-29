@@ -232,7 +232,8 @@ a:hover{color:#0f2894}
    palette   : pole grey #B3B1A9 · white die-cut · black #000 · fixed pink #FF3B6B + topic colours
    type      : SimplerPro Black slogan chunks; the HUD is a flat band, not a sticker sheet
    texture   : one — the pole: two-scale grain over pale ghost remnants of older stickers
-   BOLDNESS  : the art sticker at 196px, breaking clean out over the card's top edge
+   BOLDNESS  : a 216px die-cut sticker cut to the helmet's own silhouette, stuck on
+              the card and breaking out over its top edge
    TOPIC old->new : religion #ffd23f/#ffb800 -> #FFD60A/#FF8A00 (sticker yellow, sticker orange)
                     branches #2b4cff/#1a3acc -> #3D5BFF/#1E36B8 (electric blue, deep blue) */
 .lane3.topic-religion{--t1:#FFD60A;--t2:#FF8A00;--on-t1:#000}
@@ -282,19 +283,36 @@ a:hover{color:#0f2894}
 .lane3 .pile-3{background:var(--t2);transform:translateY(-29px) rotate(-7deg)}
 .lane3 .card{background:#fff;border:7px solid #fff;rotate:-1.4deg;overflow:visible;
   padding:0 18px 16px;box-shadow:0 7px 0 rgba(0,0,0,.42),0 16px 26px rgba(0,0,0,.28)}
-/* BOLDNESS: the art sticker breaks out over the card's top edge.
-   v4.2 FIX 3 — lane 3's freed space went to ART: the breakout sticker 196 -> 268px,
-   which is this lane's stated boldness element. The title takes 2px of it. */
-/* v4.3 CHANGE 1 — the source chip's 49px goes into the sticker, not to a gap */
-.lane3 .art{flex:1;min-height:252px;margin-top:-44px;overflow:visible;z-index:4}
-.lane3 .art-emoji{width:292px;height:292px;display:grid;place-items:center;font-size:0;
-  background:var(--t1);border:8px solid #fff;border-radius:44px;rotate:-5deg;
-  box-shadow:0 7px 0 rgba(0,0,0,.45),0 14px 22px rgba(0,0,0,.3)}
-.lane3 .art-emoji::before{content:"🪖";font-size:186px;line-height:1;
-  filter:grayscale(1) brightness(0) invert(1) drop-shadow(0 3px 0 rgba(0,0,0,.4))}
+/* BOLDNESS — v4.3 CHANGE 2: the helmet is a die-cut sticker stuck ON the card.
+   The coloured rounded square is gone. The white cut edge now follows the HELMET'S
+   OWN SILHOUETTE, which no border can do, so it is built in the filter that every
+   artboard carries in its <defs> (inert in lanes 1 and 2):
+     feMorphology dilate 15 on SourceAlpha, offset 5/8, flooded var(--t1)  -> the
+       colour registration rim, the frame's topic-colour carrier inside the card;
+     feMorphology dilate 9  on SourceAlpha, flooded #fff                   -> the cut;
+     SourceGraphic (the flat black helmet) on top.
+   A CSS drop-shadow underneath lifts it off the white card. Nothing here is
+   verdict-capable: the topic colour touches the sticker rim and nothing else. */
+.lane3 .dc-tint{flood-color:var(--t1);flood-opacity:1}
+.lane3 .dc-cut{flood-color:#fff;flood-opacity:1}
+.lane3 .art{flex:none;height:214px;margin-top:-48px;overflow:visible;z-index:4}
+.lane3 .art-emoji{display:block;font-size:0;rotate:-7deg}
+.lane3 .art-emoji::before{content:"🪖";display:block;font-size:216px;line-height:1;
+  filter:grayscale(1) brightness(0) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
+.lane3.topic-religion .art-emoji::before{filter:grayscale(1) brightness(0)
+  url(#dc-lane3-religion) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
+.lane3.topic-branches .art-emoji::before{filter:grayscale(1) brightness(0)
+  url(#dc-lane3-branches) drop-shadow(0 11px 13px rgba(0,0,0,.3))}
+/* the title + claim block is centred in what the sticker leaves, and both grow into
+   the space the source chip freed: title 46 -> 58px, claim 17 -> 19px.
+   58px is the ceiling for one line: «חוק הגיוס» measures 244px of the 252px the box
+   can hold, and 60px overflows it to 252.4px and wraps. A wrapped title stretches the
+   black box to the full card width and stops reading as a slogan chunk, so the size
+   is pinned to the one-line fit and the remainder went to the sticker (196 -> 216px). */
 .lane3 .issue-title{background:#000;color:#fff;border:5px solid #fff;padding:6px 14px 9px;rotate:1.4deg;
-  align-self:flex-start;font-size:46px;box-shadow:0 4px 0 rgba(0,0,0,.45);margin-top:16px}
-.lane3 .claim-text{margin-top:18px;font-size:17px;line-height:1.5;max-width:27ch;text-wrap:balance}
+  align-self:flex-start;font-size:58px;box-shadow:0 4px 0 rgba(0,0,0,.45);margin-top:auto}
+.lane3 .claim-text{margin-top:18px;margin-bottom:auto;font-size:20px;line-height:1.45;
+  max-width:27ch;text-wrap:balance}
 /* fixed lane colour — never the topic colour: this is the אמת/שקר surface */
 .lane3 .ans{background:#2EC4B6;color:#000;border:5px solid #fff;border-radius:16px;
   box-shadow:0 5px 0 rgba(0,0,0,.48);font-size:24px}
@@ -315,6 +333,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane1-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
@@ -381,6 +411,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane2-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
@@ -447,6 +489,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane3-religion" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
@@ -513,6 +567,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane1-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
@@ -579,6 +645,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane2-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
@@ -645,6 +723,18 @@ a:hover{color:#0f2894}
   <div class="frame" dir="rtl" lang="he">
     <div class="frame-bg"></div>
     <svg class="deco" viewBox="0 0 390 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="dc-lane3-branches" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="15" result="r2"></feMorphology>
+          <feOffset in="r2" dx="5" dy="8" result="r2o"></feOffset>
+          <feFlood class="dc-tint" result="f2"></feFlood>
+          <feComposite in="f2" in2="r2o" operator="in" result="tint"></feComposite>
+          <feMorphology in="SourceAlpha" operator="dilate" radius="9" result="r1"></feMorphology>
+          <feFlood class="dc-cut" result="f1"></feFlood>
+          <feComposite in="f1" in2="r1" operator="in" result="cut"></feComposite>
+          <feMerge><feMergeNode in="tint"></feMergeNode><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+        </filter>
+      </defs>
       <g class="deco-ghosts">
         <rect x="16" y="86" width="126" height="54" rx="9" transform="rotate(-7 79 113)"></rect>
         <rect x="238" y="176" width="138" height="46" rx="4" transform="rotate(5 307 199)"></rect>
