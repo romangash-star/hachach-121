@@ -44,7 +44,8 @@ TITLE_STEPS = json.loads((pathlib.Path(__file__).resolve().parent / "title-steps
 # rung is the floor the six-rung measurement found, so nothing falls below its claim.
 LADDER = {"lane1": [66, 50, 34],
           "lane2": [66, 50, 38],
-          "lane3": [58, 44, 34]}
+          "lane3": [58, 44, 34],
+          "lane4": [46, 36, 28]}
 
 FONT   = base64.b64encode((ROOT / "fonts" / "SimplerPro_HLAR-Black.woff2").read_bytes()).decode()
 BIBUSH = base64.b64encode((ROOT / "fonts" / "BibushChunky.v1.0.otf").read_bytes()).decode()
@@ -865,6 +866,98 @@ LANES.append(dict(
 .lane3 .ans:focus-visible{outline:4px solid #000;outline-offset:4px}
 """))
 
+# ---------------------------------------------------------------- lane 4
+LANES.append(dict(
+  n="4", file="HouseStyle.dc.html", cls="lane4", dispnote="", board=False,
+  he="קו הבית", en="House Style",
+  # DECK ONLY. Deliberately absent from repack_v4.py's FILES allowlist, so this frame
+  # can never reach the published board. Promoting it later is one line there.
+  frames=[dict(file="HouseStyle.dc.html", tid="religion", label=TOPICS["religion"],
+               x=1420, y=0)],
+  tokens="""<!--
+  LANE 4 · House Style
+  source    : NOT invented — read off the shipped prototype's own CSS, styles/base.css
+              and styles/issue.css, which is what romangash-star.github.io/hachach-121
+              serves. This lane is the language the game is already built in.
+  palette   : app #111318 · void #0a0c10 · card #fff · ink #161310
+              blue #0052ff · yellow #ffd23f · sky #37c4ff · purple #b06bff
+  type      : SimplerPro Black display; body 700-900
+  texture   : one — the app's own dot field, radial 0.5px dots on a 14px grid at .4
+  SIGNATURE : --bd 3px solid ink on everything, --hard 4px 4px 0 #000 with zero blur,
+              radii 14-22px, chips at 999px, and press physics that drop the element
+              into its own shadow
+  VERDICT   : the prototype tints .tf-btn.true green and .tf-btn.false red. That is the
+              one thing NOT reproduced here — see the note in the CSS.
+-->""",
+  css="""/* LANE 4 · House Style — the language the game already ships in
+   Every value below is read off styles/base.css and styles/issue.css rather than
+   designed: --bd 3px solid #161310, --hard 4px 4px 0 #000, the #111318 ground, the
+   white cards at 14-22px radii, the 999px chips, the saturated flat palette, and the
+   dot field over the app. SimplerPro Black carries display, as it does there. */
+.lane4.topic-religion{--t1:#ffd23f;--t2:#ffb800;--card:#ffffff}
+.lane4.topic-branches{--t1:#0052ff;--t2:#1a3acc;--card:#ffffff}
+.lane4{--ink:#161310;--hard:4px 4px 0 0 rgba(0,0,0,1);--hard-sm:3px 3px 0 0 rgba(0,0,0,1)}
+.lane4 .frame{background:#111318;color:#ffffff;padding:12px 16px 22px}
+.lane4 .frame-bg{background:#111318}
+/* the app's own texture, at its own numbers: 0.5px dots on a 14px grid, opacity .4 */
+.lane4 .frame-bg::after{content:"";position:absolute;inset:0;opacity:.4;
+  background-image:radial-gradient(rgba(255,255,255,.05) .5px,transparent .5px);
+  background-size:14px 14px}
+.lane4 .hud{min-height:52px}
+.lane4 .coin-glyph{background:#ffd23f;border-radius:999px;
+  box-shadow:inset 0 0 0 2px var(--ink),1px 2px 0 var(--ink)}
+.lane4 .coin-num{color:#ffffff;font-size:22px}
+/* the prototype's .issue-topic-tag is background:var(--ink) on color:var(--paper), and
+   both of those tokens are dark — it is dark-on-dark in the source. Using the yellow
+   chip from .issue-top .step-info instead: same file, same construction, legible. */
+.lane4 .topic-title{background:#ffd23f;color:#111;border-radius:999px;
+  padding:5px 13px;font-size:14px;font-weight:900;
+  box-shadow:inset 0 0 0 2px var(--ink),1px 2px 0 var(--ink)}
+.lane4 .map-btn{background:#ffffff;color:var(--ink);border-radius:999px;
+  box-shadow:inset 0 0 0 2px var(--ink),1px 2px 0 var(--ink)}
+.lane4 .map-btn:focus-visible{outline:3px solid #37c4ff;outline-offset:3px}
+/* matched pair with the map button, per the standing rule that the profile control gets
+   no treatment the map control does not */
+.lane4 .avatar{background:#ffffff;border-radius:999px;
+  box-shadow:inset 0 0 0 2px var(--ink),1px 2px 0 var(--ink)}
+.lane4 .avatar-sil{fill:#6b7280}
+/* the pile is the same card three times, as a stack of pending rounds would be */
+.lane4 .pile-card{background:#1c1f26;border-radius:22px;
+  box-shadow:inset 0 0 0 3px var(--ink),var(--hard)}
+/* the prototype's .tf-card is a 250px min-height box laid out space-between; this card
+   is 470px, so space-between opens a hole. The stack is centred instead and the art is
+   given a fixed height, which keeps the prototype's icon-over-question-over-statement
+   order without the gap. */
+.lane4 .card{background:var(--card);color:var(--ink);border-radius:22px;
+  justify-content:center;padding:18px 18px 16px;
+  box-shadow:inset 0 0 0 3px var(--ink),var(--hard)}
+/* the prototype's .tf-card carries a yellow corner wash; kept, at its own values */
+.lane4 .card::before{content:"";position:absolute;inset:0;border-radius:19px;
+  pointer-events:none;z-index:0;
+  background:radial-gradient(circle at top right,rgba(255,210,63,.15),transparent 60%)}
+.lane4 .art{flex:none;height:164px}
+.lane4 .art-emoji{position:relative;font-size:132px;line-height:1}
+.lane4 .issue-title{position:relative;margin-top:6px;color:var(--ink);line-height:1.18}
+/* the claim sits in the prototype's own boxed .tf-statement: tinted panel, 2.5px rule */
+.lane4 .claim-text{position:relative;margin-top:14px;background:#eef1f5;
+  border:2.5px solid var(--ink);border-radius:14px;padding:13px 15px;
+  font-size:16px;line-height:1.5;font-weight:700;color:var(--ink)}
+.lane4 .hl,.lane4 .hl2{background:none}
+/* THE ONE THING NOT COPIED. styles/issue.css sets .tf-btn.true to a green gradient and
+   .tf-btn.false to red. Reproducing that here would hand the player the answer before
+   they have read the claim, which is the rule this whole board has held to: the two
+   surfaces are identical and the direction lives in the arrow alone. So the buttons
+   keep the house construction exactly — white fill, 3px ink rule, 4px hard shadow, and
+   the press that drops the element into its own shadow — and drop the colour coding.
+   It is worth knowing that adopting the house style wholesale imports a fairness bug. */
+%TITLESTEPS%
+.lane4 .ans{background:#ffffff;color:var(--ink);border:3px solid var(--ink);
+  border-radius:16px;font-family:'SimplerPro',system-ui,sans-serif;font-weight:900;
+  font-size:21px;box-shadow:var(--hard);transition:transform .15s,box-shadow .15s}
+.lane4 .ans:active{transform:translate(4px,5px);box-shadow:0 0 0 var(--ink)}
+.lane4 .ans:focus-visible{outline:3px solid #37c4ff;outline-offset:4px}
+@media (prefers-reduced-motion: reduce){.lane4 .ans{transition:none}}"""))
+
 # =========================================================================
 def frames_of(lane):
     """Every frame a lane renders, as dicts: tid, label, file, var, note.
@@ -933,6 +1026,8 @@ def build():
     # title in data.js, so the worst case is visible next to the normal one.
     arts = []
     for fname, lane, fr in boards:
+        if not lane.get("board", True):
+            continue          # deck-only lane: never referenced by the board manifest
         col = LANES.index(lane)
         # v5.2 — a frame may pin its own board position; these are the coordinates the
         # three artboards were left at on the canvas, carried so a republish does not

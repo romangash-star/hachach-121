@@ -20,8 +20,11 @@ PAGE = HERE / "final-three-121.html"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 W, H, SCALE = 390, 780, 2
 
+# lane4 is DECK ONLY — it is not on the board, so it is rendered from disk like the
+# rest and guarded by the fidelity check in render_frames().
 FRAMES = [("VintageKnesset.dc.html", "lane1"), ("NytGames.dc.html", "lane2"),
-          ("Stickers.dc.html", "lane3")]
+          ("Stickers.dc.html", "lane3"), ("HouseStyle.dc.html", "lane4")]
+ON_BOARD = {"VintageKnesset.dc.html", "NytGames.dc.html", "Stickers.dc.html"}
 
 SHIM = """
 class DCLogic {}
@@ -40,16 +43,26 @@ document.addEventListener('DOMContentLoaded', () => {
 """
 
 def render_frames():
+    """Renders from the artboards ON DISK, but first proves that every frame which is
+    also on the board is byte-identical to the board's copy. That keeps the guarantee
+    the deck has always had — it shows the real thing, not a mock-up — while letting a
+    deck-only lane exist that the board does not carry."""
     doc = json.loads(PAGE.read_text(encoding="utf-8")
                      .split('<script type="application/json" id="appifact-doc">')[1]
                      .split("</script>")[0])
-    files = doc["content"]["files"]
+    published = doc["content"]["files"]
+    drift = [f for f in ON_BOARD
+             if (HERE / f).read_text(encoding="utf-8") != published.get(f)]
+    assert not drift, ("these frames differ from the published board, so the deck would "
+                       "misrepresent it — republish the board first: %s" % drift)
+    print("  fidelity: %d/%d board frames match the published copy"
+          % (len(ON_BOARD), len(ON_BOARD)))
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="v4deck-"))
     (tmp / "support.js").write_text(SHIM, encoding="utf-8")
     out = {}
     try:
         for src, lane in FRAMES:
-            (tmp / src).write_text(files[src], encoding="utf-8")
+            (tmp / src).write_text((HERE / src).read_text(encoding="utf-8"), encoding="utf-8")
             png = tmp / (lane + ".png")
             subprocess.run([CHROME, "--headless", "--disable-gpu", "--no-sandbox",
                             "--hide-scrollbars", "--force-device-scale-factor=%d" % SCALE,
@@ -135,6 +148,33 @@ DIRECTIONS = [
    "it. Its black headline box is expensive in width, which is why its headline drops "
    "to 34px where direction 2 still holds 38px."),
  ]),
+ dict(lane="lane4", n="4", he="קו הבית", en="House Style", blocks=[
+  ("What it is",
+   "Not a proposal — this is the language the game is already built in, drawn straight "
+   "from the working prototype. A near-black app with a faint dot field, a white card "
+   "with a thick black outline and a hard un-blurred drop shadow, the claim boxed in a "
+   "tinted panel, and buttons that fall into their own shadow when pressed."),
+  ("Why it fits",
+   "It costs nothing to adopt, because it already exists and has already been in front "
+   "of people. Its flat saturated palette and chunky outlines are native to the games "
+   "this audience plays daily, so it asks nothing of them. It also belongs on this page "
+   "for a second reason: the other three are being judged against something, and this is "
+   "the something."),
+  ("References",
+   "Neo-brutalist interface design — thick dark outlines, offset shadows with no blur, "
+   "flat saturated colour, generous corner radii. Every value here is read off the "
+   "prototype's own styles/base.css and styles/issue.css rather than designed: the 3px "
+   "rule, the 4px hard shadow, the #111318 ground, the 22px card radius, the press that "
+   "drops an element into its shadow."),
+  ("The risk",
+   "The prototype colour-codes the answer buttons — true green, false red — and that "
+   "cannot come with it: it tells the player which answer is the good one before they "
+   "have read the claim. The buttons here keep the construction and drop the colour, so "
+   "adopting the house style wholesale would import a fairness bug that has to be fixed "
+   "on the way in. Beyond that, it is the least distinctive of the four: it looks like a "
+   "lot of current mobile games, which is exactly why it feels comfortable and also why "
+   "it may not be remembered."),
+ ]),
 ]
 
 OPEN = [
@@ -193,7 +233,10 @@ h1{margin:0;font-family:var(--serif);font-weight:700;font-size:34px;line-height:
   letter-spacing:-.01em;text-wrap:balance}
 .standfirst{margin:0;max-width:68ch;color:var(--soft);font-size:16px}
 
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;align-items:start}
+/* four directions: 2x2 rather than four across — four 390px frames side by side
+   needs ~1880px, and the wider column improves the prose measure as well */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:52px 44px;
+  align-items:start}
 .dir{display:flex;flex-direction:column;gap:20px;min-width:0}
 .dir-head{display:flex;flex-direction:column;gap:3px}
 .dir-num{font-size:11.5px;font-weight:700;letter-spacing:.16em;color:var(--accent);
@@ -279,8 +322,8 @@ def body(shots):
     return """<div class="wrap">
   <header class="masthead">
     <span class="eyebrow" dir="rtl" lang="he">הח״כ ה-121</span>
-    <h1>Three directions for the round screen</h1>
-    <p class="standfirst">Each direction is shown as one screen — the %s round — with what it is, why it fits, the references it draws on, and one real risk. The screens are direct captures of what was built, unaltered.</p>
+    <h1>Four directions for the round screen</h1>
+    <p class="standfirst">Each direction is shown as one screen — the %s round — with what it is, why it fits, the references it draws on, and one real risk. The screens are direct captures of what was built, unaltered. Direction 4 is not a proposal: it is the language the working prototype already uses, included so the other three have something to be measured against.</p>
   </header>
 
   <div class="grid">
