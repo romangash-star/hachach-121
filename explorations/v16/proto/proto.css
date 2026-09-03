@@ -1,0 +1,3424 @@
+/* =====================================================================
+   הח״כ ה-121 — prototype, s1 round.
+   Sits ON TOP of ../prototype/hachach.css. Everything here is either
+   (a) screen-specific layout the handoff stylesheet deliberately does
+   not carry, (b) one of the two motion tokens the brief supersedes, or
+   (c) a documented workaround for a defect in the handoff file.
+   No colour is declared here that is not already a token.
+   ===================================================================== */
+
+@font-face{
+  font-family:'SimplerPro';
+  src:url('../../../fonts/SimplerPro_HLAR-Black.woff2') format('woff2');
+  font-weight:900; font-style:normal; font-display:block;
+}
+
+/* ---------------------------------------------------------------------
+   THE TWO OVERRIDDEN TOKENS, and why.
+   hachach.css ships --t-flip:260ms and --t-finale:620ms. Both are below
+   the figures the brief calls MEASURED: the flip wants 300-500ms (the
+   Doherty band, sheet §1.4) and the finale wants ~850ms (Balatro weight,
+   sheet §8b [M]). Overridden here, in one place, so the handoff file
+   stays the handoff file.
+   --------------------------------------------------------------------- */
+:root{
+  --t-flip:   380ms;   /* was 260ms — mid of the measured 300-500 band   */
+  --t-finale: 850ms;   /* was 620ms — the round's one held beat          */
+
+  /* ---- DERIVED. Baselines from the brief, tuned by hand on device. --- */
+  /* §1.2 THE ANSWER-FIRST HOLD. The brief's derived baseline was
+     250-300ms. On device that reads as latency, not as a held beat: the
+     player's choice does not get time to sit alone before the truth
+     arrives. --t-hold-long is the tuned figure; the switch in the spike
+     bar plays both. The FLIP is untouched at 380ms — lengthening the
+     hold does not touch the cascade-vs-finale contrast, because the hold
+     is the pause BEFORE the verdict, not the verdict's own duration. */
+  --t-hold-short:  275ms;   /* the brief's derived baseline              */
+  --t-hold-long:   640ms;   /* tuned: the choice reads as HELD           */
+  --t-hold:        var(--t-hold-long);
+
+  --t-draw:        225ms;  /* pile -> front, ease-out, deck not slide    */
+  --t-exit:        180ms;  /* the spent card leaving                     */
+  --t-ov-in:       260ms;  /* beat-2 overlay, blur ramps with it         */
+  --t-ov-collapse: 220ms;  /* beat-3 dismiss, INTO the card beneath      */
+  --t-snapback:    160ms;  /* release below the drag threshold           */
+  --t-resolve:     450ms;  /* the pinned claim resolving. A moment.      */
+  --t-coin:        400ms;  /* one coin award counting up                 */
+
+  /* §D THE OVERLAY CONTENT SWAP. This token went missing last pass — the
+     edit that was meant to add it silently matched nothing — so the
+     shorthand `transition:transform var(--t-ov-swap) var(--e-settle)`
+     resolved with NO duration, which makes the whole declaration invalid
+     and leaves transition-duration at its 0s initial value. T.ovSwap read
+     the same empty token and became 0ms, so the JS wait was zero too.
+     Both halves were instant and the class toggle I checked looked fine. */
+  --t-ov-swap:     360ms;
+  /* §4 the chosen vote landing on the chair. Long enough to read as an
+     object arriving and settling, short enough that the hold after it is
+     still the beat's pause rather than a wait. */
+  /* B2-4 · THE SLAP IS ITS OWN BEAT. --t-ask-delay is measured from the
+     moment the card is in place, and it is the number the brief asked to
+     be tuned. The card turn is --t-card-flip 450ms on --e-settle, which
+     is asymptotic: the card is visually stopped at about 390ms and the
+     last 60ms is sub-pixel. 480ms puts the slap ~90ms after the eye has
+     read the card as arrived — clearly a second event, still inside the
+     window where the eye is on that corner. It is at the low end of the
+     brief's 400-600ms band on purpose: at 600 the pause reads as a
+     hesitation rather than as a beat, and the cascade's per-card tempo is
+     ~850ms end to end. (Lion's 5ms is a third of a frame at 60Hz — the
+     slap and the card would arrive on the same paint.) */
+  --t-ask-delay:   480ms;
+  --t-ask-in:      300ms;
+  --t-b2-seat:     520ms;
+
+  /* §1 · THE LOADING BEAT, and the whole thing is budgeted to land under
+     2.5s door to door: 260 fade + 200 bar-in + 1600 fill + 180 hold =
+     2240ms from the tap to the destination. The chair's travel runs
+     inside the fade rather than after it — the screen empties and the
+     object grows as one movement, not two. */
+  --t-load-fade:   260ms;
+  --t-load-rise:   520ms;
+  --t-load-barin:  200ms;
+  --t-load-fill:  1600ms;
+  --t-load-hold:   180ms;
+
+  /* §1b · THE LOADING SCREEN'S EXIT. The chair rushes the camera and the
+     destination is already underneath when it dissolves.
+       0   -> 150   the bar fades
+       150 -> 350   the chair holds alone
+       350 -> 700   the chair launches, 1x -> 10x, ease-IN
+       525 -> 700   ... its second half, over which it fades to nothing
+       350 -> 530   the destination fades up from scale 1.04
+     700ms bar-full to settled. Runs once per load.
+
+     THE FADE STARTS AT THE HALFWAY POINT AND ENDS WITH THE SCALE, and
+     that is the correction. At 60% the chair had already filled the
+     viewport at full opacity and sat there ~35ms before anything
+     happened to it: a flat opaque frame, then a dissolve, which reads
+     as two events rather than one. The cover and the fade now begin on
+     the same frame — 50% of an ease-in zoom is where the chair passes
+     full-screen — so there is never a moment of solid chair holding
+     still. 350ms rather than 420 for the same reason: the halves have
+     to feel like one gesture.
+     The destination's fade drops to 180ms so it is fully up long before
+     the chair goes translucent. That ordering is the assertion now. */
+  --t-lx-bar:       150ms;
+  --t-lx-hold:      200ms;
+  --t-lx-zoom:      350ms;
+  --t-lx-fade-at:   175ms;   /* 50% of the zoom */
+  --t-lx-fade:      175ms;   /* and it ends when the zoom does */
+  --t-lx-dest:      180ms;
+
+  /* §S-1 · THE FINALE'S CHRONOLOGY. The whole beat is these eight
+     numbers, and the order they compose is the design:
+       r1  0.0 count -> 2.4 settled -> 2.8 flight -> 3.5 landed
+           -> 3.9 coins -> 4.7 reading + buttons
+       e3  0.0 outcome -> 1.2 flight -> 1.9 landed -> 2.3 coins
+           -> 3.1 reading + buttons
+     --t-f5-flare is INSIDE --t-f5-count, not added to it: the count
+     stops dead for 400ms on the frame 61 is crossed and the run is
+     shortened to match, so the settle still lands at 2.4s. */
+  --t-f5-count:    2400ms;
+  --t-f5-flare:     400ms;
+  --t-f5-prose:     800ms;   /* the twin's peak, before the flight     */
+  --t-f5-gap:       400ms;   /* between two beats of the sequence      */
+  --t-f5-flight:    700ms;
+  --t-f5-coin-hold: 500ms;   /* the sticker alone before it flies      */
+  --t-f5-coin-out:  300ms;
+  --t-f5-in:        300ms;   /* a block arriving                       */
+  --t-f5-bnr-out:   250ms;   /* the emptied banner leaving              */
+  --t-f5-recentre:  400ms;   /* the settled stack's one move            */
+
+  /* §T · THE TACHLES -> CASCADE TRANSITION. One continuous move made of
+     six overlapping steps; the offsets are when each STARTS, measured
+     from the tap, and the durations are how long each takes. They
+     overlap on purpose — the pair assembles while the letters are still
+     travelling — so the whole thing reads as one gesture and not as six.
+       0    -> 340   letters leave the button
+       180  -> 480   the avatar joins them
+       480  -> 740   the callout resolves into the banner
+       740  -> 1120  the banner travels to its pin   <- the one to follow
+       900  -> 1300  the next screen enters behind
+       1300          the tap affordance appears
+     Total 1720ms. */
+  --t-tc-letters:    340ms;
+  --t-tc-av-at:      180ms;
+  --t-tc-av:         300ms;
+  --t-tc-resolve-at: 480ms;
+  --t-tc-resolve:    260ms;
+  --t-tc-travel-at:  740ms;
+  --t-tc-travel:     380ms;
+  --t-tc-next-at:    900ms;
+  --t-tc-next:       400ms;
+  --t-tc-tap-at:    1300ms;
+  --t-tc-end:       1720ms;
+
+  /* A6 · how long the claim's stamp holds alone before the explanation
+     arrives under it. Long enough to read one word and register the
+     colour, short enough that it is a beat and not a wait. */
+  --t-claim-hold:  700ms;
+  /* §1.1 step 2 · THE BEAT BETWEEN COMMIT AND STAMP. The answer is
+     registered and nothing moves. It is the pause that lets the commit
+     land as its own event before the verdict arrives on top of it — with
+     no gap the stamp reads as part of the tap. */
+  --t-claim-beat: 400ms;
+  /* §6c · the seat fill. 2.15s of travel plus a 340ms stop on the seat
+     that crosses 61 — about 2.5s end to end, at the top of the brief's
+     1.8-2.5s window because the majority beat is time the eye spends on
+     one square rather than on the fill. */
+  --t-seat-fill:  2150ms;
+  --t-seat-cross:  340ms;
+  /* §0 · the two gaps that separate the reveal's three movements. Unequal
+     on purpose: an even rhythm reads as a loading sequence, an uneven one
+     reads as staging. */
+  --t-mark-gap:  120ms;
+  --t-panel-gap: 160ms;
+  /* A-1 · THE PEEL. Three phases, all CSS.
+     --t-peel      the sheet lifting and curling off the party line. 620ms
+                   is slow enough to read as a physical action and short
+                   enough that a player peeling five cards in a cascade is
+                   not waiting on it; the ease starts fast and settles,
+                   which is how a stuck edge releases.
+     --t-peel-out  the discard. Shorter than the peel and on an
+                   ACCELERATING curve — the peel is something the player
+                   does, the fall is something gravity does.
+     --t-peel-land the party line's settle, run against the discard so the
+                   beat belongs to the reveal rather than to the exit. */
+  --t-peel:      620ms;
+  --t-peel-out:  460ms;
+  --t-peel-land: 240ms;
+  /* the first curve was cubic-bezier(.32,.72,.36,1) and it was wrong for
+     this: front-loaded, so 27% of the duration had already peeled ~70% of
+     the sheet and the lift read as a snap. A peel unsticks slowly, runs
+     steady, then releases — slow in, slow out, nearly linear between. */
+  --e-peel:      cubic-bezier(.55,.08,.35,1);
+  --e-fall:      cubic-bezier(.42,0,.86,.62);
+
+  /* §A the deck. A card is turned over, never swapped: --t-card-flip is
+     the turn, --t-card-exit the resolved card being swiped off. */
+  --t-card-flip:   450ms;
+  --t-card-exit:   320ms;
+
+  /* §F the strip, played rather than stated: lock -> hold -> the MK's
+     token appears in the PLAYER'S slot -> the fill travels to the truth,
+     distance-proportional on one easing -> the stamp lands after it. */
+  --t-gx-lock:     200ms;
+  --t-gx-hold:     350ms;
+  --t-gx-appear:   140ms;
+  --t-gx-travel-1: 420ms;   /* one slot of disagreement                 */
+  --t-gx-travel-2: 650ms;   /* two — felt as bigger, not just longer    */
+  --t-gx-settle:   220ms;   /* agreement: nowhere to travel             */
+  --t-gx-stamp-lag: 80ms;
+
+  --e-in:          cubic-bezier(.55,.06,.9,.5);   /* leaving, not arriving */
+  --e-out:         cubic-bezier(.16,.84,.44,1);
+
+  --gate-hint:  4000ms;    /* §1.6 idle -> instruction line appears      */
+  --gate-grow:  8000ms;    /* §1.6 idle -> it grows. NEVER an error.     */
+
+  --card-scale: 1;         /* set from JS so a 620px card fits a short
+                              phone without ever introducing a scroll    */
+
+  /* the guess-vs-reality strip, inside the card at its foot. 88px before
+     the caption row came out. */
+  --gx-h: 71px;
+  --gx-bottom: 8px;        /* the strip's inset off the card's foot        */
+
+  /* ---- the map ----------------------------------------------------
+     The disc and its extrusion are the v16 board's own numbers, off the
+     NODE and PathMap artboards. THE RING IS NOT, any more, and this is the
+     one measurement in the file that departs from the board — see the
+     block by .node-ico for the arithmetic that forced it. */
+/* EVERY RENDERED PART IS 15% LARGER THAN THE BOARD'S. The previous attempt
+     grew --node-box 116 -> 132 and left the disc at 76 and the depth at 7, so
+     the bounding box moved and the node did not. These are the parts that
+     actually draw, and all of them moved together:
+       disc          76   -> 87px      depth        7  -> 8px
+       ring radius   63   -> 59.5px    ring stroke  6  -> 10px   (see 1.3)
+       icon average  44   -> 51px      badges       21 -> 24px
+       label         14   -> 16px      status       11 -> 13px
+     The ring radius went DOWN while everything else went up, and that is
+     1.4 rather than a contradiction: the cream tile and the 14px overhang
+     are gone, so the clearance that forced r=63 is gone with them. The ring
+     is back to hugging the face+base composite by the board's own margin,
+     scaled 15% like everything else — 6px of clearance becomes 7px. */
+  --node-box:      130px;   /* .ringnode, the whole node incl. the ring   */
+  --node-box-h:    130px;
+  --node-face:     87px;    /* the pressable top face — board 76 x 1.15   */
+  --node-depth:    8px;     /* its extrusion. 9.2% of the face — the
+                               brief's "~10% of diameter". Board.         */
+  --node-face-x:   21.5px;  /* (130 - 87) / 2                             */
+  --node-face-y:   17.5px;  /* centres face+base on the ring at cy 65     */
+  /* THE RING. Inner edge = the composite's half-height (87+8)/2 = 47.5,
+     plus the board's 6px clearance scaled to 7 = 54.5. Half the stroke on
+     top of that is the centreline: 54.5 + 5 = 59.5. */
+  --ring-r:        59.5px;
+  /* §1.3 A DELIBERATE HEAVY ARC, not a hairline. 6px was 7.9% of the
+     board's disc; 15% of it would be 6.9px and would read exactly as thin
+     as before against a 15% larger node. 10px is 11.5% of the 87px disc
+     and is the weight the segments need to hold a 360px screen. It is also
+     what makes the ring read as a track with part of it filled rather than
+     as two arcs near a disc. */
+  --ring-w:        10px;
+  /* the icon's larger dimension, AVERAGED over the eight. Each one is
+     this times its own manifest node_scale, so retuning the set is one
+     number here — see the node_mass note in tools/make_manifest.py.
+     51/87 = 58.6% of the disc, the same proportion 44/76 was. */
+  --node-ico-avg:  51px;
+  --node-gap:      199px;   /* centre to centre, up the path              */
+  /* §1.5 THESE TWO PADS ARE THE BLEED. The ribbon is drawn the full height
+     of the path now, not from the first node to the last, so what used to
+     be empty charcoal above the top node and below the bottom one is where
+     the road runs off the screen. --node-pad-top is 110 rather than 84 so
+     that 45px of ribbon shows clear of the top node's ring before the
+     edge; the bottom already had 132. */
+  --node-pad-top:  110px;
+  --node-pad-bot:  132px;   /* the name and status under the last node    */
+
+  /* ---- motion the map and the award add ----------------------------- */
+  --t-node-press:  80ms;    /* board: transform+box-shadow, linear        */
+  --t-screen:      300ms;   /* map -> round. Under the brief's 350ms cap. */
+  --t-coin-fly:    450ms;   /* one token, spawn to chip                   */
+  --t-coin-stagger: 40ms;   /* between tokens                            */
+  --t-map-in:      260ms;   /* the map settling under the round leaving   */
+}
+:root[data-hold="short"]{ --t-hold: var(--t-hold-short); }
+
+*{ box-sizing:border-box; }
+
+/* =====================================================================
+   THE STAGE IS FIXED. NO SCROLL, EITHER AXIS, ON ANY BEAT.
+   The app is a fixed stage, not a document. html and body are pinned to
+   the visual viewport and cannot scroll, rubber-band or overscroll; the
+   stage is sized in DYNAMIC viewport units so it follows Safari's chrome
+   collapsing instead of assuming a height. Exactly two surfaces in the
+   whole app may scroll — the path map and character personalisation —
+   and they opt in with .scrolls, which is also the only place
+   touch-action is handed back.
+   ===================================================================== */
+html, body{
+  margin:0; padding:0;
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:none;                 /* the body never pans. .scrolls opts back in. */
+  -webkit-text-size-adjust:100%;
+}
+body{
+  background:#6E6C68; color:var(--ink);
+  font-family:var(--font-ui); font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+  display:flex; justify-content:center;
+}
+/* the only two surfaces that may ever scroll */
+.scrolls{ overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; }
+
+.defs{ position:absolute; width:0; height:0; }
+
+.stage{
+  position:relative; width:100%; max-width:390px;
+  /* --vh is set from window.innerHeight for Safari versions without dvh;
+     dvh wins wherever it exists. Either way the stage IS the viewport. */
+  height:calc(var(--vh, 1vh) * 100);
+  overflow:hidden; isolation:isolate;
+  display:flex; flex-direction:column;
+  padding:calc(10px + env(safe-area-inset-top))
+          calc(16px + env(safe-area-inset-right))
+          calc(12px + env(safe-area-inset-bottom))
+          calc(16px + env(safe-area-inset-left));
+  background:#403E3A;
+  box-shadow:0 3px 20px rgba(0,0,0,.4);
+}
+/* §3.2 · THE MAP GETS A GROUND OF ITS OWN, warm and energetic. It is on
+   .stage rather than on .sc-map so it covers the whole viewport including
+   the strips under the HUD and below the jump button — see §5.3. The
+   round and the intro are untouched: only [data-screen="map"] matches.
+   THE DOT GRID CARRIES OVER IT. .stage::before is inset:0 above this and
+   is not touched, so the same 4px/7px two-layer grid the round stands on
+   runs across the gradient — which is what keeps the two screens the same
+   product. Its dark layer does most of the work on a light ground. */
+.stage[data-screen="map"]{
+  background:
+    radial-gradient(120% 80% at 50% 108%, #F2B33C 0%, #E4732B 38%, #C4402E 70%, #8E2A2E 100%),
+    #C4402E;
+}
+@supports (height: 100dvh){ .stage{ height:100dvh; } }
+/* §5.3, SECOND CAUSE. max-width:390px is a DESKTOP PREVIEW FRAME — it
+   keeps the prototype phone-shaped in a browser window — but it applies on
+   real phones too, so a 430px device ran the app at 390 with 20px of body
+   grey down each side. That is the same "does not fill the viewport"
+   symptom on the other axis, and it affects every screen, not just the
+   map. On anything phone-sized the cap comes off; above 480px the frame
+   stays, because there it is doing the job it was written for. */
+@media (max-width: 480px){
+  .stage{ max-width:none; }
+}
+
+.stage::before{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(rgba(255,255,255,.07) .5px,transparent .6px),
+    radial-gradient(rgba(0,0,0,.34) .5px,transparent .6px);
+  background-size:4px 4px,7px 7px; background-position:0 0,2px 3px;
+}
+
+/* =====================================================================
+   HUD. Coins left, avatar right. Sits ABOVE the beat-2 overlay so the
+   coin count stays readable while the round is blurred out.
+   ===================================================================== */
+.hud{
+  position:relative; z-index:12; flex:none;
+  display:flex; align-items:center; gap:var(--sp-2);
+  /* §3c the chyron sits 12px under the HUD, not 32. 8px of HUD padding
+     plus a 22px helper box was making that gap the widest space on the
+     screen. The helper still reserves its box on every beat — the card
+     cannot change size — it is just the size of its own line now. */
+  padding-bottom:0;
+}
+/* §B the topic title. flex:1 so it centres between the chip and the
+   avatar whatever their widths, and truncates rather than wrapping the
+   HUD onto a second line. */
+.hud-topic{
+  flex:1; min-width:0; text-align:center;
+  font-family:var(--font-display); font-weight:900; font-size:15px;
+  color:#D8D2C4; line-height:1;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.hud-coins{ direction:ltr; }
+.hud-coins .coin-glyph{ color:var(--primary); font-size:13px; line-height:1; }
+.hud-coins .num{ direction:ltr; unicode-bidi:isolate; }
+.hud-coins.is-awarding{ animation:coin-bump var(--t-coin) var(--e-out); }
+@keyframes coin-bump{ 0%,100%{transform:none} 35%{transform:translateY(-3px) scale(1.04)} }
+.hud-you{ width:40px; height:40px; }
+/* A4 · the right slot holds whichever of the two is on this screen, and
+   holds the SAME 40px box either way so the row never shifts when the
+   avatar swaps for the ✕. */
+.hud-right{ flex:none; width:40px; height:40px; display:grid; place-items:center; }
+.hud-right > [hidden]{ display:none; }
+.hud-x{ font-size:17px; line-height:1; }
+
+/* =====================================================================
+   B5-1 · THE EXIT CONFIRM, BUILT AND CENTRED
+   §3.3. The board drew a sheet at the foot; this is centred in BOTH axes,
+   because a bottom sheet is the shape of an options menu and this is a
+   destructive confirm. It borrows .stmodal's sticker outright — same
+   white die-cut, same keyline, same extrusion, same tilt — so the round
+   has ONE modal shape and not one for content and another for confirms.
+   ===================================================================== */
+.exitsheet{
+  position:absolute; inset:0; z-index:70; display:grid; place-items:center;
+  padding:var(--sp-4); background:rgba(20,18,15,.74);
+  opacity:0; transition:opacity var(--t-ov-in) linear;
+}
+.exitsheet.is-in{ opacity:1; }
+.exitsheet.is-out{ opacity:0; }
+.exitsheet__box{
+  position:relative; width:100%; max-width:300px;
+  background:var(--paper); color:var(--ink);
+  border:5px solid var(--edge); border-radius:18px;
+  box-shadow:0 0 0 2px var(--keyline), 0 8px 0 rgba(0,0,0,.4);
+  padding:var(--sp-4);
+  display:flex; flex-direction:column; gap:var(--sp-3);
+  /* the sticker is LAID DOWN, not printed square. 1.2 degrees the other
+     way from .stmodal so the two are not the same object twice. */
+  transform:rotate(1.2deg) scale(.9);
+  transition:transform var(--t-flip) var(--e-land);
+}
+.exitsheet.is-in .exitsheet__box{ transform:rotate(1.2deg) scale(1); }
+/* §3.3 the ✕ — a third way to stay, and the one that costs nothing to
+   reach because it is where the ✕ that opened this already was. Inset so
+   it clears the die-cut border rather than sitting on it. */
+/* the exit confirm's ✕ is the SAME COMPONENT as the modals' — see the
+   shared rules under .stmodal__x. Physically right, not inline-end:
+   inset-inline-end resolves LEFT under dir=rtl, which would put it on the
+   opposite side from the HUD ✕ that opened it. */
+/* §3.3 THE QUESTION IS BLACK AND IT IS A QUESTION. It used to be one
+   string carrying the question and the consequence at once, at
+   --ink-faint's weight, which made the thing being agreed to read as
+   part of the thing being asked. Padded on the end so it clears the ✕. */
+.exitsheet__q{
+  margin:0; padding-right:34px;   /* clears the ✕, which is physically right */
+  font-family:var(--font-display); font-weight:900;
+  font-size:19px; line-height:1.18; color:var(--ink); text-align:start;
+}
+.exitsheet__note{
+  margin:-4px 0 0; font-size:var(--fs-meta); font-weight:700;
+  line-height:1.4; color:var(--ink-soft); text-align:start;
+}
+/* §1b · EQUAL HEIGHTS AND A REAL GAP. .p-c is min-height:56px and .r-b is
+   52px, so the yellow was 4px taller than the outline and the pair read as
+   primary-plus-afterthought rather than as two choices. I kept 56 — the
+   PRIMARY's height is the one tuned against every other primary in the
+   app, and shrinking it here would make this the one 52px primary in the
+   build; raising the outline costs nothing.
+   The gap goes 8 -> 14px: at 8 the two boxes were nearly flush and read as
+   a segmented control, which is the wrong affordance for a destructive
+   confirm where the two options are opposites. */
+.exitsheet__row{ display:flex; flex-direction:column; gap:14px; }
+/* min-height is not what was making them unequal — both already had 56 and
+   both already exceeded it. The heights come from the TYPE: .p-c is 25px
+   (--fs-action) and .r-b is 17px (--fs-body), which put them at 70 and 61.
+   The type sizes are system tokens and are not this modal's to change, so
+   the fix is an explicit shared height with the label centred in it. */
+.exitsheet__row > *{
+  min-height:70px;
+  display:flex; align-items:center; justify-content:center;
+  padding-block:0;
+}
+/* R-B IS BUILT FOR THE DARK GROUND. hachach.css draws it as
+   `color:var(--paper); background:transparent; box-shadow:inset 0 0 0 2.5px
+   var(--paper)` — cream type in a cream outline, which is correct on the
+   charcoal stage and completely invisible on a cream sticker: להישאר
+   disappeared and the modal read as having one action and a large empty
+   panel under it. Re-inked here rather than in hachach.css, which is the
+   locked handoff sheet and not ours to change. */
+.exitsheet .r-b{
+  color:var(--ink); box-shadow:inset 0 0 0 2.5px rgba(19,19,16,.38);
+}
+.exitsheet .r-b:active{ box-shadow:inset 0 0 0 2.5px rgba(19,19,16,.65); }
+
+/* §C THE ONE HELPER LINE. Not a pill: plain type on the ground, low
+   contrast, between the HUD and the chyron. Its box is reserved on every
+   beat — is-empty hides the text, never the space — so turning it on for
+   the first MK card cannot change the card's size. */
+/* A8 · 1.5x. --fs-micro is 11px and that is what the MK question was set
+   in; it is now 17px with a box to match. The box is still RESERVED on
+   every beat — is-empty hides the text, never the space — so the card is
+   the same size on the claim, the overlay and every cascade card. */
+.helper{
+  /* margin, not margin-bottom: it is a <p>, and the UA's default 1em top
+     margin was quietly taking another 13px off the card. */
+  flex:none; min-height:18px; margin:5px 0 0;
+  font-size:17px; font-weight:900; line-height:1.05;
+  font-family:var(--font-display);
+  color:#D8D2C4; text-align:center; opacity:1;
+}
+.helper.is-empty{ visibility:hidden; }
+
+.round{ position:relative; z-index:1; flex:1; min-height:0;
+  display:flex; flex-direction:column; padding-top:26px; }
+
+.beat{ flex:1; min-height:0; display:flex; flex-direction:column; position:relative; }
+
+/* =====================================================================
+   NUMERALS · §7. Western numerals in an LTR run inside the RTL flow.
+   ===================================================================== */
+.num,.n{ direction:ltr; unicode-bidi:isolate; font-family:var(--font-display);
+  font-weight:900; }
+
+/* =====================================================================
+   PLACEHOLDER · copy Tamar has not written.
+   The spike bar hides these so the round can be played clean. They are
+   HIDDEN, never deleted: the marker is what makes a missing string
+   visible, and the layout has to hold without them because that is what
+   shipping looks like. Hiding targets the HOST element, so a paragraph
+   that exists only to carry a placeholder leaves no empty line behind.
+   ===================================================================== */
+.ph{
+  display:inline-block; background-color:var(--primary);
+  background-image:repeating-linear-gradient(45deg,#FFE03D 0 8px,var(--primary) 8px 16px);
+  color:var(--ink); border:2px dashed var(--ink); border-radius:4px;
+  padding:2px 8px 3px; font-size:var(--fs-meta); font-weight:700; line-height:1.4;
+}
+body.no-ph [data-ph]{ display:none !important; }
+
+
+/* =====================================================================
+   THE CARD STACK
+   .cardwrap is the only thing that scales, so a 620px card fits a short
+   phone. It does NOT clip: the verdict stamp hangs outside the card and
+   .mf-b carries overflow:hidden, which is what clipped it before.
+   ===================================================================== */
+/* .stack is the only thing that scales, so a 620px card plus its axis
+   strip fits a short phone without ever introducing a scroll.
+   sizeStage() sets BOTH the transform and an explicit height, because a
+   transform does not shrink the box the flex column reserves — leaving
+   the layout claiming 620px while the eye saw 500. */
+/* §3 THE DECK SITS HIGHER. The beat centres the stack, so a bottom
+   margin lifts it by half its own value: 20px here moves the deck up
+   10px and leaves that much more air under it. sizeStage() subtracts
+   this margin from the card's budget — it is the stack's own margin, so
+   the `others` sum never sees it, and uncounted it would push the card's
+   foot past the stage on a short viewport. */
+.stack{
+  display:flex; flex-direction:column; align-items:center; flex:none;
+  transform-origin:top center; margin-bottom:20px;
+}
+/* .cardwrap does NOT clip: the verdict stamp hangs outside the card, and
+   .mf-b carries overflow:hidden, which is what was cutting it off. */
+/* §A THE DECK. .cardwrap is the deck's own box and the 3D context the
+   cards turn inside: perspective HAS to sit on the parent, not on the
+   card, or every card gets its own vanishing point and the turn reads
+   flat. Fixed height because the cards are stacked absolutely on top of
+   each other now — the claim card, the active card and the face-down
+   next card all occupy it at once. */
+.cardwrap{
+  position:relative; width:var(--card-w); height:var(--card-h); flex:none;
+  perspective:1400px;
+}
+/* one card: a back and a front on one element, turned in 3D.
+   THE TRANSFORM LISTS MATCH between states on purpose. Interpolating
+   `translate+rotate` against a bare `rotateY` falls back to matrix
+   decomposition, which squashes the card instead of turning it. */
+.deckcard{
+  position:absolute; inset:0; transform-style:preserve-3d;
+  transform:translate(2px,-7px) rotate(.9deg) rotateY(0deg);
+  transition:transform var(--t-card-flip) var(--e-settle);
+}
+.deckcard.is-current{
+  z-index:2;
+  transform:translate(0px,0px) rotate(0deg) rotateY(180deg);
+}
+.deckcard.is-next{ z-index:1; }
+/* the resolved card is swiped off — ease-IN, because it is leaving */
+.deckcard.is-leaving{
+  transform:translate(-420px,8px) rotate(-13deg) rotateY(180deg); opacity:.2;
+  transition:transform var(--t-card-exit) var(--e-in),
+             opacity   var(--t-card-exit) linear;
+}
+.deckcard > .cardback,
+.deckcard > .mf-b{
+  position:absolute; inset:0; margin:0;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+}
+/* the front is pre-turned, so the card shows its back at rest and its
+   face at rotateY(180deg). It is in the DOM from the deal but never
+   visible until then — which is what stopped an MK's face showing
+   through the beat-2 blur a whole beat before the cascade. */
+.deckcard > .mf-b{ transform:rotateY(180deg); }
+
+/* §6 THE JOLT WAS UN-TURNING THE CARD. hachach.css lands the stamp with
+   `.mf-b.is-stamped{ animation:d2-jolt ... both }`, and d2-jolt's frames
+   set `transform:translateY(...)` — a WHOLE transform, which replaced the
+   front face's own rotateY(180deg). With fill:both it then held that
+   value forever. The front's net rotation went from 360 to 180, its
+   backface turned to the viewer, backface-visibility hid it, and what
+   showed through was the face-down card underneath: the MK vanished and
+   the player saw a card back the instant the stamp landed.
+   The jolt is kept — it is the card taking the hit — but it now carries
+   the face's rotation with it. */
+.deckcard > .mf-b.is-stamped{
+  animation:d2-jolt-face 120ms var(--e-land) var(--t-stamp-drop) both;
+}
+@keyframes d2-jolt-face{
+  0%,100%{ transform:rotateY(180deg) translateY(0) }
+  40%    { transform:rotateY(180deg) translateY(3px) }
+}
+
+/* §1 THE CARD BACK. One illustration, identical on every back and on
+   every pile card, at FULL STRENGTH — the previous treatment greyed it,
+   dropped it to 20% and multiplied it into the kraft, which was far too
+   faint to read as a card back at all.
+   BOTTOM-ANCHORED AND COVERED. The art is 1536x2752 (0.558) against a
+   340x620 card (0.548), so `cover` crops a sliver — and anchoring the
+   bottom takes that sliver off the EMPTY SKY at the top, keeping the
+   building and the flags at its foot, which is the part worth seeing. */
+.cardback{
+  background:var(--cardback-art) bottom center / cover no-repeat, #C4B48F;
+  border:var(--card-border) solid var(--edge-warm);
+  box-shadow:0 0 0 2px var(--keyline), var(--shadow-card);
+  overflow:hidden;
+}
+/* the claim card sits on top of the deck it belongs to */
+.b1card{ z-index:3; }
+
+/* =====================================================================
+   BEAT 1 · THE CLAIM · B1-B developed
+   ONLY THE TOP CARD MOVES. The stage, the pile and the ground are never
+   transformed — the drag is on .b1card and nothing else.
+   ===================================================================== */
+.b1{ align-items:center; justify-content:center; }
+
+.b1card{
+  display:flex; flex-direction:column; align-items:center;
+  padding:44px var(--sp-4) 84px;
+  touch-action:none;                 /* the card owns the gesture */
+  will-change:transform;
+}
+.b1card.is-dragging{ transition:none; }
+.b1card.is-snapping{ transition:transform var(--t-snapback) var(--e-settle); }
+/* §3 · THE CARD IS THROWN, AND IT IS THE DECK'S OWN THROW. It used to
+   travel on --t-swipe 220ms with --e-out — a DECELERATING curve, which is
+   the ease for something arriving — while fading 1 -> 0 linearly across
+   the whole flight, so it was half transparent by the time it had crossed
+   half the screen. That reads as vanishing, not as being thrown.
+   It now uses exactly what .deckcard.is-leaving uses when a resolved MK
+   card is swiped off in the cascade: --t-card-exit 320ms on --e-in, the
+   accelerating curve, and it fades only to .2 and only over the last
+   100ms, so the object is opaque for two thirds of its travel and leaves
+   the frame rather than dissolving in it. One throw in the round, not
+   two. */
+.b1card.is-leaving{ transition:transform var(--t-card-exit) var(--e-in),
+                                opacity 100ms linear 220ms; }
+
+/* §1.3 · THE GRAPHIC USES THE ROOM, AND IT IS THE THING THAT YIELDS.
+   The card is 620px and the art had a flat 210px floor with the claim
+   taking whatever was left, so on a short claim (s1, 49 chars) a third of
+   the card was empty. It is now flexible with a generous floor and a cap,
+   so it grows into the space a short claim leaves and shrinks when the
+   claim needs the room — `flex:1 1 auto; min-height:0` on the art and
+   `flex:none` on the claim is what makes the TEXT win the fight. Checked
+   against e3, the longest claim in the active set at 190 characters. */
+/* the BOX grows into whatever the claim leaves, the IMAGE is capped by its
+   own declared size — so the graphic is centred in the space rather than
+   the space collecting as a gap between the claim and the buttons */
+.b1art{
+  flex:1 1 auto; min-height:0;
+  display:grid; place-items:center; align-self:stretch;
+}
+/* THE IMG IS CAPPED, NOT RE-SIZED. claimArt() writes width/height
+   attributes on the <img> — 300x180 for s1's art, 128-scaled for the
+   topic fallback — and those attributes ARE the layout size. Setting
+   `width:auto; height:auto` here (which the first version did) threw them
+   away and the image rendered at its natural 900x539, four times its
+   slot, overflowing the card and being clipped by .mf-b's overflow.
+   max-* only: the attributes still size it, this only ever shrinks it. */
+/* THE RATIO IS NOT NEGOTIABLE, AND max-height ALONE BREAKS IT. The
+   attributes set the used WIDTH; max-height then clamped the HEIGHT
+   without the width following, so the reveal state stretched the
+   graphic horizontally on ALL ELEVEN active issues — 1.32x on g1/g3 to
+   1.52x on r1. It was not a rounding artefact, it was every card.
+   `width:auto` is NOT the fix and was tried once already: on a replaced
+   element it discards the attributes and falls back to the INTRINSIC
+   size, which rendered s1 at 900x539 and overflowed the card.
+   object-fit:contain is. The box may still be constrained by a cap, but
+   the pixels inside it letterbox instead of distorting, so no future
+   asset or cap can reintroduce the squish. */
+.b1art img{
+  max-width:100%; max-height:var(--b1art-cap, 340px); height:auto;
+  object-fit:contain;
+}
+/* WHEN THE PANEL RISES THE ART GIVES WAY. The panel covers the card's
+   lower portion, and the one thing that must survive it is the claim the
+   explanation is explaining. The art is capped hard here so the claim
+   floats up clear of the panel's top edge; the answer row is spent and
+   goes entirely, which is where most of the room comes from. */
+/* ON REVEAL THE ART BOX STOPS GROWING. Left at flex:1 it absorbed the room
+   the hidden answer row freed and pushed the claim straight back under the
+   panel — the box grew even though the image inside it could not. */
+.b1card.is-revealing .b1art{ flex:0 0 auto; }
+/* THE 126px REVEAL CAP IS GONE. Capping the art was what forced the
+   choice between distorting it and shrinking it, and the artwork is
+   never the thing that gives. Every active issue's graphic is 126-191px
+   tall and 101-298px wide, all inside the 340px default cap and the
+   container's width, so with this removed NO max-* binds and the art
+   renders at exactly its declared size — identical before the answer and
+   in the reveal. The room comes out of the claim's leading instead; see
+   .b1card.is-revealing .b1claim. */
+.b1card.is-revealing .b1ans{ display:none; }
+.b1card.is-revealing{ padding-bottom:var(--sp-3); }
+.b1card.is-revealing .b1claim{ flex:none; }
+.b1art img{ display:block; filter:url(#dcw) drop-shadow(0 5px 0 rgba(0,0,0,.30)); }
+
+/* §1.3 · THE TEXT WINS, SO THE TEXT SETS ITS OWN SIZE. The claims in the
+   active set run from 49 characters (s1) to 190 (e3) — nearly 4x — and one
+   font size cannot serve both: 29px is right for s1 and gives e3 eight
+   lines that overflow the card. Three steps, keyed off the string length
+   in beat1(), so the graphic yields to the text rather than the text being
+   clipped. The steps are measured, not guessed: at 393px, e3 at 29px is
+   336px of claim, at 20px it is 232 — which is what lets the panel clear
+   it. See the panel cap in claimReveal(). */
+.b1claim{
+  flex:none; display:grid; place-items:center; margin-top:10px;
+  font-family:var(--font-display); font-weight:900;
+  font-size:var(--b1claim-fs, var(--fs-claim));
+  line-height:1.16; color:var(--ink); text-align:center; text-wrap:balance;
+}
+.b1card--mid  { --b1claim-fs:24px; }
+.b1card--long { --b1claim-fs:20px; }
+
+/* the two answers. IDENTICAL — same class, same size, same weight, same
+   ink. אמת and שקר are never told apart by anything but their letters.
+
+   §2.2 THE BUTTON IS THE DRAG'S READOUT. The answer the gesture is
+   choosing fills solid --ink on the same ramp as the preview pill, so it
+   is fully solid at the commit threshold and partially filled below it.
+   Only --fill moves. It changes no geometry and it is never set on the
+   other button, so the pair is identical in size and weight at every
+   point of the drag — which is the whole reason the feedback could not
+   be "shrink the one you are not choosing".                            */
+.b1ans{ position:absolute; z-index:7; bottom:var(--sp-3); inset-inline:var(--sp-3); }
+.b1ans .v-a{
+  --fill:0;
+  min-height:60px; font-size:var(--fs-action);
+  position:relative; overflow:hidden;      /* clips the fill to the radius */
+}
+/* THE FILL IS A WIPE, NOT A CROSS-FADE. Fading the background to --ink
+   while fading the label to --paper puts mid-grey text on a mid-grey
+   ground at --fill:.5 and the word vanishes at exactly the moment the
+   player is deciding. The wipe carries a hard edge instead: every pixel
+   is either ink-on-paper or paper-on-ink, so both halves stay at full
+   contrast at every value. The two layers share one clip so the dark
+   ground and the light lettering can never drift apart.
+   RTL: the fill grows from the inline-start edge, which is the right. */
+.b1ans .v-a::before,
+.b1ans .v-a::after{
+  position:absolute; inset:0; pointer-events:none;
+  clip-path:inset(0 0 0 calc((1 - var(--fill)) * 100%));
+}
+.b1ans .v-a::before{ content:""; background:var(--ink); }
+/* the label's light copy. data-label is the same string as the button's
+   own text; the pseudo-element inherits the font, and the padding is
+   symmetric, so the two copies land on the same baseline. */
+.b1ans .v-a::after{
+  content:attr(data-label);
+  display:grid; place-items:center; color:var(--paper);
+}
+
+/* ---- the swipe, §2.2 · every gesture has a button twin -------------
+   THE REVEAL APPEARS ON THE SIDE THE CARD IS MOVING TOWARD. Written in
+   PHYSICAL left/right on purpose: the logical properties invert under
+   dir=rtl, which is exactly how this ended up mirrored. The mapping
+   switch changes which ANSWER a direction means, never which side the
+   reveal comes from.                                                  */
+/* ---- THE REVEAL, and why it is ON the card rather than behind it.
+   Measured: dragging left exposes 0px of ground on the left and 56-152px
+   on the right, because the card is 340px wide inside 25px of ground —
+   its leading edge leaves the stage before any gap can open there. A
+   panel parked behind the card on the travel side therefore cannot ever
+   become visible, at any drag distance. It is not a z-order or an RTL
+   bug; the geometry forbids it at this card width.
+   So the reveal is the Tinder/Reigns move instead: a wash on the card's
+   LEADING EDGE, which is visible from the first few pixels of travel, is
+   unambiguously on the side the card is going, and travels with it.
+   Same ink both directions — it names the word, never which one is the
+   "good" answer. The alternative, if the panel behind is wanted, is to
+   shrink the card during the drag so ground opens on the leading side. */
+.b1target{
+  position:absolute; z-index:6; top:0; bottom:0; width:62%;
+  display:flex; align-items:center; opacity:0; pointer-events:none;
+  border-radius:2px;
+}
+.b1target--left{
+  left:0; justify-content:flex-start; padding-inline-start:20px;
+  /* §2 A SHADOW, NOT A LEAK. This was --kraft-deep, a pale beige, which
+     read as light escaping from behind the card instead of the card
+     lifting away from the deck. Deep warm brown-black: the gap a card
+     opens when it moves off is dark. */
+  background:linear-gradient(to right, rgba(14,10,6,.90) 0%,
+             rgba(14,10,6,.52) 58%, rgba(14,10,6,0) 100%);
+}
+.b1target--right{
+  right:0; justify-content:flex-end; padding-inline-end:20px;
+  background:linear-gradient(to left, rgba(14,10,6,.90) 0%,
+             rgba(14,10,6,.52) 58%, rgba(14,10,6,0) 100%);
+}
+/* THE WASH CARRIES NO WORD. It used to hold the answer at 38px across the
+   card face, which — with the pill above it and the button below it —
+   put the same word on screen three times during a single drag. The wash
+   is the DIRECTION; the pill and the button carry the word. */
+
+/* §2.1 Reigns: the label fades in ACROSS the drag, before release.
+   It lives INSIDE the card so it travels with it — as a sibling it
+   floated loose on screen while the card moved out from under it. */
+/* IT IS A STAMP, NOT A BUTTON. As a paper pill with --r-pill corners, a
+   white die-cut edge and an extruded shadow it was built out of exactly
+   the parts a control is built from, so the one thing on the card that
+   is NOT pressable looked the most pressable. Now it takes the committed
+   button's own treatment — solid --ink, --paper lettering — with every
+   affordance removed: no radius, no die-cut, no extrusion, nothing that
+   implies a press. It sits ON the card surface and hangs slightly over
+   the top edge, the way a stamp lands on top of a thing rather than
+   being part of it. The opacity ramp is unchanged: it is still the
+   drag's readout and still arrives on the same k as the button fill. */
+.b1prev{
+  position:absolute; z-index:9; top:-9px; opacity:0;
+  display:flex; align-items:center;
+  background:var(--ink); border:0; border-radius:0;
+  padding:7px 16px 9px; pointer-events:none;
+  box-shadow:none;
+}
+.b1prev b{ font-family:var(--font-display); font-weight:900; font-size:22px;
+  color:var(--paper); }
+
+/* out of flow so unwritten copy must not be
+   able to cost the card 40px when the placeholders are switched on */
+.b1hint{ position:absolute; left:0; right:0; bottom:0; z-index:10;
+  text-align:center; margin:0; pointer-events:none; }
+
+/* =====================================================================
+   BEAT 2 · YOUR OWN VOTE · B2-CHAIR-FULL
+   A full-height blurred overlay, not a card: this is an interruption,
+   a meta question, not a step in the same plane.
+   THE OVERLAY IS A CHILD OF .stage, NOT OF THE BEAT, so the blur reaches
+   every edge including the safe areas. Anchored to the beat it stopped
+   at the round's padding and the dot-grid ground showed through.
+   ===================================================================== */
+.ov--stage{
+  position:absolute; inset:0; z-index:9;
+  display:grid; place-items:center;
+  padding:calc(18px + env(safe-area-inset-top)) 16px
+          calc(16px + env(safe-area-inset-bottom));
+  /* softer than beat 3's: what is behind it — the answer just given and
+     the cards ahead — is meant to be recognisable as those things */
+  -webkit-backdrop-filter:blur(9px) saturate(.9);
+  backdrop-filter:blur(9px) saturate(.9);
+  background:rgba(28,26,23,.52);
+  animation:ov-in var(--t-ov-in) var(--e-settle) both;
+}
+/* ONE SURFACE, TWO CONTENTS. Both panes occupy the same grid cell of the
+   same .ov, so the backdrop is painted once and never re-rendered: at the
+   commit the vote pane travels UP and out while the bill pane arrives
+   from BELOW, and the blur behind them does not move, blink or restart.
+   Two overlays doing this were two blurs and the seam read as a load. */
+.ovpane{
+  grid-area:1 / 1; width:100%; display:grid; place-items:center;
+  transition:transform var(--t-ov-swap) var(--e-settle),
+             opacity   var(--t-ov-swap) var(--e-settle);
+}
+.ovpane--vote.is-above{ transform:translateY(-44px); opacity:0; pointer-events:none; }
+.ovpane--bill.is-below{ transform:translateY( 44px); opacity:0; pointer-events:none; }
+
+.ov-inner{ display:flex; flex-direction:column; align-items:center;
+  gap:clamp(8px, 1.6vh, 16px); width:100%; max-width:358px; }
+/* align-items:center on a flex column shrink-wraps every child, so the
+   vote row was 219px of a 326px line. The board writes width:100% here. */
+.ov-inner .v-a-row{ width:100%; }
+/* THE VOTE ROW IS THE CARD'S WIDTH, NOT THE OVERLAY'S. At the overlay's
+   358px the three chips were wider and taller than anything on the claim
+   card, so beat 2 read as a bigger, more important surface than the deck
+   it interrupts. Same width as the card, same min-height and same type as
+   the claim card's two answers. */
+/* the parent selector is load-bearing: `.ov-inner .v-a-row{width:100%}`
+   above is (0,2,0) and a bare .b2votes would lose to it silently. */
+/* §4 AIR BETWEEN THE QUESTION AND THE ANSWERS. .ov-inner's own gap is
+   clamp(8px,1.6vh,16px) and it applies between every child, which left
+   the vote row sitting as close to the bill title as the title sits to
+   the question — one undifferentiated block. This is on top of the gap,
+   so the space before the buttons roughly doubles while the copy above
+   stays as tight as it was. */
+.ov-inner .b2votes{
+  width:var(--card-w); max-width:100%;
+  margin-top:clamp(10px, 2.2vh, 22px);
+}
+.b2votes .v-a{ min-height:60px; font-size:var(--fs-action); }
+/* §4 THE SEAT. The chair and the confirmation share one positioning
+   context so the confirmation can sit ON the chair rather than under it.
+   THE CHAIR IS NEVER CROPPED — it is the game's emblem and a cut one
+   reads as a bug — so it is height-capped against the viewport and the
+   cap is what shrinks on a short phone, never the crop. */
+.b2seat{ position:relative; flex:none; display:grid; place-items:center; }
+.b2chair{
+  display:block; flex:none;
+  /* was clamp(96px, 23vh, 196px) — at that size it read as an icon beside
+     the question instead of the thing the question is about */
+  width:auto; height:clamp(168px, 40vh, 330px); aspect-ratio:168 / 196;
+  object-fit:contain;
+  filter:url(#dcw) drop-shadow(0 5px 0 rgba(0,0,0,.34));
+  transition:transform var(--t-b2-seat) var(--e-settle);
+}
+/* the confirmation lands on the seat itself, ~62% down the chair, which
+   is where the seat pan is in the illustration */
+.b2taken{
+  position:absolute; left:50%; top:62%; margin:0; z-index:2;
+  display:flex; align-items:baseline; gap:var(--sp-2); white-space:nowrap;
+  padding:8px 20px 11px;
+  background:var(--paper); color:var(--ink);
+  box-shadow:0 0 0 3px var(--edge), 0 0 0 5px var(--keyline), 0 5px 0 rgba(0,0,0,.34);
+  font-family:var(--font-display); font-weight:900;
+  font-size:clamp(21px, 4.2vh, 32px); line-height:1;
+  opacity:0; pointer-events:none;
+  transform:translate(-50%,-50%) scale(.82);
+  transition:opacity var(--t-b2-seat) var(--e-settle),
+             transform var(--t-b2-seat) var(--e-land);
+}
+.ovpane--vote.is-taken .b2taken{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+/* the chair settles under the weight of being taken */
+.ovpane--vote.is-taken .b2chair{ transform:translateY(4px) scale(1.02); }
+/* the two not chosen RECEDE, they are not deleted: the round never hides
+   an option it offered, and beat 5 still has to be able to talk about
+   what was on the table. */
+.ovpane--vote.is-taken .b2votes .v-a{
+  opacity:.3; transform:scale(.94);
+  transition:opacity var(--t-b2-seat) linear, transform var(--t-b2-seat) var(--e-settle);
+}
+.ovpane--vote.is-taken .b2votes .v-a.is-chosen{ opacity:1; transform:none; }
+/* §3.2 THE QUESTION'S LEADING. It had no line-height at all, so it ran
+   at the UA's `normal` — which for SimplerPro 900 resolves to 1.32 — and
+   at 22-29px that is 8px of air between two lines of a two-line question.
+   1.08 is the display face's own set width: the prompt now reads as one
+   block rather than as two sentences. Before 1.32 (normal), after 1.08.
+   text-wrap:balance keeps the two lines near-equal so the tighter leading
+   does not leave a one-word second line hanging under a full first. */
+/* §2 · THE FRAMING LINE. Chrome, not card content, and deliberately NOT
+   the chyron's own treatment — the chyron is the player's pinned VOTE and
+   a second light-and-neon band would say the same thing twice. This is the
+   inverse construction: a dark plate with a bright rule down its leading
+   edge, so it reads as framing that belongs to the beat rather than as a
+   caption on the question below it.
+   WEIGHT SITS BETWEEN ITS NEIGHBOURS on purpose — larger and brighter than
+   the bill link (15px at 78% white) and clearly under the prompt
+   (22-29px display), because it introduces the question rather than being
+   it. Two lines at 360px; measured, not assumed. */
+.b2frame{
+  margin:0; align-self:stretch;
+  padding:9px 12px 10px;
+  border-radius:var(--r-chip);
+  border-inline-start:3px solid #37C4FF;
+  background:rgba(16,14,11,.42);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);
+  font-size:14.5px; font-weight:700; line-height:1.4;
+  color:#EFECE4; text-align:start; text-wrap:pretty;
+}
+
+.b2q{ font-family:var(--font-display); font-weight:900;
+  font-size:clamp(22px, 3.4vh, 29px); line-height:1.08; text-wrap:balance;
+  color:#EFECE4; text-align:center; margin:0; }
+.b2bill{ font-size:15px; font-weight:700; line-height:1.45; color:#D8D2C4;
+  text-align:center; max-width:30ch; margin:0; }
+/* §3.2 .b2consent IS GONE from the markup — "את התוצאה נגלה בסוף ›" was
+   a promise about a beat five screens away, printed under the question
+   being asked now. The rule is kept as a tombstone rather than deleted so
+   the next person searching for the class finds out where it went. */
+.ov--out{ animation:ov-out var(--t-ov-in) var(--e-settle) both; }
+@keyframes ov-out{ from{opacity:1} to{opacity:0} }
+
+/* =====================================================================
+   BEAT 3 · THE BILL · B3-OVERLAY
+   bill_title + bill_date only, over the MK card. What shows through is
+   the card and nothing else. Dismiss COLLAPSES INTO the card beneath.
+   ===================================================================== */
+/* the bill pane's own column. The surface is .ov--stage's; this is only
+   the content that arrives on it. */
+.b3inner{ gap:var(--sp-4); text-align:center; }
+.ov--stage.is-dismissable{ cursor:pointer; }
+.b3title{ font-family:var(--font-display); font-weight:900; font-size:30px;
+  line-height:1.2; color:#F6F1E2; text-wrap:balance; margin:0; }
+.b3date{ font-size:15px; font-weight:700; color:var(--ink);
+  background:var(--paper); border-radius:var(--r-pill); padding:5px 15px; }
+.b3go{ margin-top:var(--sp-2); }
+.ov--collapse{ animation:ov-collapse var(--t-ov-collapse) var(--e-out) both;
+  transform-origin:50% 62%; }
+@keyframes ov-collapse{
+  from{ opacity:1; transform:scale(1);
+        -webkit-backdrop-filter:blur(16px) saturate(.9); backdrop-filter:blur(16px) saturate(.9) }
+  to  { opacity:0; transform:scale(.86);
+        -webkit-backdrop-filter:blur(0) saturate(1); backdrop-filter:blur(0) saturate(1) }
+}
+
+/* =====================================================================
+   BEAT 4 · THE MK CASCADE · B4-D developed, CHIPS-RING, D2 at 190px
+   ===================================================================== */
+.b4{ align-items:center; justify-content:center; }
+
+/* draw/spend are gone: a card is TURNED OVER to arrive (.deckcard) and
+   SWIPED OFF to leave (.deckcard.is-leaving). Nothing fades in place. */
+
+.mf-b__port{ filter:drop-shadow(0 2px 0 rgba(0,0,0,.18)); }
+
+/* ---- THE PARTY GOES ON ITS OWN LINE.
+   hachach.css styles .mf-b__id's <h2> and <p> both display:inline-block,
+   so on a short name they share a line and the party reads as a subtitle
+   beside it. Every board frame draws the party UNDER the name.
+   §1.4b the label itself stays — hiding it dumps the complexity on a
+   17-year-old as noise, and the fix for a boring round is curation. */
+.mf-b__id h2{ display:block; }
+.mf-b__id p { display:inline-block; margin-top:4px; }
+/* the .mf-b__basis rule went with the line itself — see the note at the
+   verdict. Nothing else in the sheet targeted it. */
+
+/* the initials badge. Never another politician's face. Set on the set's
+   own eyeline — 37.7% down the box — so it occupies the card as a
+   portrait does. */
+.mf-b__badge{
+  position:absolute; left:50%; top:37.7%; translate:-50% -50%;
+  width:170px; height:170px; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-display); font-weight:900; font-size:56px;
+  box-shadow:0 0 0 4px var(--edge), 0 0 0 6px var(--keyline);
+}
+
+.mf-b__foot .v-a{ font-size:19px; }
+
+/* ---- the guess-vs-reality axis. The payload of the beat, and it is
+   INSIDE the card again, at the foot, where the board draws it.
+   It is absolutely positioned, so it contributes nothing to the card's
+   box: the card is 340x620 and the strip arriving at the verdict cannot
+   re-scale it. The reserved box that used to hold its footprint below the
+   card is gone with it — reserving space out there is what was making the
+   card smaller.
+
+   IT CROSSES THE LOWEST FACES IN THE SET, and that is known and accepted
+   for this build. Face boxes measured per portrait (card-local px, skin
+   mask + beard density, validated against the render):
+     ben_gvir  y_max 508 · netanyahu 450 · lapid 516
+     gantz     y_max 551 · michaeli  578 · deri  553
+   The strip's top edge sits at y=541, so it lands on Michaeli's neck by
+   37px and on Deri's beard by 12px. Unresolved, on the record. */
+.gx{
+  position:absolute; z-index:8; bottom:var(--gx-bottom); inset-inline:var(--sp-3);
+  height:var(--gx-h);
+  animation:gx-in var(--t-hold) var(--e-settle) both;
+  background:rgba(216,201,168,.92); border-radius:12px; padding:7px 9px 5px;
+  box-shadow:0 0 0 2px rgba(0,0,0,.4);
+}
+@keyframes gx-in{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+.gx-track{
+  position:relative; height:38px; margin:0 4px;
+  background:rgba(34,31,23,.13); border-radius:19px;
+  box-shadow:inset 0 0 0 1.5px rgba(34,31,23,.22);
+}
+/* the fill. It grows FROM the player's stop toward the MK's, anchored on
+   the edge the growth starts at — see runAxis() for why that anchor is
+   what makes it read right-to-left when it runs that way. */
+/* §3.1 · THE GAP CARRIES THE DISTANCE. It was rgba(34,31,23,.26) — a flat
+   grey that said only "there is a gap here" while the length of it
+   already said that.
+   ONE HUE, THREE STRENGTHS, and that is deliberate: the strengths are the
+   only variable, so the three states cannot be misread as three different
+   kinds of thing. The hue is --verdict-surprise, which is already the
+   system's "you were surprised" colour, so a wide gap says the same word
+   the stamp does rather than introducing a fourth verdict colour.
+   SYMMETRY IS STRUCTURAL. runAxis() keys the class off Math.abs(), so
+   בעד->נגד and נגד->בעד are the same class and there is no branch that
+   could drift. Verified in the report against all 9 guess/vote pairs.
+   DISTANCE 0 NEVER PAINTS A FILL — there is nowhere to travel — so
+   agreement is carried by a lime tint on the TRACK instead, which is the
+   "neutral/positive, no alarm" end of the scale. */
+.gx-fill{
+  position:absolute; top:0; bottom:0; width:0; border-radius:19px;
+  background:var(--gx-gap, rgba(34,31,23,.26)); pointer-events:none;
+  transition:background var(--t-flip) linear;
+}
+.gx--d1{ --gx-gap:color-mix(in srgb, var(--verdict-surprise) 30%, transparent); }
+.gx--d2{ --gx-gap:color-mix(in srgb, var(--verdict-surprise) 62%, transparent); }
+.gx--d0 .gx-track,
+.gx.is-agreed .gx-track{
+  background:color-mix(in srgb, var(--verdict-correct) 22%, rgba(34,31,23,.26));
+}
+.gx-m{ position:absolute; top:50%; translate:50% -50%; width:38px; height:38px; display:block;
+  transition:right var(--t-flip) var(--e-settle); z-index:2; }
+/* the player's token drops into its slot rather than being there */
+.gx-you{ transition:right var(--t-flip) var(--e-settle),
+                    transform var(--t-gx-lock) var(--e-land),
+                    opacity var(--t-gx-lock) linear; }
+.gx-you.is-landing{ transform:translateY(-14px) scale(1.12); opacity:0; }
+/* the MK's token arrives in the PLAYER'S slot before it travels */
+.gx-mk{ transition:right var(--t-flip) var(--e-settle),
+                   opacity var(--t-gx-appear) linear,
+                   transform var(--t-gx-appear) var(--e-land); }
+.gx-mk.is-hidden{ opacity:0; transform:scale(.72); }
+/* agreement: the two share one slot and settle instead of travelling */
+.gx.is-agreed .gx-track{ animation:gx-settle var(--t-gx-settle) var(--e-land); }
+@keyframes gx-settle{ 0%,100%{transform:none} 45%{transform:scale(1.015)} }
+/* A8 · the neutral "your guess" mark. A punch-hole: paper ring, dark
+   centre, NO hue — the verdict stamp beside it is the only coloured thing
+   in the beat and this must never compete with it or be mistaken for it.
+   Its label sits above the token rather than inside: 38px cannot hold
+   three Hebrew words, and the strip's own height is fixed. PLACEHOLDER,
+   marked as such — B4 replaces the whole mark. */
+.gx-punch{
+  display:block; width:38px; height:38px; border-radius:50%;
+  background:var(--paper);
+  box-shadow:inset 0 0 0 6px var(--ground), 0 0 0 2px rgba(0,0,0,.45),
+             0 2px 0 rgba(0,0,0,.3);
+}
+.gx-punch__lab{
+  position:absolute; bottom:calc(100% + 3px); left:50%; transform:translateX(-50%);
+  white-space:nowrap; font-size:9px; line-height:1;
+}
+.gx-punch__lab .ph{ padding:1px 5px 2px; font-size:9px; border-width:1px; }
+.gx-port{ display:block; width:34px; height:46px; object-fit:contain; object-position:50% 0; }
+.gx-badge{ display:grid; place-items:center; width:38px; height:38px; border-radius:50%;
+  background:var(--paper); font-family:var(--font-display); font-weight:900; font-size:14px;
+  box-shadow:0 0 0 2px var(--keyline); }
+/* ---- THE PAIRED PLAYER TOKEN, and the bug it was.
+   When the guess and the vote land on the SAME stop the player's token is
+   lifted clear of the MK's so both read. The lift was translateY(-30px)
+   on a 38px token centred in a 38px track with 7px of strip padding above
+   it: 30px up put its top edge 16.6px ABOVE .gx's own top edge, so after
+   the verdict the avatar floated over the strip, outside it, attached to
+   nothing. The lift has to fit the headroom that exists.
+   A pure vertical stack cannot be made to fit: the MK's portrait already
+   overflows the track to -4px, so clearing it needs a 26px lift and the
+   strip has 7px. The paired token becomes a BADGE on the shared stop
+   instead — up and toward the inline-start, small, above the portrait in
+   z-order, and read as separate by the die-cut edge it already carries.
+   It costs no height, and it stays inside both the track and the slot at
+   every stop and every card scale. */
+.gx-m.is-paired.gx-you{
+  translate:50% -50%; transform:translate(13px,-8px) scale(.58); z-index:2;
+}
+.gx-stops{ display:flex; margin-top:5px; }
+.gx-stops i{ flex:1; text-align:center; font-style:normal; font-size:var(--fs-meta);
+  font-weight:700; color:var(--ink-soft); }
+
+/* ---- D2, THE VERDICT STAMP · ONE PLANE, ON TOP ---------------------
+   It paints OVER everything the card carries — portrait, name plate, the
+   axis strip at the foot — and it is flat while it does it: no drop
+   shadow against the card, no ring, nothing that reads as a layer
+   sitting between the card and the viewer. hachach.css gives .d2 a
+   1px black shadow for exactly that depth cue; it is removed here.
+
+   Parented to .cardwrap rather than .mf-b, which carries overflow:hidden
+   and would cut the overhang, with a z-index above the card so it clears
+   the strip's z-index 8 inside it.
+
+   IT LANDS ON THE FACE ON ALL SIX, and that is accepted for this build
+   rather than solved. top:430 puts the disc's foot exactly on the card's
+   bottom edge — the largest inside-the-card placement — and the share of
+   the disc covering skin or beard is then:
+     netanyahu 4% · lapid 12% · ben_gvir 18% · gantz 35% · deri 42% ·
+     michaeli 69%
+   No placement that keeps a 190px disc wholly on the card clears anyone:
+   the faces run y[115,450..578] and the card is 620, so there is no 190px
+   band inside it that misses them. Dropping to top:470, which hangs 40px
+   below the card, would clear netanyahu and ben_gvir — but the overhang
+   is not reserved anywhere (reserving it would shrink the card) and it
+   clips ~19px off the stage at 375x667. Card size wins. ON THE RECORD,
+   UNRESOLVED. */
+.d2{
+  /* one number for the disc. The word's size and the ink's CSS-px scale
+     are both derived from it, so they cannot drift out of step with it. */
+  --d2-size:190px;
+  width:var(--d2-size); height:var(--d2-size);
+  top:430px; left:-22px; bottom:auto; right:auto;
+  z-index:14;
+  box-shadow:none;
+}
+.d2__art{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; fill:none; }
+.d2__art circle{ fill:none; stroke:currentColor; }
+/* §1 THE CENTRE WORD IS HTML. No bidi property fixes SVG text in WebKit
+   — direction, unicode-bidi and every combination of them render Hebrew
+   left-to-right there — so the word does not go through SVG's text
+   shaping at all. HTML text is reordered correctly by every engine, and
+   the source strings stay in logical order in the file.
+
+   IT IS STILL THE STAMP'S OWN MARK, not type layered on a graphic:
+   · it lives INSIDE .d2, so d2-land's scale — and any rotation the disc
+     is ever given — carries it; disc and word are one object;
+   · `color` is unset, so it takes the disc's currentColor (--d2-on), the
+     identical ink the circles are stroked with;
+   · the display face at 900, as the ring had;
+   · filter:url(#ink-h) is #ink rescaled from viewBox units to CSS px, so
+     the displacement, the dry-brush holes and the blur land at the same
+     rendered grain — and inkBleed() drives both maps off one clock, so
+     the word ruptures at contact with the disc rather than after it.
+   WHAT IS LOST: nothing measurable. The one difference is that the word
+   is filtered in its own pass instead of inside the disc's <g>, so the
+   noise field is sampled from its own origin — the grain does not
+   continue unbroken from circle to letter. At 32px on a 190px disc that
+   is not visible; it would be if the word ever overlapped a circle.
+
+   .d2__ring is GONE. Curved text is the one case HTML cannot take over
+   without hand-placing glyphs in visual order, which is the reversal
+   being refused here. The ring stays as the two stroked circles. */
+.d2__word{
+  position:absolute; inset:0;
+  display:grid; place-items:center;
+  font-family:var(--font-display); font-weight:900;
+  font-size:calc(var(--d2-size) * .17);      /* the 17 viewBox units it was */
+  letter-spacing:.01em; line-height:1;
+  filter:url(#ink-h);
+  /* the disc is role="img" with an aria-label; this is the same word
+     again, and pointer-events would otherwise put it over the card */
+  pointer-events:none;
+}
+
+/* EVERY BACK IS THE SAME BACK — the pile's cards carry the identical
+   artwork to .cardback, at the same strength, so the deck reads as one
+   deck. hachach.css gives .pile i a grid-on-kraft background; this
+   replaces it outright rather than layering over it.
+   The offsets start one step deeper than they did, because the face-down
+   .deckcard now occupies the slot the first pile back used to. */
+.pile i{
+  background:var(--cardback-art) bottom center / cover no-repeat, #C4B48F;
+}
+.pile i:nth-last-child(1){ transform:translate(3px,-17px) rotate(1.7deg); }
+.pile i:nth-last-child(2){ transform:translate(2px,-22px) rotate(1.4deg); }
+.pile i:nth-last-child(3){ transform:translate(2px,-32px) rotate(1.85deg); }
+.pile i:nth-last-child(4){ transform:translate(3px,-41px) rotate(1.2deg); }
+
+/* =====================================================================
+   BEAT 5 · THE REVEAL · B5-A1 (count leads) / B5-A2 (count quiet)
+   Strict order: resolution + count, then the shape of the guess, then
+   the explanation, then sources as ONE line.
+   §8 NEVER: >1 number at the emotional peak. The tally counts up alone;
+   the score and the coins arrive after it has settled.
+   IT DOES NOT SCROLL. Only the map and character personalisation ever
+   do. fitBeat() scales this block down on a short phone instead.
+   ===================================================================== */
+/* the top pad is what a short phone can least afford: at 640px of height
+   fitBeat() is already scaling the whole beat, and 44px of air above the
+   board is 44px the grid pays for. Fluid, so the tall phones keep it. */
+.b5{ padding-top:clamp(14px, 5vh, 44px); gap:var(--sp-2); justify-content:flex-start; }
+.b5 > *{ flex:none; }
+.b5fit{ transform-origin:top center; }
+
+.b5panel{
+  background:rgba(0,0,0,.16); box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.10);
+  width:calc(100% + 32px); margin:0 -16px; padding:16px var(--sp-4) 14px;
+  display:flex; flex-direction:column; gap:var(--sp-2);
+}
+/* =====================================================================
+   THE SEAT GRID · v20 option 4
+   ===================================================================== */
+/* §S-1 · THE BAR'S TWO FILLS, AND A CONFLICT ON THE RECORD.
+   The spec sets בעד to #B6E521 and נגד to #FF7A6B and says they "carry no
+   correctness meaning — they are a quantity, not a verdict."
+
+   #B6E521 IS --verdict-correct. It is the claim chip, the cascade stamp
+   and the cascade gap, and the rule written at the top of this file and
+   in the handoff stylesheet is that colour codes correctness and NEVER
+   vote direction — "nothing else may borrow either." The previous finale
+   pass removed a green/red pair from exactly this bar for exactly this
+   reason: a 17-year-old reads green as good, so the beat was quietly
+   saying that voting for a bill is the right answer. By beat 5 the
+   player has spent a whole round learning lime = you were right.
+
+   BUILT AS SPECIFIED, because it is a design call and it is Lion's, but
+   both palettes are here and the switch is ?f5bar=spec|neutral so the
+   two can be compared on a device. `neutral` is the pair the seat grid
+   derived and verified: #4E6BFF and #E8DCC0, separated on LUMINANCE
+   (0.194 vs 0.721 — a channel no dichromacy touches), dE2000 53.0
+   normal / 58.3 deuteranopia / 56.3 protanopia / 43.2 tritanopia, and
+   neither carries valence. */
+:root{
+  --f5-for: #B6E521;
+  --f5-ag:  #FF7A6B;
+  --f5-rem: #2A2822;          /* the unfilled remainder of 120          */
+}
+[data-f5bar="neutral"]{
+  --f5-for: #4E6BFF;
+  --f5-ag:  #E8DCC0;
+}
+
+/* the seat grid's stylesheet went with seatBoard() — .b5board, .b5seats,
+   .seat, .seat--me, .seat.is-cross, .b5me__lab, .b5tal and the
+   --seat-* tokens. See the note at §S-1 in proto.js for why. */
+
+.b5-a2 .b5count{ font-size:22px; color:var(--ink-faint); }
+.b5res{
+  font-family:var(--font-display); font-weight:900; font-size:44px; line-height:1;
+  background:#000; color:#fff; border:var(--card-border) solid var(--edge);
+  padding:2px 16px 6px;
+}
+.b5-a2 .b5res, .b5-nocount .b5res{ font-size:56px; }
+.b5outcome{ font-size:12.5px; font-weight:700; color:#8E897C; margin:0; }
+
+/* §1.4c THE 121st VOTE. Compared to the OUTCOME, never to a party or a
+   named MK. Usually nothing changes — that is the lesson. */
+.b5you{
+  display:flex; align-items:center; gap:var(--sp-2);
+  font-size:var(--fs-body); font-weight:700; color:#EFECE4;
+  background:rgba(255,255,255,.06); border-radius:var(--r-chip);
+  padding:9px var(--sp-3);
+}
+.b5you .as-d{ width:32px; height:32px; flex:none; }
+.b5you .num{ color:var(--primary); }
+
+/* §1.8 the SHAPE of the guess, narrated before the score.
+   Describes the pattern; never characterises the guesser. */
+.b5shape{ font-size:15px; font-weight:700; line-height:1.45; color:#D8D2C4; margin:0; }
+
+.b5exp{ font-size:14.5px; font-weight:700; line-height:1.5; color:#D8D2C4; margin:0; }
+
+/* §1.1 the unfinished sentence, completed. Verb + count, nothing added. */
+.b5sentence{
+  font-size:14.5px; font-weight:700; line-height:1.45; color:#BEB9AC;
+  border-inline-start:2px solid rgba(255,214,10,.5); padding-inline-start:10px; margin:0;
+}
+
+.gt{ background:rgba(55,196,255,.22); border-bottom:2px dotted #9FD9F2;
+  color:#EFECE4; padding:0 3px; font-weight:900; cursor:pointer; }
+/* §3.1 .gdef IS GONE. Tapping a term opened a plain white panel inline,
+   under the term, inside the paragraph — so the sentence the player was
+   reading reflowed around it as it opened and again as it shut. The term
+   now opens .stmodal, the same sticker the law does. Tombstone kept so
+   the next person searching for the class finds out where it went. */
+/* sources: ONE line. Not a block, not a card, not chips. */
+.b5src{ font-size:11.5px; font-weight:700; color:#8E897C; margin:0; }
+.b5src a{ color:#8E897C; }
+
+.b5stage{ opacity:0; transform:translateY(6px);
+  transition:opacity var(--t-flip) var(--e-settle), transform var(--t-flip) var(--e-settle); }
+.b5stage.is-in{ opacity:1; transform:none; }
+
+.b5go{ margin-top:var(--sp-3); }
+
+/* ---- THE PINNED CLAIM · a chyron ------------------------------------
+   WHAT THIS REPLACES. hachach.css's .pinned is a pill: absolutely
+   positioned, --r-chip radius, --shadow-press, the same shape and weight
+   as the .h-a coin chip in the HUD opposite it. Two problems, and the
+   second is a defect. It read as a STATUS CHIP — a pip the round had
+   awarded — when it is the player's held commitment and has to read as a
+   declaration. And being positioned over the play area it sat ON the
+   card: measured on the beat-4 frame it covered the first letter of the
+   MK's name, so איתמר בן-גביר rendered as יתמר בן-גביר.
+
+   A BAND INSTEAD, IN FLOW. .chyron is a sibling of .hud and .round rather
+   than a child of either, so "it never overlaps the card" is structural:
+   the round begins where the band ends, at every viewport, and no z-index
+   is doing the work. Horizontal, flat, unrotated — the shape reports what
+   the player said rather than posturing it.
+
+   IT HOLDS ITS BOX ON BEAT 1. There is nothing to pin before the claim is
+   answered, so it renders empty — but it keeps its height. Collapsing it
+   would make .round 52px taller on beat 1 than on beats 2-5, and
+   sizeStage() would hand the card a different scale on either side of the
+   answer. visibility, not display, for exactly that reason.             */
+/* THE SLOT KEEPS THE FLOW; THE BANNER LEFT IT. .chyron-slot carries the
+   exact box .chyron used to occupy inside #scRound — same min-height,
+   same margins — so the round still begins where the band ends and the
+   card is the same size on every beat. It holds nothing and paints
+   nothing. See the note in index.html for why the banner had to go. */
+.chyron-slot{ flex:none; min-height:44px; margin-top:8px; margin-bottom:var(--sp-2); }
+
+/* z-index 11: ABOVE .ov--stage's 9, so the banner flies over the beat-2
+   blur rather than under it, and BELOW .hud's 12, so it still passes
+   beneath the coin counter it has always sat under. Positioned from
+   #chyronSlot's measured box by placeChyron(). */
+.chyron{
+  position:absolute; z-index:11; pointer-events:none;
+  display:flex; align-items:center; gap:var(--sp-2);
+  /* §2 · AT LEAST 8px OFF THE HUD, at every width. The band was flush
+     against the HUD row — .hud has its own bottom padding but the chyron
+     had no top margin, so on the beats where the band is filled the two
+     read as one stacked object. margin-top, not a gap on the parent,
+     because .sc-round's other children must not gain the same space. */
+  min-height:44px;
+  color:var(--ink);
+}
+/* THE BOX IS RESERVED IN ALL THREE STATES. Only the contents change,
+   never the height, so the card is the same size whichever state is
+   switched on and whichever beat is showing. */
+.chyron.is-empty{ visibility:hidden; }
+
+/* ---- band · the full-width chyron -----------------------------------
+   §3b REAL TRANSPARENCY. It was a 62% paper film, which over the dark
+   ground composites to an almost solid mid-grey — a grey bar with a blur
+   nobody can see behind it. A LOW-ALPHA DARK film instead: the ground and
+   whatever card is under it genuinely read through, the blur does visible
+   work, and the type goes light because the band is now dark.
+   §3a the hard ink block down the leading edge is gone with the ::before
+   that drew it. §3d so is the avatar — the band carries the answer. */
+/* §2 · THE BAND GOES LIGHT, AND THE TYPE GOES DARK WITH IT.
+   It was a 30% dark film with light type. Light type on a low-alpha film
+   only works while the ground stays dark, and §3.2 puts a warm
+   yellow/red gradient behind the map — so the same band would have had to
+   carry light type over a light ground. A LIGHT film with INK type is the
+   combination that survives both, which is why the re-ink goes this
+   direction rather than the other.
+   The blur stays: at 72% the ground still reads through it, and the band
+   is a film over the round rather than a panel on top of it.
+
+   §2 · THE NEON, AND WHY THIS HUE.
+   Every other candidate in the palette is spoken for:
+     lime #B6E521 / magenta #FF3BC0  are the verdict pair. A verdict hue on
+       the player's own vote banner says their vote was graded, which is
+       the exact thing §0 forbids anywhere near the tachles award.
+     yellow #FFD60A  is P-C, "the only yellow in the system", and §3.2
+       turns the map ground warm yellow/red — a yellow glow would compete
+       with the primary button and then disappear against the map.
+     the six live topic hues  name a topic, and this band is the player's.
+   #37C4FF is already in the system twice — it is the glossary accent
+   (.gt's dotted underline) and internal_sec's topic hue — so it
+   introduces no new brand colour. internal_sec has no active issue, so
+   its node never draws, and §3.2 takes topic hues off the nodes anyway;
+   the association is theoretical rather than visible. It is also the only
+   palette hue that stays legible against BOTH the charcoal round chrome
+   and the warm map gradient, being roughly complementary to the latter.
+
+   A LIT SIGN, NOT A BLOOM. One 2px stroke at full strength, then two
+   spreads at 55% and 22% — enough that the edge reads as emitting rather
+   than as drawn, and short enough that it does not haze the type inside
+   it or fight the sticker language around it. No animation: a pulsing
+   chyron would compete with §3.3's next-up node, which is the one thing
+   on screen that IS allowed to pulse. */
+/* =====================================================================
+   THE ROUND BANNER · B-5 sticker + B-1's neon
+   .chyron is the RESERVED SLOT and nothing else now — no fill, no edge, no
+   width. The object is .bnr inside it, sized to its own contents, which is
+   what removes the 67% void the full-width band carried. Both banner
+   states are the same construction: only the fill and the skew differ.
+   ===================================================================== */
+[data-chyron="band"] .chyron{
+  background:none; box-shadow:none; padding-inline:0;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  justify-content:flex-start;
+}
+[data-chyron="band"] .chyron-line{ color:var(--ink); }
+[data-chyron="band"] .chyron-line .ph{ color:var(--ink); }
+/* ---- .bnr · ONE STICKER, TWO STATES ---------------------------------
+   B-5's construction: sized to contents, white die-cut, hard keyline
+   outside it, flat extrusion, set down slightly off-square.
+   B-1's ACCENT, AND ONLY AS A GLOW. The neon does not replace the
+   keyline and is not a second hard rule — there is no `0 0 0 Npx neon`
+   term anywhere here. It is two blurred, spread shadows painted BEHIND
+   the keyline and the extrusion, so the stacking from the middle out is:
+       fill -> 3px white die-cut -> 2px keyline -> soft cyan halo
+   The white cut stays the object's edge; the cyan is light coming off it.
+   Order in the box-shadow list is load-bearing — the first entry paints on
+   top, so the keyline and the extrusion must be listed before the glows or
+   the halo washes over them. */
+.bnr{
+  --neon:#37C4FF;
+  display:inline-flex; align-items:center; gap:8px;
+  /* PADDING IS OPTICALLY BALANCED, NOT NUMERICALLY. The leading side holds
+     a 28px circle and the trailing side holds Hebrew. A circle touches its
+     boundary at one point and curves away, so it reads as having more room
+     than flat type at the same distance; Hebrew letters like ד, ר and ם
+     end on a straight vertical stroke that sits flush. Equal numbers
+     therefore look wrong in exactly the way the brief describes — the word
+     crowding the edge while the avatar floats.
+     TUNED BY MEASUREMENT, NOT BY EYE ALONE. The first attempt swung too
+     far the other way — 8px behind the avatar and 17px behind the word
+     put the real ink gaps at 5.25px and 16.5px, a 3x difference, because
+     the avatar's own 2px ring already eats into its padding while the
+     Hebrew sits flush against its own. Rendered at DPR 4 and measured
+     from the last inked column to the inner edge, 11px / 12px lands the
+     ink at 8.2px and 11.4px — and those two READ as equal, because the
+     circle recedes from its tangent point while the flat stroke of ד
+     does not. Numerically 3px apart, optically level. */
+  padding:6px 6px 7px 6px;
+  padding-inline-start:11px;
+  padding-inline-end:12px;
+  border:3px solid var(--edge);
+  border-radius:13px;
+  color:var(--ink);
+  box-shadow:
+    0 0 0 2px var(--keyline),
+    0 3px 0 rgba(0,0,0,.34),
+    0 0 11px 2px color-mix(in srgb, var(--neon) 52%, transparent),
+    0 0 26px 6px color-mix(in srgb, var(--neon) 20%, transparent);
+}
+/* the two states differ in FILL, in how they are set down, and in whether
+   they carry the accent — see below. Same object, same edge. */
+.bnr--vote{ background:var(--paper); transform:rotate(1.2deg); }
+.cmark.bnr{ background:var(--cm); transform:rotate(-1.6deg); border-radius:999px; }
+
+/* THE GLOW IS THE PINNED VOTE'S, NOT THE CHIP'S, and that is a meaning
+   distinction rather than a colour fix. The pinned vote persists for four
+   beats and is the 121st-MK conceit while it is on screen, so it earns
+   the accent; the correctness chip is on screen for a moment and already
+   carries a strong colour of its own. Cyan over magenta also stopped
+   reading as light and started reading as a third colour.
+   THE HALO IS NEVER TINTED TO THE CHIP'S HUE. That would make the accent
+   mean two things, and it would put a lime glow beside a right answer and
+   a magenta one beside a wrong answer — which is the accent creeping into
+   coding correctness, which it may never do. So it is removed, not
+   recoloured. */
+.cmark.bnr{
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+}
+
+/* ?neon=off draws the same sticker with the glow removed, so the two can
+   be compared on a device rather than argued about. */
+[data-neon="off"] .bnr{
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+}
+
+/* THE AVATAR IS RE-INKED BY ITS EDGE, not by repainting AV3. Its ground
+   circle is #C9BFA6 cream, which on a cream sticker loses its silhouette
+   entirely; a dark keyline restores the boundary without touching the
+   inline SVG's fills — which the map node and the HUD also draw. */
+[data-chyron="band"] .chyron-av{
+  border-radius:50%;
+  box-shadow:0 0 0 2px rgba(19,19,16,.72);
+}
+
+/* ---- note · a scrap left on the table -------------------------------
+   Not a band at all: a small square of paper resting at the leading side
+   of the same reserved box, carrying the ANSWER WORD and nothing else —
+   no avatar, no lead-in. Low-key by construction: small, off to one side,
+   and the only thing in the row. */
+[data-chyron="note"] .chyron{
+  background:none; box-shadow:none; padding:0;
+  justify-content:flex-start;
+}
+[data-chyron="note"] .chyron-line .ph{ display:none; }
+[data-chyron="note"] .chyron-line{
+  width:40px; height:40px; display:grid; place-items:center;
+  background:var(--paper); color:var(--ink);
+  font-size:15px; line-height:1;
+  transform:rotate(-2.5deg);          /* set down by hand, not placed    */
+  box-shadow:0 2px 0 rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.18);
+}
+
+/* ---- off · nothing shown, box still reserved ---------------------- */
+[data-chyron="off"] .chyron{ visibility:hidden; }
+
+.chyron-line{
+  display:flex; align-items:baseline; gap:var(--sp-2); min-width:0;
+  font-family:var(--font-display); font-weight:900; font-size:20px;
+  line-height:1; color:var(--ink);
+}
+/* THE WORD IS NEVER COLOURED BY DIRECTION. אמת and שקר take exactly the
+   same ink, the same weight and the same size — the band says what was
+   said, and says nothing about whether it was right. */
+.chyron-line b{ font:inherit; color:var(--ink); }
+
+
+/* =====================================================================
+   THE THREE SCREENS · intro -> map -> round
+   The stage carries data-screen and the screens are `hidden`; only one is
+   in the layout at a time, so nothing off-screen can charge the visible
+   screen for height. The HUD is OUTSIDE all three — see index.html.
+   ===================================================================== */
+.screen{ flex:1; min-height:0; display:flex; flex-direction:column; position:relative; z-index:1; }
+.screen[hidden]{ display:none; }
+/* the intro has nothing to count and nobody to be yet */
+.stage[data-screen="intro"] .hud{ display:none; }
+
+/* §5 ON THE MAP THE HUD IS OUT OF FLOW, and that is what makes the map
+   pass BEHIND it rather than start below it. It is the same row, the same
+   three chips, with no band and no background of its own — the stage's
+   charcoal and dot grid run under the chips unbroken, and the path scrolls
+   through that gap. Taking it out of flow is also what hands .sc-map the
+   whole stage: the screen is the only flex child left, so it fills the
+   column without a negative margin anywhere.
+   In the round it stays IN FLOW: the card is measured against the height
+   the HUD leaves, and floating it there would put the card under it. */
+.stage[data-screen="map"] .hud{
+  position:absolute; z-index:30;
+  top:calc(10px + env(safe-area-inset-top));
+  left:calc(16px + env(safe-area-inset-left));
+  right:calc(16px + env(safe-area-inset-right));
+  background:none;
+}
+/* the HUD's centre slot. Exactly one of the two children is ever in it,
+   and the slot holds the same box either way so the row never jumps. */
+.hud-mid{ flex:1; min-width:0; display:flex; justify-content:center; align-items:center; }
+.hud-progress[hidden], .hud-topic[hidden]{ display:none; }
+
+/* §3 THE COIN CHIP GOES BACK TO A FULL PILL — deliberately, and it is now
+   the only 999px corner in the prototype. See the report: what hachach.css
+   CALLS H-A is the 14px chip (--r-chip), and 999px is the SHIPPED app's
+   coin chip (styles/home.css:9). The token is not touched, because
+   --r-chip is also .v-a, .ib-b, .p-c and the chyron; this is scoped to the
+   two chips that carry a NUMBER in the HUD row, so the pair still reads as
+   one family and the grammar chips are left where the board put them. */
+.hud-coins, .hud-progress{ border-radius:999px; }
+.hud-progress{ direction:ltr; font-size:var(--fs-body); }
+
+/* =====================================================================
+   1 · INT-D · THE INTRO
+   One primary action, and it goes straight to the map. There is no
+   character step: §4.1 kills creation-as-first-step outright and the
+   default avatar is assigned at boot. The flowmap's Intro -> Create -> Map
+   is superseded; a stub would be a screen we know is wrong.
+   ===================================================================== */
+/* EVERY VERTICAL NUMBER HERE IS TIED TO VIEWPORT HEIGHT, and it has to
+   be: the intro is the one screen with no card to scale, so if the
+   composite does not shrink it clips — the stage is overflow:hidden and
+   would simply eat the CTA. Margins are all explicit for the same reason;
+   the UA's 1em <p> margin is 26px under a 26px sub-head and was quietly
+   spending a fifth of the slack on a 667px phone. */
+/* A1 · ONE COMPOSED GROUP, SHIFTED UP. With the lede pill and the note
+   gone, the four things left — title, chair, tagline, CTA — are centred as
+   a block rather than spread between the top and the bottom edges. The CTA
+   keeps a small auto margin so it settles at the foot of the group instead
+   of being pushed to the foot of the screen. */
+.sc-intro{ align-items:center; text-align:center;
+  justify-content:center; padding-top:clamp(6px, 1.6vh, 14px); }
+/* the plaza the building stands on */
+.sc-intro::before{
+  content:""; position:absolute; left:-16px; right:-16px; bottom:-12px; height:62%;
+  z-index:0; pointer-events:none;
+  background:linear-gradient(to top,#6E6242 0%,#514A38 38%,rgba(64,62,58,0) 100%);
+}
+.i-tag{ flex:none; position:relative; z-index:5; margin:clamp(6px,1.5vh,16px) 0; }
+/* THE TITLE AND THE CHAIR ARE ONE COMPOSITE STICKER. The chair sits ON the
+   letters and both carry the same white die-cut edge — the overlap of the
+   two cuts is the whole idea, and it only works because neither is boxed. */
+.i-comp{ position:relative; z-index:5; display:flex; flex-direction:column;
+  align-items:center; margin-top:6px; flex:none; }
+.i-title{ display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; z-index:4; }
+/* the chair sits ON the letters — the two die-cut edges overlapping IS
+   the composite — so the negative margin is the whole point of it. Sized
+   off viewport height for the same reason the title is. */
+.i-chair{ display:block; position:relative; z-index:3;
+  margin-top:clamp(-64px, -7.5vh, -40px);
+  width:auto; height:clamp(150px, 36vh, 324px); aspect-ratio:278 / 324;
+  filter:url(#dcw) drop-shadow(0 4px 0 rgba(0,0,0,.3)); }
+/* §2 · A SOFT DARK LIFT BEHIND THE TAGLINE, and this is the element that
+   actually needed it: measured at 360, .i-sub and .i-para both cross the
+   building — the roof band and the flags — while the title clears it at
+   every viewport and sits on the charcoal ground.
+   TWO BLURRED LAYERS, NO OFFSET-HEAVY DROP. A tight one for the local
+   contrast right at the glyph edge and a wide one that darkens the whole
+   patch behind the line, both pure black at partial alpha. There is no
+   0-blur term, so it can never read as an outline, and no colour, so it
+   can never read as a glow. */
+.i-sub{ margin:clamp(10px,2.4vh,20px) 0 0; font-size:clamp(21px,3.1vh,26px);
+  font-weight:700; color:#EFECE4; position:relative; z-index:4; flex:none;
+  text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
+.i-para{ margin:clamp(6px,1.2vh,10px) 0 0; max-width:30ch;
+  font-size:clamp(14px,1.9vh,16px); font-weight:700;
+  line-height:1.5; color:#EFECE4; position:relative; z-index:4; flex:none;
+  text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
+.i-stage{ position:absolute; left:-16px; right:-16px; bottom:-12px; top:0;
+  z-index:1; pointer-events:none; overflow:hidden; }
+.i-build{ position:absolute; left:0; right:0; bottom:0; width:100%; display:block; }
+/* a scrim OVER the building and under the type. On a 667px phone the
+   paragraph and the note come down onto the flags and the road stripes,
+   and light type on that is unreadable. It sits inside .i-stage so it can
+   never get between the composite and the viewer. */
+/* §2 · THE SCRIM CARRIES THE REST, and this is the right lever rather than
+   a heavier text-shadow. Measured under the glyph strokes at 360, the
+   paragraph crosses the building's lit roof band at 2.13:1 — the shadow
+   alone takes it to 3.87:1, past AA-Large but short of the 4.5:1 body
+   text needs, and the brief says not to push the shadow further.
+   The scrim is the mechanism already designed for exactly this case; it
+   was simply too weak where the paragraph lands. It reached only ~31%
+   black at the paragraph's height because the .55 stop sat at 46% of a
+   46%-tall band. Raised to 56% tall with the mid stop held further up, so
+   the type band is genuinely dark while the gradient still fades to
+   nothing well before the roof line — the building keeps its own light.
+   TUNED TO THE MINIMUM THAT CLEARS AA, by sweeping four candidates and
+   measuring both the paragraph's contrast and the mean luminance of the
+   building band underneath it: 50%/.78 gives 4.76:1, this gives 5.49:1,
+   56%/.86 gives 7.01:1. The building band only moves 0.2251 -> 0.2122
+   across that whole range, so the scrim costs the illustration far less
+   than it looks like it does; this setting takes the margin over AA and
+   still leaves the building 1.6% brighter than the heaviest candidate. */
+.i-stage::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:52%; z-index:2;
+  background:linear-gradient(to top,rgba(43,41,38,.80),rgba(43,41,38,.58) 52%,rgba(43,41,38,0));
+}
+/* the action sits with the group, not at the bottom of the screen — that
+   is the whole point of A1's rebalance. A capped top margin keeps it
+   clearly separate from the paragraph without opening a gap. */
+/* §1 · DOWN 12px. Every bound of the top clamp moves by the same 12, so
+   the gap grows by 12 at every viewport rather than only where the middle
+   term is active — clamp(18,4vh,34) at 360 resolves to its 4vh term, at
+   393 to its ceiling, and bumping only one of the three would have moved
+   some phones and not others. Re-measured below the fold check. */
+/* THE 12px COMES OUT OF THE BOTTOM MARGIN, NOT OUT OF THE COLUMN.
+   .sc-intro is justify-content:center, so simply growing the top margin
+   grows the whole group and the centring gives back half of it — the
+   first attempt moved the CTA down 6px and pushed the title UP 6px.
+   Adding 12 above and removing 12 below leaves the group exactly as tall
+   as it was, so nothing above the CTA moves and the CTA moves the full
+   12. Verified: title top unchanged, CTA top +12 at every width. */
+.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 clamp(0px,calc(2.4vh - 12px),8px);
+  width:280px; font-size:clamp(21px,3.1vh,26px);
+  position:relative; z-index:6; flex:none; }
+
+/* ---- the display title, letter by letter --------------------------
+   Each glyph is its own <svg><text>, which is how the white cut can
+   overlap its neighbour's — a single <text> would paint one stroke around
+   the whole run. paint-order puts the stroke behind the fill so the cut
+   reads as a cut and not as an outline.
+   AND IT IS IMMUNE TO THE WEBKIT BIDI BUG: one character per <text> has no
+   order to get wrong. The right-to-left run is done by RTL inline-flex on
+   .i-ls, which is HTML layout, not SVG text shaping. */
+/* THE ONE SIZE THE TITLE HAS. .g is sized in em, so without this the
+   glyphs inherit the body's 14px and the composite collapses. Tied to
+   viewport HEIGHT, not width: height is what runs out on a 667px phone,
+   and the chair below it is competing for the same space. */
+.i-ls{ display:inline-flex; align-items:center; line-height:1;
+  font-size:clamp(52px, 9.6vh, 84px); }
+/* a run of Western numerals, kept LTR inside the RTL row */
+.i-ls .i-run{ display:inline-flex; direction:ltr; flex:none; }
+/* §2 · the title gets LIFT, not contrast. It already carries a white
+   die-cut keyline and it does not cross the building at any viewport, so
+   a heavy shadow here would only muddy the keyline. The existing hard 2px
+   is kept — that is the sticker's own edge — and one soft blurred layer
+   is added under it so the sheet lifts off the ground. */
+.i-ls .g{ width:.86em; height:1em; overflow:visible; flex:none;
+  margin:0 -.115em; position:relative;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.30))
+         drop-shadow(0 4px 11px rgba(0,0,0,.45)); }
+.i-ls .g:nth-child(2n){ z-index:2; }
+.i-ls .g:nth-child(3n){ z-index:3; }
+.i-ls text{
+  font-family:var(--font-display); font-weight:900; font-size:92px;
+  text-anchor:middle; fill:var(--ink); stroke:var(--edge); stroke-width:29px;
+  stroke-linejoin:round; paint-order:stroke fill;
+}
+/* §3 · THE COLOURED RING, painted UNDER the white cut and nowhere else.
+   fill:none so it contributes no letterform at all — it is an edge and
+   only an edge, which is the whole difference from the rejected filled
+   version. The stroke colour is set per glyph by lsGlyph().
+   WIDTH: 36 against the white's 29, so 3.5 user units show on each side.
+   The SVG's 100 units map to .86em of a fluid font-size, so that lands at
+   1.9px at 360, 2.5px at 393 and 2.6px at 430 — the "~2px" the brief asks
+   for at the small end, drifting up slightly on the larger phones because
+   the whole title scales with the viewport. Holding a literal 2px at
+   every width would need non-scaling-stroke, which cannot be combined
+   with a width expressed relative to the white stroke underneath it. */
+.i-ls text.g-ring{
+  fill:none; stroke:var(--ring); stroke-width:36px; stroke-linejoin:round;
+}
+/* the soft lift added in §2 sits exactly where the ring does and was
+   swallowing it, so a ringed glyph keeps the hard 2px edge shadow and
+   drops the blur — the ring is doing that job for these two variants. */
+.i-ls .g--ring{ filter:drop-shadow(0 2px 0 rgba(0,0,0,.30)); }
+
+/* =====================================================================
+   2 · THE PATH MAP
+   The one surface in the app that scrolls, and the only reason .scrolls
+   exists. Bottom to top: node 1 is at the FOOT of the path, which is why
+   the window opens parked near the bottom and climbs.
+   ===================================================================== */
+/* §4 THE MAP HAS NO GROUND OF ITS OWN. It used to carry the board's
+   .path-glow — two radial washes over a warm-to-blue vertical ramp — which
+   is the only place in the app where the ground changed under a screen,
+   and it made the map look like a different product from the round. It is
+   gone. What shows through is .stage's own charcoal and its 4px/7px dot
+   grid, unbroken from the top of the HUD to the foot of the path, which is
+   what every other screen stands on. */
+/* §5.3 · THE MAP SURFACE REACHES ALL FOUR VIEWPORT EDGES.
+   THE CAUSE, measured rather than guessed. .stage carries
+   `padding: 10px+safe-top / 16px / 12px+safe-bottom / 16px`, and .mapwin
+   cancelled the HORIZONTAL half of that with `margin:0 -16px` and nothing
+   at all vertically. So the map's scroll surface has always stopped 10px
+   below the viewport top and 12px above the bottom.
+   IT WAS INVISIBLE BECAUSE THE TWO GROUNDS MATCHED: the map had no ground
+   of its own and what showed in those strips was .stage's charcoal, the
+   same charcoal the map was drawn on. What made it visible was the
+   ribbon — the road ran to .mapwin's edge and stopped 10/12px short of
+   the screen, which is what reads as "the map is sitting in a box".
+   §3.2's gradient would have made it obvious in a different way: a
+   gradient surface with a flat charcoal strip above and below it.
+   So this is NOT the styles/base.css `--vh` bug — .stage measures
+   0->852 at 393x852, full height, and 100dvh does win here because
+   proto.css puts it in an @supports block AFTER the --vh declaration.
+   base.css:25 has the opposite order and that IS broken, but it is the
+   shipped app's file and a different screen; see the report.
+   THE FIX is to give the map back the padding on all four sides, not
+   just two. The HUD floats over it at z-index 12, which it already did. */
+.sc-map{ min-height:0; }
+.mapwin{
+  position:relative; flex:1; min-height:0;
+  margin:calc(-10px - env(safe-area-inset-top)) -16px
+         calc(-12px - env(safe-area-inset-bottom));
+}
+/* the HUD and the jump button keep their inset — only the SURFACE bleeds */
+.sc-map .map-jump{ bottom:calc(14px + env(safe-area-inset-bottom)); }
+.path{ position:relative; width:100%; }
+
+/* §2 THE CONNECTOR IS THE BOARD'S RIBBON, not a bead trail. The v7 path
+   study picked it outright — "a ribbon with a lit top and a shadowed
+   under-edge, so the path carries the same thickness the nodes do" —
+   and the archive note records it as already applied to the v8 map. The
+   dotted variant it replaces was the treatment the study was run to
+   REPLACE. Both strokes and both colours are PathRoad's own.
+   The taper is the two strokes, not a width ramp: 23px of dark offset 6px
+   down, 19px of lighter laid on top, so 2px of shadow shows on each side
+   and 6px along the bottom — the same lit-top-over-dark-base construction
+   the discs, the chips and the cards are all built from. */
+.path-line{ position:absolute; inset:0; width:100%; height:100%; z-index:1; overflow:visible; }
+/* §3.2 the ribbon is re-toned for the warm ground. The old #2A2924/#615D53
+   pair was mixed for charcoal and read as a dead grey road on the
+   gradient. Same construction — dark base offset 6px, lighter top laid
+   over — with both tones pulled toward the ground's own warmth, so the
+   road belongs to the map instead of sitting on it. */
+.pl-under{ fill:none; stroke:#3A2119; stroke-width:23; stroke-linecap:round;
+  transform:translateY(6px); }
+.pl-dots{ fill:none; stroke:#7A5B49; stroke-width:19; stroke-linecap:round; }
+
+.node{ position:absolute; z-index:2; width:var(--node-box);
+  display:flex; flex-direction:column; align-items:center; }
+/* THE GAP UNDER THE NODE IS PART OF THE 15%. It is not the margin — it is
+   the distance from the base of the disc to the label, and the ring box
+   closed up by 2px when the overhang went, so the margin has to make up
+   the difference as well as grow. Board: 132 - (24.5+76+7) + 2 = 26.5px.
+   Now: 130 - (17.5+87+8) + 13 = 30.5px, which is 26.5 x 1.15. */
+/* §0b · THE SAME LIFT THE INTRO TAGLINE GOT, for the same reason and by
+   the same mechanism. On flat charcoal this type was fine; §3.2's warm
+   gradient put the labels over ground that runs to #F2B33C at the foot of
+   the map, and #EFECE4 on that is nearly invisible. Two blurred black
+   layers, no 0-blur term and no colour, so it is lift and never an
+   outline or a glow. The status line gets it too and needs it more — it
+   is smaller and it is --ink-faint rather than white. */
+.node-name{ margin-top:13px; font-size:16px; line-height:1.2; text-align:center;
+  color:#EFECE4; font-family:var(--font-display); font-weight:900;
+  text-shadow:0 1px 4px rgba(0,0,0,.92), 0 2px 14px rgba(0,0,0,.78); }
+/* THE STATUS LINE IS ALSO RE-INKED, and it had to be. --ink-faint is
+   #BEB9AC — a light grey chosen for a dark ground — and on the gradient's
+   light end it starts at 1.24:1, which no shadow can rescue: a shadow
+   raises contrast by darkening what is BEHIND the glyph, and there is a
+   limit to how much of a light ground a blur can darken before it reads
+   as a plate. #E4DFD3 gives the shadow something to work with while
+   staying clearly subordinate to the 16px display name above it.
+   Measured ceiling for this mechanism is in the report — it clears
+   AA-Large but not AA at the very foot of the map. */
+.node-status{ font-size:13px; font-weight:700; color:#E4DFD3;
+  text-shadow:0 1px 4px rgba(0,0,0,.92), 0 2px 14px rgba(0,0,0,.78); }
+
+/* ---- the node itself ----------------------------------------------
+   THE RING IS A SEPARATE ELEMENT BEHIND THE NODE and nothing the node
+   carries may touch it. The face is 76px centred on (66,62.5); the ring is
+   r=63 with a 6px stroke centred on (66,66) — 3.5px lower, because it is
+   centred on the face PLUS its 7px base, not on the face alone. Both
+   badges are inset from the face far enough that their casings clear it
+   too — see .node-check below. */
+.ringnode{ position:relative; display:block; overflow:visible;
+  width:var(--node-box); height:var(--node-box-h); }
+.ring{ position:absolute; left:0; top:0; z-index:1; overflow:visible;
+  width:var(--node-box); height:var(--node-box-h); }
+.seg{ stroke-width:var(--ring-w); fill:none; stroke-linecap:round; }
+/* THE CASING CARRIES FULL WEIGHT NOW. It used to be a 4px arc at 72%
+   opacity, which was legible when the ring hugged the disc at 6px; at the
+   18.5px stand-off the icon's overhang forces, a thin pale arc stopped
+   reading as part of the node and became two brackets floating near it.
+   Both states are --ring-w, and the difference is VALUE and hue, not
+   thickness — so the ring reads as one track with part of it filled,
+   which is what a progress ring has to look like.
+   The unplayed state is still legible without colour: it is a dark inert
+   casing against the topic's own saturated hue. */
+/* §3.2 · ONE NODE COLOUR, AND THE STATES MOVE FROM HUE TO VALUE.
+   The disc used to carry the topic hue and the ring used the same hue for
+   its filled segments, so "which topic" and "how far through it" were the
+   same variable at two saturations. The sticker names the topic now, so
+   the disc goes to one shared ink for all six and the ring carries state
+   alone — CREAM for done, dark translucent for not. That is a value
+   contrast rather than a hue contrast, which is what keeps it legible
+   against a gradient that runs from #F2B33C to #8E2A2E; a hue-coded ring
+   would have had to fight a different background colour at every node.
+   The per-topic hues stay in data.js and are still written onto the node
+   as --tc; nothing reads them here. Presentation only, as briefed. */
+.seg-off{ stroke:rgba(24,20,16,.42); }
+.seg-on { stroke:var(--paper); }
+
+/* §1 THE DISC CARRIES THE HUE, AND THE ICON SITS ON CREAM. This reverses
+   the neutral-dark disc: on device that lost the eight-hue topic system
+   entirely, floated the icons on near-black, and sank the extrusion into a
+   ground that was almost the same value as the base.
+   The hue is now the raw data.js topic colour rather than a wash of it, so
+   the disc reads as the topic from across the screen, and the base is that
+   colour multiplied to 78% — a flat multiply, so the hue is preserved
+   exactly and the seam between face and base cannot show. Against the
+   charcoal ground a saturated disc over a darker version of itself is the
+   same figure-on-ground the cards and chips use.
+
+   DUOLINGO EXTRUSION, NOT A DROP SHADOW. Zero blur, zero spread, offset
+   straight down by the depth. */
+.node{ --node-fill:#2E2A26; --node-base:#171412; }
+.node-face{
+  position:absolute; left:var(--node-face-x); top:var(--node-face-y); z-index:2;
+  width:var(--node-face); height:var(--node-face); border-radius:50%;
+  border:0; padding:0; cursor:pointer;
+  background:var(--node-fill);
+  box-shadow:0 var(--node-depth) 0 0 var(--node-base),
+             0 0 0 1.5px rgba(0,0,0,.42);
+  transition:transform var(--t-node-press) linear, box-shadow var(--t-node-press) linear;
+}
+.node-face:active{ transform:translateY(var(--node-depth));
+  box-shadow:0 0 0 0 var(--node-base), 0 0 0 1.5px rgba(0,0,0,.42); }
+.node-face:focus-visible{ outline:3px solid var(--edge); outline-offset:3px; }
+
+/* ---- THE ICON SITS DIRECTLY ON THE DISC ---------------------------
+   §1.4 resolves the standing A3 conflict in favour of the newer
+   instruction. The cream stadium tile and the 14px overhang are both
+   gone; the icon lies flat on the hue, optically centred in the face,
+   which is what the earliest node version did.
+
+   WHAT STILL SEPARATES A CORAL ICON FROM A CORAL DISC is the die-cut —
+   url(#dcw-sm), the 2px white dilate the avatars carry (the cards' own
+   edge, #dcw, is 5px; this is the small one). The earlier
+   instruction was "pick one, do not do both": the tile and the die-cut
+   were the two candidates, the tile won that round, and removing the tile
+   promotes the die-cut rather than leaving the icon unseparated. It
+   follows the object's silhouette instead of boxing it, so the cream
+   still shows through the gaps in the scales and the hole in the
+   magnifier — which is where most of the separation came from anyway.
+
+   OPTICALLY CENTRED, NOT BOX CENTRED. The face is 87px with an 8px base
+   under it, so the composite's centre of mass sits below the face's; the
+   icon is lifted 1.5px off the geometric centre so it reads as sitting in
+   the middle of the disc rather than slightly low on it. Everything is
+   measured from the FACE, so the icon still inherits the 80ms translateY
+   the disc takes on press — it is a child of the face, not a sibling.
+
+   IT MUST CLEAR THE RING, and it does with room to spare. The widest icon
+   in the set is the scales at 56.6 x 49.6 (gender, node_scale 1.11), whose
+   half-diagonal is 37.6px from the face centre — 46.0 from the ring
+   centre once the ring's 4px drop is taken in — against the ring's 54.5px
+   inner edge. The tallest, the receipt, is 29.2 x 54.9 and clears by
+   more. Nothing in the set touches the ring at any of the three widths. */
+.node-ico{
+  position:absolute; left:50%; top:calc(50% - 1.5px); z-index:3;
+  transform:translate(-50%, -50%);
+  display:block; pointer-events:none;
+  filter:url(#dcw-sm);
+}
+/* the emoji fallback has no die-cut to give it — it is a glyph, not art */
+span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.28)); }
+
+/* the two badges. The number is always there — nodes are numbered, and a
+   number that vanishes on completion stops being an address. */
+.node-num{
+  position:absolute; left:6px; bottom:6px; z-index:3;
+  width:24px; height:24px; border-radius:50%;
+  display:grid; place-items:center;
+  direction:ltr; font-family:var(--font-display); font-weight:900; font-size:14px;
+  background:var(--paper); color:var(--ink);
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.3);
+}
+/* THE BADGES CLEAR THE RING, halo included, and they still do at 15%.
+   24px inset 6px on an 87px face puts a badge's far corner 50.3px from
+   the RING centre — 51.8 with its 1.5px casing — against the ring's
+   54.5px inner edge. That is 2.7px of clearance where the board's
+   21/5 against r=50.5 had 1.7px, so the rule "nothing may overlap the
+   ring, shadows included" holds by a wider margin than before. */
+.node-check{
+  position:absolute; right:6px; bottom:6px; z-index:3;
+  width:24px; height:24px; border-radius:50%;
+  display:grid; place-items:center;
+  font-size:14px; font-weight:900;
+  background:#2B2926; color:#fff; border:2px solid var(--paper);
+  box-shadow:0 2px 0 0 #161413;
+}
+/* THE SOFT NUDGE, and it is the only one. No lock, no prerequisite, no
+   "pick needed" warning: free choice is a SET decision (§3.1) and the
+   current node is a suggestion for choice-paralysis, nothing more. */
+/* §3.3 · THE SLOW PULSE, and it is a nudge and nothing more.
+   Behind the node, never on it: a soft disc that breathes between 0.94
+   and 1.16 over 3.4s. Slow enough that it reads as ambient rather than as
+   an alert, and it never touches the node's own geometry, so a pulsing
+   node and a still one are the same size and the same shape — nothing
+   about it says "you must play this one". The map stays free choice.
+   NO MOTION UNDER prefers-reduced-motion: the glow holds at its midpoint
+   so the node is still marked, it simply stops moving. The global
+   reduced-motion rule at the foot of this file caps durations at 1ms,
+   which for an infinite alternate loop would strobe — hence the explicit
+   `animation:none` here rather than relying on it. */
+.node.is-current .ringnode::before{
+  content:""; position:absolute; z-index:0;
+  left:50%; top:calc(var(--node-face-y) + var(--node-face) / 2);
+  width:150px; height:150px; margin:-75px 0 0 -75px;
+  border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle,
+    rgba(255,255,255,.34) 0%, rgba(255,255,255,.16) 42%, rgba(255,255,255,0) 70%);
+  animation:node-pulse 3400ms var(--e-settle) infinite alternate;
+}
+@keyframes node-pulse{
+  from{ transform:scale(.94); opacity:.55 }
+  to  { transform:scale(1.16); opacity:1 }
+}
+@media (prefers-reduced-motion: reduce){
+  .node.is-current .ringnode::before{
+    animation:none; transform:scale(1.05); opacity:.8;
+  }
+}
+.node.is-current .seg-off{ stroke:rgba(24,20,16,.55); }
+/* §3.3 · THE NEXT-UP NODE. A white keyline plus the pulse behind it —
+   see .node.is-current .ringnode::before. */
+.node.is-current .node-face{
+  box-shadow:0 var(--node-depth) 0 0 var(--node-base),
+             0 0 0 3px var(--edge), 0 0 0 4.6px rgba(0,0,0,.45);
+}
+.node.is-current .node-face:active{
+  box-shadow:0 0 0 0 var(--node-base),
+             0 0 0 3px var(--edge), 0 0 0 4.6px rgba(0,0,0,.45);
+}
+/* an untouched node is carried by its RING — two unfilled casings — and by
+   the tile and art sitting a little back. The disc cannot carry it: the
+   disc is the topic's identity now and is the same on every state. */
+.node.is-untouched .node-ico{ opacity:.9; }
+
+/* §3 THE PINNED SECTION HEADER IS GONE. It named the node nearest the
+   middle of the window and swapped as you climbed — Duolingo's move, and
+   the right one on a list of lessons that have no labels of their own.
+   Every node here already carries its topic's name under it, so the header
+   was saying the same word twice, and it needed an opaque band across the
+   top of the map to stay legible. Removing it also removes the band. */
+
+/* ---- jump back to the current node ---------------------------------
+   Only ever visible when the current node is off screen; it is a way back,
+   not a nag. It is not a Claim button and it awards nothing. */
+.map-jump{
+  position:absolute; z-index:21; bottom:14px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:7px;
+  padding:7px 15px 8px; border:0; cursor:pointer;
+  border-radius:999px; background:var(--paper); color:var(--ink);
+  font-family:var(--font-display); font-weight:900; font-size:14px;
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  opacity:0; visibility:hidden;
+  transition:opacity 160ms linear, visibility 160ms linear;
+}
+.map-jump.is-on{ opacity:1; visibility:visible; }
+.map-jump i{ font-style:normal; line-height:1; }
+
+/* ---- map -> round -------------------------------------------------
+   Under the brief's 350ms cap and deliberately cheap: the map drops back
+   and fades, the round comes up. It is a cut with a hinge on it, not a
+   transition to spend time on. */
+.sc-map.is-leaving{ animation:map-out var(--t-screen) var(--e-in) both; }
+.sc-round.is-entering{ animation:round-in var(--t-screen) var(--e-settle) both; }
+.sc-map.is-arriving{ animation:map-in var(--t-map-in) var(--e-settle) both; }
+@keyframes map-out  { to{ opacity:0; transform:scale(.965) } }
+@keyframes round-in { from{ opacity:0; transform:scale(1.03) } }
+@keyframes map-in   { from{ opacity:0; transform:scale(1.02) } }
+
+/* =====================================================================
+   4 · THE COIN AWARD, AS A FLIGHT
+   Tokens leave the point the award was earned at — the stamp, the verdict
+   — and arrive at the chip that counts them. They are spawned into a fixed
+   layer over everything so no beat has to make room for them, and they are
+   pointer-transparent so they cannot eat a tap mid-flight.
+   ===================================================================== */
+/* direction:ltr IS LOAD-BEARING, and this cost a bug. A token is
+   positioned entirely by transform, so it was left with left:auto and
+   top:auto — and in an RTL containing block the static position of an
+   absolutely positioned box is its inline START, which is the RIGHT edge.
+   Every token therefore began 390px to the right of where the maths put
+   it and flew off the stage, where overflow:hidden ate it silently.
+   left:0/top:0 pins the origin; direction:ltr keeps it pinned if the
+   offsets are ever dropped again. */
+.coinfly{ position:absolute; inset:0; z-index:60; pointer-events:none; direction:ltr; }
+.coin-t{
+  position:absolute; left:0; top:0; width:19px; height:19px; border-radius:50%;
+  background:var(--primary);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.55), 0 2px 0 rgba(0,0,0,.3);
+  will-change:transform, opacity;
+}
+/* the chip's own acknowledgement, once per arrival */
+.hud-coins.is-landing{ animation:coin-land 180ms var(--e-out); }
+@keyframes coin-land{ 0%,100%{transform:none} 40%{transform:scale(1.09)} }
+
+/* =====================================================================
+   A6 · THE CLAIM RESOLVES ON THE SPOT
+   A full-screen surface over everything: the verdict stamp alone first,
+   then the explanation under it and one way out. It sits above the HUD
+   because the claim is the only thing on screen at this moment — the coin
+   count and the issue title are not competing with the answer.
+   ===================================================================== */
+/* =====================================================================
+   §1.2 · V18-1 · THE CLAIM REVEAL, ON THE CARD
+   The full-screen scrim is GONE. .creveal used to be an inset:0 overlay
+   at 90% opacity with a 14px backdrop blur, which is what took the HUD,
+   the coins and the issue title off screen and left the stamp with
+   nothing to land on. Everything here now lives inside .cardwrap.
+   ===================================================================== */
+/* THE STAMP OVERLAPS THE CARD'S EDGE. It is centred on the card's upper
+   third and pulled 22px past the leading edge, which is the same
+   relationship the cascade's stamp has — the overlap is what reads as
+   "applied to this card" rather than "drawn on the screen in front of
+   it". .cardwrap does not clip, so the overhang survives. */
+/* §4a · THE STAMP CLEARS THE CLAIM TEXT, ALWAYS.
+   It was 190px at top:118, which put it across y 294-484 while the claim
+   ran 361-461 — half the sentence under the disc, on the option that was
+   chosen precisely because the card stays readable.
+   THE CLAIM'S TOP IS A KNOWN NUMBER, not a guess: in the revealing state
+   the card is 44px of padding, then the art capped at --b1art-cap 126px,
+   then a 10px margin, so the claim always starts 180px into the card and
+   the art always ends at 170. A 136px stamp at top:20 ends at 156 — 24px
+   of clearance from the claim and fully inside the art band. It stays
+   over the artwork, which is what a stamp on a document does.
+   It is smaller than the cascade's 190px on purpose: at 190 nothing fits
+   in that band at any offset. */
+/* §0 · THE STAMP STRIKES THE CARD. d2-land was already running, so the
+   fault was not a missing animation — it was the EASE. --e-land is
+   cubic-bezier(.2,.9,.25,1), which front-loads: measured frame by frame,
+   the disc reached final scale at 134ms of a 190ms fall and the overshoot
+   peaked near 1.036 instead of 1.06. It arrived rather than landed.
+   Same keyframe, re-cut with a per-phase timing function over a linear
+   base, so each stated duration is the duration it takes:
+     0 -> 190ms    scale 1.8 -> 1.0, ACCELERATING, like a thing falling
+     190 -> 252ms  overshoot to 1.06, the rebound off the card
+     252 -> 340ms  settle to 1.0
+   Opacity is up by 20ms so the disc is never a ghost mid-fall. The card's
+   3px jolt is hachach.css's own d2-jolt at --t-stamp-drop, so it fires on
+   the frame the disc hits. */
+.d2--claim{
+  top:20px; left:-26px; z-index:12;
+  width:136px; height:136px;
+  animation:d2-claim-land var(--t-stamp) linear both;
+}
+@keyframes d2-claim-land{
+  0%   { transform:scale(1.8); opacity:0;
+         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
+  6%   { opacity:1;
+         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
+  56%  { transform:scale(1);
+         animation-timing-function:cubic-bezier(.25,.9,.35,1) }
+  74%  { transform:scale(1.06);
+         animation-timing-function:cubic-bezier(.35,0,.45,1) }
+  100% { transform:scale(1) }
+}
+.d2--claim .d2__word{ font-size:34px; }
+/* ACHROMATIC. .d2 normally mixes --d2-ink at --verdict-wash over the
+   card; the claim stamp mixes INK instead, so the disc is a neutral
+   wash and the word is the only thing it says. Correctness is .cmark's
+   job and .cmark's alone — see the note in claimReveal(). */
+/* IT HAS TO BE READABLE, which the first attempt was not: a 26% black
+   wash with black ink put a dark word on a dark disc over dark artwork
+   and שקר disappeared. The disc is PAPER at 88% with ink lettering — the
+   same figure-on-ground the rest of the system uses — so the word is the
+   highest-contrast thing on the card while carrying no hue at all. */
+.d2--neutral{
+  --d2-ink:var(--paper);
+  --d2-on:var(--ink);
+  background:color-mix(in srgb, var(--paper) 88%, transparent);
+  color:var(--ink);
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.5);
+}
+.d2--neutral .d2__art circle{ stroke:var(--ink); }
+.d2--claim.is-leaving{
+  transition:transform var(--t-card-exit) var(--e-in), opacity 100ms linear 220ms;
+}
+
+/* ---- the correctness chip, in the chyron slot ----------------------
+   A DIFFERENT PLANE FROM THE STAMP, deliberately: it sits above the card
+   in the round's chrome, where the player's own vote will be pinned two
+   beats later. It carries correctness by COLOUR and by the word, never
+   by a tick — the map already uses ✓ for a completed topic and a tick
+   here would be the same glyph meaning something else. */
+/* §4c · THE BAND COMES OFF FOR THE MARK. .chyron keeps its reserved 44px
+   box — that is what stops the card resizing across the answer — but
+   under .is-mark it drops the fill, the neon stroke and the padding, so
+   there is no empty container around the chip. */
+.chyron.is-mark{
+  background:none !important; box-shadow:none !important;
+  padding-inline:0 !important; justify-content:center;
+  backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+}
+/* §4d · the avatar, so the mark is visibly the PLAYER's */
+.cmark__av{ width:26px; height:26px; flex:none; line-height:0; }
+.cmark__av svg{ width:100%; height:100%; display:block; }
+/* the correctness chip is now .bnr + this: the fill, the type and the
+   entrance. Everything about its edge comes from .bnr. */
+.cmark{
+  font-family:var(--font-display); font-weight:900; font-size:15px;
+  opacity:0;
+  transition:opacity var(--t-flip) linear, transform var(--t-flip) var(--e-land);
+}
+.cmark:not(.is-in){ transform:rotate(-1.6deg) translateY(-6px) scale(.94); }
+.cmark.is-in{ opacity:1; }
+.cmark--ok { --cm:var(--verdict-correct); }
+.cmark--sur{ --cm:var(--verdict-surprise); }
+/* the neutral dot is gone — the avatar is the thing on the leading edge
+   now, and two tokens in one pill was one too many */
+
+/* ---- the explanation panel ----------------------------------------
+   It rises over the card's LOWER PORTION and is capped against the card,
+   not against its own content. IT SCROLLS, and that is load-bearing:
+   e3's tf_explain is 280 characters — the longest of the eleven active
+   issues — and does not fit at a legible size on a 360px phone. The CTA
+   is a sibling of the scroller, not inside it, so it can never be
+   scrolled out of reach. */
+/* §0 · THE CARD DOES NOT RESIZE. REVERTED, and the causal chain is worth
+   writing down: the last pass dropped .b1card's 620px min-height so the
+   card shrank to its content and the panel could sit below it. That did
+   two things at once — the card visibly changed height on answering, and
+   shrinking it EXPOSED THE DECK'S CARD BACK behind it, so the Knesset
+   building appeared under the claim. One cause, two symptoms; fixing only
+   the visible half would have brought the other half back.
+   The height is restored, the deck is untouched, and the panel is a SHEET
+   over the card's foot again rather than a block under it. */
+.creveal__exp{
+  position:absolute; left:0; right:0; bottom:0; z-index:14;
+  max-height:62%;
+  display:flex; flex-direction:column; gap:var(--sp-3);
+  padding:var(--sp-3) var(--sp-3) calc(var(--sp-3) + 2px);
+  background:#211F1B;
+  box-shadow:0 -3px 0 rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+  opacity:0; transform:translateY(18px);
+  transition:opacity var(--t-flip) var(--e-out), transform var(--t-flip) var(--e-settle);
+}
+.creveal__exp.is-in{ opacity:1; transform:none; }
+.creveal__scroll{
+  min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.creveal__text{
+  margin:0; font-size:15.5px; font-weight:700; line-height:1.5;
+  color:#EFECE4; text-align:start; text-wrap:pretty;
+}
+/* §0/§3 · הלאה goes back INSIDE the sheet with the structure, but not back
+   to the 97px pill in the corner it was before the last pass. It keeps the
+   full width it earned there and gains height: the widest thing in the
+   panel and the only thing in it that is not type. §3 asked for
+   substantially wider — 100% of the card against the 28% it had. */
+.creveal__go{
+  position:relative; z-index:15;
+  flex:none; align-self:stretch; width:100%;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  padding:14px 0 15px; font-size:19px;
+}
+.creveal__go i{ font-style:normal; }
+
+/* =====================================================================
+   A9 · THE FINAL REVEAL, rebuilt on Tamar's fields
+   The explanation paragraph and the bill summary are GONE from here: the
+   explanation resolves the claim at beat 1 now, and the bill's description
+   lives in the law modal. What is left is the result, the terms and the
+   ways out — no prose we wrote ourselves.
+   ===================================================================== */
+/* the result is PROSE and it wraps. Some rows are three lines about a
+   committee; nothing here truncates or ellipsises. */
+.b5result{
+  margin:6px 0 0; font-size:var(--fs-body); font-weight:700; line-height:1.45;
+  color:var(--ink); text-align:center; text-wrap:pretty;
+}
+.b5panel.b5-nocount .b5result{ margin-top:0; }
+
+/* glossary terms as chips, not as body text */
+.b5gloss{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:2px; }
+.b5chip{
+  appearance:none; cursor:pointer; border:0;
+  padding:4px 11px 5px; border-radius:var(--r-chip);
+  background:rgba(255,255,255,.10); color:#EFECE4;
+  font-family:var(--font-display); font-weight:900; font-size:var(--fs-meta);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.b5def{
+  margin:6px 0 0; font-size:var(--fs-meta); font-weight:700; line-height:1.5;
+  color:#D8D2C4; text-align:start;
+  background:rgba(0,0,0,.22); border-radius:var(--r-chip); padding:8px 11px;
+}
+.b5def b{ color:#EFECE4; }
+
+/* the links row. A missing URL is a DEAD chip that looks dead — it is
+   marked data-missing-url and listed in the report, never a live-looking
+   anchor that goes nowhere. */
+.b5links{ display:flex; flex-direction:column; gap:5px; margin-top:4px; align-items:stretch; }
+.b5link{
+  display:flex; align-items:center; gap:7px;
+  font-size:var(--fs-meta); font-weight:700; line-height:1.3;
+  color:#D8D2C4; text-decoration:none;
+}
+.b5link i{ font-style:normal; flex:none; opacity:.85; }
+.b5link:not(.is-missing){ text-decoration:underline; text-underline-offset:3px; }
+.b5link.is-missing{ color:var(--ink-faint); opacity:.55; cursor:default; }
+
+/* the secondary way out, under the primary */
+.b5back{ margin-top:8px; }
+
+/* A7 · the law name, small and underlined, under the tachles prompt.
+   §3.2 IT WAS RENDERING GREY, and not by anyone's choice: .b2bill sets
+   #D8D2C4, and this rule — later in the file, same specificity — then
+   overwrote it with `color:inherit`, which resolved to the pane's own
+   muted body colour. It is a tap target under the question and it has to
+   look like one, so it now sets its colour outright at 78% white. The
+   underline and the tap target are unchanged. */
+.b2bill--link{
+  appearance:none; border:0; background:none; cursor:pointer;
+  font:inherit; color:rgba(255,255,255,.78); text-decoration:underline;
+  text-underline-offset:3px; padding:2px 0;
+}
+.b2bill.b2bill--link{ color:rgba(255,255,255,.78); }
+/* =====================================================================
+   B3-3 · THE DIE-CUT STICKER MODAL
+   One component, two contents: the law (title + date + summary + the
+   police-hat placeholder) and a glossary term (term + definition). §3.1
+   moved the glossary onto it; the old inline .gdef panel is gone.
+   ===================================================================== */
+.stmodal{
+  position:absolute; inset:0; z-index:60; display:grid; place-items:center;
+  padding:var(--sp-4); background:rgba(20,18,15,.76);
+  opacity:0; transition:opacity var(--t-ov-in) linear;
+}
+.stmodal.is-in{ opacity:1; }
+.stmodal.is-out{ opacity:0; }
+/* THE STICKER. Same construction as every card and every node icon in the
+   system: a white die-cut edge, the keyline outside it, and a flat
+   extrusion straight down with zero blur. The 1.4-degree tilt is what
+   makes it a sticker laid on the screen rather than a dialog box. */
+.stmodal__box{
+  /* THE BOX NO LONGER SCROLLS — ITS BODY DOES. The ✕ went from sticky to
+     absolute when it became a drawn control, and an absolute child of a
+     scrolling box scrolls away with the content; on b3's 309-character
+     summary the close would have left the screen. Moving the scroll to
+     .stmodal__body pins the ✕, the graphic and the title, which is the
+     better behaviour anyway. */
+  position:relative; width:100%; max-width:312px; max-height:76%;
+  background:var(--paper); color:var(--ink);
+  border:5px solid var(--edge); border-radius:18px;
+  box-shadow:0 0 0 2px var(--keyline), 0 8px 0 rgba(0,0,0,.4);
+  padding:var(--sp-4);
+  display:flex; flex-direction:column; align-items:center; gap:var(--sp-2);
+  transform:rotate(-1.4deg) scale(.9);
+  transition:transform var(--t-flip) var(--e-land);
+}
+.stmodal.is-in .stmodal__box{ transform:rotate(-1.4deg) scale(1); }
+/* the ✕ sits over the scrolling content, not inside it, so a long
+   bill_summary cannot scroll the way out off the top of the box */
+/* flex-start in an RTL column is the PHYSICAL RIGHT, which is where the
+   app's own ✕ lives — see .exitsheet__x. Sticky so a long bill_summary
+   cannot scroll the way out off the top of the box. */
+/* §1 + §1b · ONE CLOSE BUTTON, SHARED BY BOTH MODALS, AND IT IS DRAWN.
+   It was an 18px ✕ glyph at 60% opacity inset 8px from the corner — a
+   typographic character, not a control, and the thinnest thing on a sheet
+   whose every other edge is 2-5px. A glyph also cannot be given a stroke
+   weight: ✕ has no bold in this face, so the only way to specify
+   thickness is to draw it. Two 3px bars in a 46px target.
+   MATCHED TO THE HUD's ✕, which is already right: .ib-b is a 40px cream
+   button and .hud-x sets its glyph at 17px. This is 46px with a 19px mark
+   and a 3px stroke — slightly larger because it sits on paper rather than
+   in a chip, and closer to the corner because a modal's close belongs in
+   the corner, not floated in from it.
+   ONE COMPONENT: the law sheet, the glossary sheet and the exit confirm
+   all use these rules. Two of them previously had their own. */
+.stmodal__x,
+.exitsheet__x{
+  position:absolute; top:2px; right:2px; left:auto; z-index:4;
+  width:46px; height:46px; margin:0;
+  border:0; background:none; cursor:pointer; padding:0;
+  font-size:0; color:var(--ink); opacity:.72;
+}
+.stmodal__x::before, .stmodal__x::after,
+.exitsheet__x::before, .exitsheet__x::after{
+  content:""; position:absolute; left:50%; top:50%;
+  width:19px; height:3px; border-radius:2px; background:currentColor;
+  margin:-1.5px 0 0 -9.5px;
+}
+.stmodal__x::before, .exitsheet__x::before{ transform:rotate(45deg); }
+.stmodal__x::after,  .exitsheet__x::after { transform:rotate(-45deg); }
+.stmodal__x:active, .exitsheet__x:active{ opacity:1; }
+/* the sheet is position:relative already; the title needs to clear the
+   button now that it sits in the corner rather than in the flow */
+.stmodal__box{ padding-top:calc(var(--sp-4) + 8px); }
+.stmodal__art{ width:64px; height:auto; display:block; filter:url(#dcw-sm); }
+.stmodal__title{
+  margin:0; padding-inline:30px;   /* symmetric, so a centred title clears the ✕ */
+  font-family:var(--font-display); font-weight:900;
+  font-size:var(--fs-body); line-height:1.22; text-align:center;
+}
+.stmodal__meta{ margin:0; font-size:var(--fs-meta); font-weight:700; color:var(--ink-soft); }
+.stmodal__body{
+  margin:2px 0 0; font-size:var(--fs-meta); font-weight:700;
+  line-height:1.55; text-align:start; align-self:stretch;
+  min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+/* a glossary term has no graphic and no date, so its sticker is short —
+   the title carries the term and the body carries data.js's definition */
+.stmodal__box:not(:has(.stmodal__art)) .stmodal__title{ font-size:20px; }
+
+/* =====================================================================
+   B2-4 · THE ASK STICKER
+   One component, two copy strings: the claim card asks אמת או שקר? and
+   the first cascade card asks מה הוא/היא הצביע/ה?. Nothing else about it
+   differs between the two.
+   ===================================================================== */
+/* IT COSTS THE CARD NOTHING. It is a child of .cardwrap, which does not
+   clip, and it hangs off the card's TOP-RIGHT corner — the corner
+   diagonally opposite the verdict stamp at top:430 left:-22. The two
+   cannot meet on any card at any scale, which is what makes this the one
+   B2 option with no stamp risk.
+
+   IT IS CHROME-SCALE, NOT CARD-SCALE, and this is the only unusual thing
+   about it. sizeStage() scales .stack so a 620px card fits a short phone;
+   a sticker inside it would inherit that and settle SMALLEST on the
+   smallest screen, which is exactly backwards for an instruction. The
+   counter-scale is 1/--card-scale about the same corner it is pinned to,
+   so the settled sticker is the same number of CSS pixels at 360, 393 and
+   430 — measured, not asserted; the figures are in the report.
+
+   THE TWO TRANSFORMS ARE ON TWO ELEMENTS ON PURPOSE. .ask-st carries the
+   counter-scale, which is static and depends on a custom property;
+   .ask-st__i carries the slap, which is a keyframe animation. Composing
+   them on one element would mean animating a transform whose base value
+   changes on resize. */
+/* IT STRADDLES THE CARD'S TOP EDGE rather than sitting inside the corner,
+   and that is a collision fix, not a preference. .mf-b__id puts the MK's
+   name at top:18px inset-inline:14px with text-align:right — which in RTL
+   is the card's top-RIGHT corner, exactly where a corner sticker wants to
+   go. Drawn there it covered יאיר לפיד outright, and a name long enough
+   would reach a top-LEFT sticker just as surely.
+   bottom:calc(100% - 10px) pins the sticker's FOOT 10px below the card's
+   top edge — 5px of that is the card's own die-cut border — so it reads as
+   stuck onto the card while its body sits above the card entirely. The
+   name block starts 8px below where the sticker ends, at any name length,
+   because the sticker is no longer in the name's band at all. */
+.ask-st{
+  position:absolute; z-index:9; top:auto; bottom:calc(100% - 10px); right:-8px;
+  transform-origin:100% 100%;
+  transform:scale(calc(1 / var(--card-scale, 1)));
+  pointer-events:none;
+  transition:opacity 160ms linear, transform 160ms var(--e-in);
+}
+.ask-st.is-retired{ opacity:0; }
+/* §5.4 · INVERTED. It was cream with ink type — the same fill, the same
+   ink and nearly the same radius as the .v-a vote buttons directly below
+   it, so an INSTRUCTION looked like a CONTROL and invited a tap that does
+   nothing.
+   THE FILL IS NEUTRAL AND MUST STAY NEUTRAL. #2E2A26 is the same ink the
+   map nodes use — a dark grey with no hue in it. Nothing here may take a
+   verdict colour: lime and magenta code correctness, and a coloured
+   sticker on the card the player is about to answer would read as a hint
+   about the answer.
+   IT STILL READS AS APPLIED, not as chrome: the white die-cut border, the
+   keyline outside it and the 4px extrusion are unchanged, and it still
+   straddles the card's top edge at a slap angle. Only the two colours
+   swapped. Type goes up 0.5px to hold at 360px against the darker fill. */
+.ask-st__i{
+  display:block; opacity:0; transform-origin:100% 100%;
+  background:#2E2A26; color:#F4F1E8;
+  font-family:var(--font-display); font-weight:900;
+  font-size:16.5px; line-height:1.06; white-space:nowrap;
+  padding:8px 13px 9px; border-radius:12px;
+  border:3px solid var(--edge);
+  box-shadow:0 0 0 2px var(--keyline), 0 4px 0 rgba(0,0,0,.34);
+}
+/* THE SLAP. It arrives from above and outside the card, over-shoots small
+   on contact and settles — the same land-and-hit shape the verdict stamp
+   uses, at a fraction of its weight, so it reads as part of the same
+   physical language without ever being mistaken for a verdict. It has no
+   hue: the verdict stamp is the only coloured mark in the round. */
+.ask-st__i.is-ready,
+.ask-st.is-slapped .ask-st__i{
+  animation:ask-slap var(--t-ask-in) var(--e-land) both;
+}
+@keyframes ask-slap{
+  0%   { opacity:0; transform:translate(10px,-30px) rotate(-21deg) scale(1.7) }
+  40%  { opacity:1 }
+  62%  { transform:translate(0,0) rotate(-3.2deg) scale(.94) }
+  82%  { transform:translate(0,0) rotate(-6.6deg) scale(1.03) }
+  100% { opacity:1; transform:translate(0,0) rotate(-5.5deg) scale(1) }
+}
+
+/* =====================================================================
+   B1-2 · THE FIRST-RUN INSTRUCTION OVERLAY
+   Full screen, the player's first ever issue, never again. The card is
+   already dealt underneath it — the overlay explains the thing that is
+   there, rather than standing in front of an empty screen.
+   ===================================================================== */
+.b1intro{
+  position:absolute; inset:0; z-index:80; cursor:pointer;
+  display:grid; place-items:center; padding:var(--sp-5);
+  background:rgba(20,18,15,.88);
+  opacity:0; transition:opacity var(--t-ov-in) linear;
+}
+.b1intro.is-in{ opacity:1; }
+.b1intro.is-out{ opacity:0; }
+.b1intro__box{
+  display:flex; flex-direction:column; align-items:center; gap:var(--sp-4);
+  text-align:center; max-width:320px;
+  transform:translateY(10px); transition:transform var(--t-flip) var(--e-settle);
+}
+.b1intro.is-in .b1intro__box{ transform:none; }
+/* the heading is the SAME string the claim sticker carries — one question
+   asked once big and then kept small on the card for every round after */
+/* §1 · the heading is longer than the one it replaced — "טענה — אמת או
+   שקר?" against "אמת או שקר?" — and at 34px in a 300px box it broke with
+   "שקר?" alone on the second line. balance splits it evenly instead, and
+   the box gains 20px so the two halves have room. Type size untouched:
+   this is a wrap fix, not a shrink. */
+.b1intro__t{
+  margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:34px; line-height:1.05; color:#EFECE4; text-wrap:balance;
+}
+.b1intro__b{
+  margin:0; font-size:var(--fs-body); font-weight:700; line-height:1.5;
+  color:#D8D2C4;
+}
+.b1intro__go{ min-width:170px; }
+
+/* A7 · the avatar inside the pinned own-vote band, at the leading edge */
+.chyron-av{ flex:none; width:28px; height:28px; line-height:0; }
+.chyron-av svg{ width:100%; height:100%; display:block; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:1ms !important; transition-duration:1ms !important; }
+}
+
+
+/* =====================================================================
+   A-1 · PARTY CONCEALMENT — THE PEELING COVER
+   An object placed OVER the party line, not a missing field: it is the
+   size of the chip beneath it, it carries the sticker sheet's own die-cut
+   edge, and it says what it is covering. A-2's redaction bar was rejected
+   for reading as accusation on a product about the Knesset, and A-3's
+   priced chip for making this the first thing in the game a player pays
+   for.
+   ===================================================================== */
+.pty{ position:relative; }
+
+/* THE RESIDUE — the ghost of where the tape was stuck.
+   IT IS THE TAPE'S OWN FOOTPRINT, NOT AN APPROXIMATION OF IT: inset and
+   radius are copied from .pcov / .pcov__face, so the patch and the sheet
+   are the same rectangle. That is the whole trick — the residue is
+   already there, exactly covered, BEFORE the peel, so nothing appears,
+   grows or shifts when the sheet lifts. The peel's clip-path uncovers it
+   at the same rate it uncovers the party name, which is what makes it
+   read as "this was covered and now isn't" rather than as a new object
+   arriving to announce that something happened.
+   FLAT BLACK AT 5.5%, hard-edged, no blur — it darkens the kraft AND the
+   grid ruling printed on it by the same amount, which is what an
+   adhesive actually does to a printed card. On #D8C9A8 that lands on
+   #CCBE9F: about 5% down in luminance, enough to find and too little to
+   read as a filled shape. */
+.pty::before{
+  content:""; position:absolute; inset:-2px -4px; z-index:1;
+  border-radius:4px; background:rgba(0,0,0,.055);
+  pointer-events:none;
+}
+/* the name has to sit ON the residue, not under it. .pcov is z-index 3
+   and stays above both, so the stacking is card -> residue -> party ->
+   tape. */
+.pty__val{ display:inline-block; position:relative; z-index:2; }
+/* the settle. The line is already visible by the time this runs — the
+   peel uncovered it progressively — so this is a small landing, not an
+   entrance: a 4% overshoot that resolves, nothing that fades in. */
+.pty.is-open .pty__val{
+  animation:pty-land var(--t-peel-land) var(--e-land) both;
+}
+@keyframes pty-land{
+  0%  { transform:scale(1.04) translateY(-1px) }
+  100%{ transform:none }
+}
+
+.pcov{
+  position:absolute; inset:-2px -4px; z-index:3;
+  border:0; padding:0; background:none; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+/* THE FLAT SHEET. Paper, not a panel: the same cream the stickers are cut
+   from, a hard keyline and a flat 2px extrusion — the construction every
+   other sticker in the app uses. clip-path is what the peel animates, so
+   the sheet is genuinely removed from over the text rather than faded. */
+.pcov__face{
+  position:absolute; inset:0; display:grid; place-items:center;
+  border-radius:4px;
+  background:linear-gradient(160deg,#FBF7EE 0%,#EFE7D4 62%,#E2D9C2 100%);
+  box-shadow:0 0 0 1.4px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.26);
+  clip-path:inset(0 0 0 0);
+}
+.pcov__lab{
+  font-family:var(--font-display); font-weight:900; font-size:11px;
+  line-height:1; color:#6B6350; letter-spacing:.01em;
+}
+/* THE CURL, and this is what gives it thickness. It rides the peeling
+   edge: a narrow strip whose gradient runs light on the outer face to
+   dark on the underside, so the sheet reads as having two sides and a
+   rolled edge rather than as a rectangle being wiped away. It widens as
+   it lifts — a tighter roll opens out — and casts a shadow onto the card
+   below it. Sits at the LEADING edge, which under dir=rtl is the right. */
+.pcov__curl{
+  position:absolute; top:-1px; bottom:-1px; right:0; width:9px;
+  border-radius:2px 5px 5px 2px;
+  transform-origin:right center;
+  background:linear-gradient(to left,
+    #B9AE93 0%, #E8E0CD 34%, #FBF7EE 62%, #D8CFB6 100%);
+  box-shadow:-3px 1px 6px rgba(0,0,0,.42), inset 0 0 0 1px rgba(0,0,0,.18);
+}
+
+/* 1 · THE PEEL. Two animations on one clock: the sheet's clip retreats
+   from the right and the curl rides exactly that edge. They are separate
+   elements because the curl has to rotate and widen while the sheet only
+   clips, and one element cannot do both. */
+.pcov.is-peeling .pcov__face{ animation:peel-face var(--t-peel) var(--e-peel) both; }
+.pcov.is-peeling .pcov__curl{ animation:peel-curl var(--t-peel) var(--e-peel) both; }
+@keyframes peel-face{
+  from{ clip-path:inset(0 0 0 0) }
+  to  { clip-path:inset(0 100% 0 0) }
+}
+@keyframes peel-curl{
+  0%   { right:0;    transform:rotate(0deg)  scaleX(1);   }
+  35%  { transform:rotate(-7deg)  scaleX(1.7); }
+  100% { right:100%; transform:rotate(-14deg) scaleX(2.4); }
+}
+/* the label goes as soon as the sheet starts moving — type sliding under
+   a clip reads as a wipe, which is the one thing this must not look like */
+.pcov.is-peeling .pcov__lab{ animation:peel-lab 180ms linear both; }
+@keyframes peel-lab{ to{ opacity:0 } }
+
+/* 2 · THE DISCARD. It leaves on an arc — left, down and turning — on an
+   accelerating curve, so it reads as dropped rather than slid or faded.
+   The opacity only goes at the very end, so what the eye follows is the
+   object leaving, not the object dissolving. */
+.pcov.is-gone{ animation:peel-drop var(--t-peel-out) var(--e-fall) both; pointer-events:none; }
+@keyframes peel-drop{
+  0%   { transform:translate(0,0) rotate(0deg); opacity:1 }
+  55%  { transform:translate(-14px,16px) rotate(-26deg); opacity:1 }
+  100% { transform:translate(-30px,58px) rotate(-68deg); opacity:0 }
+}
+
+/* NO MOTION, NO COVER. The button is removed outright in wirePeel(), so
+   this only has to make sure nothing animates in the frame before that. */
+@media (prefers-reduced-motion: reduce){
+  .pcov, .pcov__face, .pcov__curl, .pty.is-open .pty__val{ animation:none !important; }
+}
+
+/* =====================================================================
+   §V21-1 · THE INVERTED ROUND
+   One MK, face withheld, vote stated. The card, the sticker, the foot
+   and the stamp are the cascade's own objects — only the question is
+   inverted, and the styling here is deliberately thin for that reason.
+   ===================================================================== */
+
+/* THE BLUR IS ON THE PORTRAIT, NOT ON THE CARD. Blurring .mf-b would
+   take the card's border, its keyline and anything else inside it with
+   the photograph, and would read as a broken render rather than as a
+   withheld face. The drop-shadow is the cascade's own and is kept, so
+   the portrait still sits on the card the same way.
+   Gaussian only. It removes detail and never displaces it, so no step
+   in the sequence can deform a real politician's face — which is the
+   reason the mechanic is blur and not mosaic, pixelation or warp. */
+.mf-b--inv .mf-b__port{
+  filter:blur(var(--inv-blur, 13px)) drop-shadow(0 2px 0 rgba(0,0,0,.18));
+  transition:filter 200ms linear;
+}
+/* 200ms inside a 1400ms hold is 14% of the step: enough not to snap,
+   far too little to read as a continuous sharpen. The step has to stay
+   a step, because a step is the thing the player decides against. */
+
+.inv-tray{ display:flex; flex-direction:column; gap:var(--sp-2); }
+/* .v-a is flex:1, which in a COLUMN stretches each name to fill the
+   foot instead of sizing to its type. */
+.inv-name{ flex:none; width:100%; min-height:52px; font-size:19px; }
+.inv-name.is-picked{ box-shadow:0 0 0 3px var(--edge), 0 0 0 6px var(--ink); }
+
+/* SUBORDINATE. Half the type of the names, no fill, no edge, no
+   extrusion — it is a readout and a secondary control sharing one line
+   under the answers, and neither may look like a fourth option. */
+.inv-bar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:var(--sp-2); padding:5px 9px 6px; margin-top:2px;
+  /* A GROUND, because what is behind it is a photograph. The bar sits on
+     the portrait at the card's foot, and the portrait is different behind
+     every MK — on this deal it lands on a red tie. Cream type on an
+     uncontrolled image is a contrast bug waiting for the next card, so
+     the bar carries its own bed rather than trusting the picture.
+     Dark and neutral, the same #2E2A26 family as the question sticker:
+     nothing at the foot of an unanswered card may carry a hue. */
+  background:rgba(30,27,24,.62); border-radius:11px;
+  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+}
+.inv-steps{ display:inline-flex; gap:5px; align-items:center; }
+.inv-steps i{
+  width:7px; height:7px; border-radius:50%;
+  background:rgba(244,241,232,.30);
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.42);
+  transition:background 200ms linear;
+}
+/* filled = sharpness reached. It reports the FACE, which the player can
+   already see; it never reports the payout, which they cannot. */
+.inv-steps i.is-on{ background:#F4F1E8; }
+.inv-hint{
+  border:0; background:none; padding:2px 4px; cursor:pointer;
+  font-family:var(--font-display); font-weight:900; font-size:13px;
+  color:#F4F1E8; text-decoration:underline; text-underline-offset:3px;
+}
+.inv-hint:disabled{ opacity:.42; text-decoration:none; cursor:default; }
+
+/* THE HINT LANDS AS A STICKER, mid-card on the TRAILING side — which
+   under RTL is the left, hence inset-inline-end. Same die-cut family as
+   the peel reveal it stands in for, and cream rather than the question
+   sticker's neutral dark, because this one is an ANSWER to something and
+   the question sticker is not. It still carries no hue: lime and magenta
+   code correctness and nothing on an unanswered card may borrow them. */
+.inv-hint-st{
+  /* 56%, not the vertical middle. At 47% it landed across the cheek and
+     the eye line — the two features a player actually recognises a face
+     by — so a hint that is supposed to HELP was covering the evidence.
+     It sits on the jaw and shoulder instead, still unmistakably on the
+     card and still on the trailing side. */
+  position:absolute; z-index:8; top:56%; inset-inline-end:-9px;
+  pointer-events:none;
+  /* the counter-scale is on the WRAPPER and the slap is on the inner
+     span, exactly as .ask-st splits them — an animation that sets
+     transform would otherwise wipe the counter-scale out on frame one */
+  transform-origin:0 50%;
+  transform:scale(calc(1 / var(--card-scale, 1)));
+}
+.inv-hint-st__i{
+  display:block; opacity:0; transform-origin:0 100%;
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-display); font-weight:900;
+  font-size:16px; line-height:1.06; white-space:nowrap;
+  padding:7px 12px 8px; border-radius:12px;
+  border:3px solid var(--edge);
+  box-shadow:0 0 0 2px var(--keyline), 0 4px 0 rgba(0,0,0,.34);
+}
+.inv-hint-st.is-slapped .inv-hint-st__i{
+  animation:inv-hint-slap var(--t-ask-in) var(--e-land) both;
+}
+@keyframes inv-hint-slap{
+  0%   { opacity:0; transform:translate(-12px,-22px) rotate(15deg) scale(1.6) }
+  40%  { opacity:1 }
+  62%  { transform:translate(0,0) rotate(2.6deg) scale(.95) }
+  82%  { transform:translate(0,0) rotate(5.4deg) scale(1.03) }
+  100% { opacity:1; transform:translate(0,0) rotate(4.2deg) scale(1) }
+}
+
+/* the name arriving with the reveal, in the slot the cascade has always
+   kept for it — the card gains an identity block rather than unhiding
+   one, because it never had one to unhide */
+.inv-id{ opacity:0; transform:translateY(-7px);
+  transition:opacity var(--t-flip) linear, transform var(--t-flip) var(--e-land); }
+.inv-id.is-in{ opacity:1; transform:none; }
+
+/* THE INVERTED QUESTION IS TWICE THE LENGTH OF THE CASCADE'S. .ask-st__i
+   is white-space:nowrap and .ask-st counter-scales against --card-scale
+   to hold true size while the card shrinks, so at 360px the longer
+   string ran past BOTH edges of the card it is supposed to be stuck to —
+   a sticker that is wider than the object it was slapped onto stops
+   reading as applied and starts reading as a banner.
+   It wraps to two lines inside the card's own width instead. Centred,
+   because a two-line sticker with a ragged trailing edge reads as a
+   paragraph; and half a point smaller, which buys the second line back
+   most of what the wrap cost. */
+.ask-st--inv{ inset-inline-start:auto; }
+.ask-st--inv .ask-st__i{
+  white-space:normal; text-align:center; text-wrap:balance;
+  max-width:calc(var(--card-w) - 34px);
+  font-size:16px; line-height:1.18; padding:8px 14px 9px;
+}
+.inv-hint-st.is-retired{ opacity:0; transition:opacity 160ms linear; }
+
+
+/* =====================================================================
+   §1 · THE LOADING BEAT
+   Between the intro and wherever the game goes next. Everything on the
+   intro leaves except the chair; the chair grows and centres; a bar
+   fills beneath it; then the destination.
+
+   IT IS HONESTLY FAKE AND THE CODE SAYS SO. There is nothing to load —
+   no fetch, no decode, no wait. The bar runs on a fixed clock. When
+   there IS something to load the clock is the thing to replace, and
+   loadingBeat() takes the destination as an argument so the beat does
+   not have to know what it is waiting for.
+   ===================================================================== */
+
+/* everything but the chair goes. The plaza gradient is part of the
+   building scene, so it leaves with it. */
+.sc-intro.is-loading .i-title,
+.sc-intro.is-loading .i-sub,
+.sc-intro.is-loading .i-para,
+.sc-intro.is-loading .i-stage,
+.sc-intro.is-loading .i-cta,
+.sc-intro.is-loading::before{
+  opacity:0; pointer-events:none;
+  transition:opacity var(--t-load-fade) linear;
+}
+
+/* THE CHAIR KEEPS ITS DIE-CUT, AND THAT IS THE DECISION. filter runs
+   BEFORE transform, so a scaled chair carries a scaled white edge — at
+   the sizes used here 5px becomes 6.2-7.3px, which is heavier but still
+   plainly the same cut. Dropping it at the larger scale was the
+   alternative and it is wrong: the chair becomes the only object on
+   screen at exactly the moment it would stop belonging to the sticker
+   language everything else in the game is drawn in, so it would read as
+   a different object rather than as the same one, bigger. The edge is
+   the object's identity, not its decoration.
+   Transform only — no width, height or margin is touched — so the growth
+   cannot reflow the composite it is leaving. */
+.sc-intro.is-loading .i-chair{
+  transition:transform var(--t-load-rise) var(--e-settle);
+  will-change:transform;
+}
+
+/* THE BAR. Sticker construction, same as everything else that matters:
+   3px white die-cut, a hard keyline outside it, a flat extrusion. The
+   cyan is the chyron's own #37C4FF, which is the accent this app already
+   uses for "this is the live thing on screen".
+   NO LABEL — see loadingBeat(). It carries a progressbar role and an
+   accessible name instead, so it is announced without being drawn. */
+.i-load{
+  position:absolute; left:50%; translate:-50% 0; z-index:6;
+  width:min(196px, 54%); height:18px;
+  border:3px solid var(--edge); border-radius:999px;
+  background:rgba(24,22,20,.55);
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  overflow:hidden;
+  opacity:0; transition:opacity var(--t-load-barin) linear;
+}
+.i-load.is-in{ opacity:1; }
+.i-load__fill{
+  display:block; height:100%; width:0;
+  border-radius:999px;
+  background:linear-gradient(180deg,#7FDCFF 0%,#37C4FF 46%,#12A9E8 100%);
+}
+/* DECELERATING INTO THE END, which is the one thing a fake bar has to get
+   right — a linear fill reads as a timer, and a timer invites the player
+   to notice it is exactly the same length every time.
+   THE FIRST CURVE HERE WAS cubic-bezier(.12,.72,.24,1) AND IT WAS WRONG:
+   measured on the running page it was 42% full at 9% of the duration and
+   93% at the halfway point, so the bar sprinted and then crawled — the
+   opposite of the brief, and the shape that makes a progress bar feel
+   like it is lying. This one is near-linear through the first half and
+   eases only into the last third: 9/38/79/96/99% at 9/25/50/75/90% of
+   the clock. */
+.i-load.is-filling .i-load__fill{
+  width:100%;
+  transition:width var(--t-load-fill) cubic-bezier(.30,.22,.30,1);
+}
+
+@media (prefers-reduced-motion: reduce){
+  /* the beat does not run at all — loadingBeat() goes straight to the
+     destination — so there is nothing here to soften. */
+  .i-load, .sc-intro.is-loading .i-chair{ transition:none; }
+}
+
+/* =====================================================================
+   §S-1 · THE FINALE AS A SEQUENCE
+   Two numbers, a bar between, counting up; then the player's own token
+   flies to the side they voted for. Type sizes are the spec's, and the
+   spec is explicit about why: the old lower section PASSED WCAG AA at
+   every element — worst item 5.32:1 — so contrast was never the problem
+   and darkening grounds or brightening text would have fixed nothing.
+   It was SIZE and DENSITY. Everything below is bigger, and three things
+   went behind a tap.
+   ===================================================================== */
+
+.f5{ align-items:stretch; }
+/* THE BOARD IS CENTRED WHILE IT IS ALONE AND THEN HOLDS ITS PLACE.
+   justify-content:center cannot do this — it re-centres the whole group
+   every time a block is added, so the board climbed 441 -> 404 -> 340 ->
+   75 as the outcome, the coins and the reading arrived, which is four
+   moves for an object that is supposed to make one. The offset is
+   measured in JS by f5Place() instead: it is the centring offset while
+   the board is alone, and afterwards the SMALLER of that and whatever
+   the content actually leaves, so the board holds until the content
+   genuinely needs the room and then rises by exactly that much. */
+.f5 .b5fit{ display:flex; flex-direction:column; gap:11px; position:relative;
+  justify-content:flex-start;
+  transition:padding-top var(--t-f5-in) var(--e-settle); }
+
+/* ---- the board -------------------------------------------------------
+   A GENERIC plenum display and deliberately not the Knesset's own: no
+   emblem, no menorah, no colonnade, no seat plan. Those are protected
+   insignia and were excluded before this brief. */
+.f5board{
+  background:#15130F; border-radius:14px; padding:24px 16px 20px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.10), 0 4px 0 rgba(0,0,0,.4);
+  position:relative; overflow:hidden; flex:none;
+  transition:padding var(--t-f5-in) var(--e-settle);
+}
+/* the scanline. It is what makes it read as a lit board rather than as a
+   dark panel, and it is 1px in 3 so it never muddies the numerals. */
+.f5board::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.045) 0 1px,transparent 1px 3px);
+}
+.f5row{ display:flex; align-items:flex-end; gap:10px; }
+.f5cell{ flex:1; text-align:center; }
+.f5lab{ font-size:13px; font-weight:700; color:#8E897C; margin:0 0 2px; }
+.f5dash{ flex:0 0 22px; padding-bottom:20px; color:#5A554A; font-size:24px; text-align:center; }
+/* 74px, and tabular so the numerals do not jitter as they climb — a
+   proportional 1 is narrower than a 0 and the whole block would twitch
+   on every frame of the count. */
+.f5n{
+  direction:ltr; font-family:var(--font-display); font-weight:900;
+  font-size:74px; line-height:.92; font-variant-numeric:tabular-nums;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.f5n--for{ color:var(--f5-for); }
+.f5n--ag { color:var(--f5-ag); }
+/* the slot the token lands in. It holds its size from the start so the
+   numerals do not shift sideways when the avatar arrives — a landing
+   that moves the thing it lands next to reads as a collision. */
+.f5slot{ flex:none; width:34px; height:34px; display:block; }
+.f5av{ display:block; width:100%; height:100%; border-radius:50%; overflow:hidden;
+  background:#C9BFA6; box-shadow:var(--f5-token); }
+.f5av svg{ display:block; width:100%; height:100%; }
+
+.f5bar{
+  position:relative; height:14px; border-radius:99px; overflow:visible;
+  display:flex; margin-top:9px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.f5bar > i{ display:block; height:100%; min-width:0; }
+.f5bar > i:first-child{ border-radius:99px 0 0 99px; }
+.f5bar > i:last-child { border-radius:0 99px 99px 0; }
+.f5bar__f{ background:var(--f5-for); }
+.f5bar__a{ background:var(--f5-ag); }
+.f5bar__r{ background:var(--f5-rem); }
+/* THE MAJORITY LINE SITS AT 61/121, not at the midpoint. 50.4% is where
+   the 61st vote of a 121-seat house actually falls, and the half-point
+   would put it a whole seat out. */
+.f5maj{
+  position:absolute; top:-5px; bottom:-5px; inset-inline-start:50.4%; width:3px;
+  background:#FBF7EE; box-shadow:0 0 0 1px rgba(0,0,0,.5);
+  transition:box-shadow 120ms linear;
+}
+.f5maj.is-flare{ box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 0 16px 5px rgba(251,247,238,.9); }
+.f5majlab{
+  position:absolute; top:-20px; inset-inline-start:50.4%; transform:translateX(50%);
+  font-family:var(--font-display); font-weight:900; font-size:11px; color:#FBF7EE;
+}
+
+/* the degraded twin's peak: with no count, the outcome prose IS the
+   loudest object, at 19px. It is the only account of the outcome that
+   exists on those seven issues. */
+.f5board--prose{ padding:22px 16px 20px; }
+.f5prose{
+  margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:19px; line-height:1.35; color:#EFECE4; text-align:start;
+}
+
+/* ---- the strip. THE BOARD DOES NOT LEAVE, IT DEMOTES — same element,
+   same numbers, same bar, re-laid onto one line so the outcome stays
+   readable above the sheet while the reading takes the room.
+   `display:contents` on the row is what lets the bar move BETWEEN the
+   two numerals without the markup changing: the cells become direct
+   children of the board and `order` puts the bar in the middle. Under
+   RTL order 1 is the rightmost, which is the side בעד is on. */
+.f5board.is-strip{ padding:11px 12px 10px; }
+.f5board--num.is-strip{ display:flex; align-items:center; gap:10px; }
+.f5board--num.is-strip .f5row{ display:contents; }
+.f5board.is-strip .f5lab, .f5board.is-strip .f5dash{ display:none; }
+.f5board--num.is-strip .f5cell{ flex:0 0 auto; }
+.f5board--num.is-strip .f5cell:first-child{ order:1; }
+.f5board--num.is-strip .f5bar{ order:2; flex:1; margin-top:0; }
+.f5board--num.is-strip .f5cell:last-child{ order:3; }
+.f5board.is-strip .f5n{ font-size:32px; }
+.f5board.is-strip .f5slot{ width:26px; height:26px; }
+.f5board.is-strip .f5prose{ font-size:19px; }
+
+/* ---- the token, and it is the ONLY object on this beat carrying both a
+   yellow keyline and a cyan glow. That pairing is what keeps it from
+   ever being read as a verdict mark: lime and magenta are correctness,
+   and this is neither. */
+:root{ --f5-token:
+  0 0 0 3px #FFD60A, 0 0 0 4.6px rgba(0,0,0,.5), 0 0 18px 5px rgba(55,196,255,.72); }
+.f5board.is-strip .f5av, .f5plate.is-small .f5av{ box-shadow:
+  0 0 0 2.5px #FFD60A, 0 0 0 4px rgba(0,0,0,.5), 0 0 14px 4px rgba(55,196,255,.72); }
+/* the clone that actually travels. Fixed, above everything, so nothing
+   it passes over can clip it. */
+.f5fly{
+  position:fixed; z-index:120; display:block; border-radius:50%; overflow:hidden;
+  background:#C9BFA6; box-shadow:var(--f5-token); pointer-events:none;
+}
+.f5fly svg{ display:block; width:100%; height:100%; }
+/* the banner the token LEFT. It dims and keeps an empty socket rather
+   than closing up: the vote is still pinned there, the token has just
+   gone. A banner that reflowed would read as the vote being withdrawn. */
+.chyron .bnr.is-spent{ opacity:.42; transition:opacity var(--t-f5-in) linear; }
+.chyron .bnr.is-spent .chyron-av{ visibility:hidden; }
+
+/* ---- the plate the twin's token lands on. It moves, and it does not
+   claim a number that is not there. */
+.f5plate{
+  display:flex; align-items:center; gap:11px; flex:none;
+  background:#15130F; border-radius:14px; padding:14px 14px 13px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.10), 0 4px 0 rgba(0,0,0,.4);
+  font-size:15px; color:#EFECE4;
+}
+.f5plate__slot{ flex:none; width:34px; height:34px; display:block; }
+.f5plate__t b{ font-family:var(--font-display); font-size:19px; color:#FBF7EE; margin-inline-start:6px; }
+
+/* ---- the resolution line ---- */
+.f5res{
+  margin:0; text-align:center; font-family:var(--font-display); font-weight:900;
+  font-size:16px; line-height:1.35; color:#EFECE4;
+}
+.f5res__you{ display:block; font-size:14px; font-weight:700; color:#E6E2D8; }
+.f5res__you b{ color:#FBF7EE; }
+
+.f5shape{ margin:0; font-size:14px; font-weight:700; color:#E6E2D8; text-align:center; }
+
+/* ---- the reading. 15px, up from 12.5px. ---- */
+.f5read{ margin:0; }
+.f5exp{ margin:0; font-size:15px; line-height:1.55; color:#F2EFE7; }
+.f5more{
+  display:inline-flex; align-items:center; gap:5px; margin-top:9px;
+  border:0; cursor:pointer; font-family:var(--font-display); font-weight:900;
+  font-size:14px; color:#131310; background:#D8D2C4; border-radius:999px;
+  padding:5px 13px 6px; box-shadow:0 2px 0 rgba(0,0,0,.4);
+}
+
+/* ---- the coin moment ---- */
+/* OUT OF FLOW, because it is a MOMENT and not a block. In the column it
+   was 117px of layout that arrived, pushed the board up 13px and then
+   gave it back 800ms later — the board bounced 339 -> 326 -> 339 before
+   its real settle, which is exactly the double move Part 3 forbids. It
+   is absolutely placed under the board instead, so it can be as large as
+   it likes and move nothing. */
+.f5coin{
+  position:absolute; left:50%; translate:-50% 0; z-index:3;
+  display:flex; flex-direction:column; align-items:center;
+  opacity:0; transform:scale(.9) rotate(-3deg);
+  transition:opacity var(--t-f5-in) linear, transform var(--t-f5-in) var(--e-land);
+}
+.f5coin.is-in{ opacity:1; transform:scale(1) rotate(-3deg); }
+.f5coin.is-out{ opacity:0; transform:scale(.94) rotate(-3deg);
+  transition:opacity var(--t-f5-coin-out) linear, transform var(--t-f5-coin-out) var(--e-in); }
+.f5coin__n{
+  font-family:var(--font-display); font-weight:900; font-size:34px; direction:ltr;
+  color:#131310; background:var(--primary); padding:10px 20px 12px; border-radius:16px;
+  box-shadow:0 0 0 3px #fff, 0 0 0 4.6px rgba(0,0,0,.55), 0 5px 0 rgba(0,0,0,.34);
+}
+.f5coin__sub{ margin:9px 0 0; font-size:13px; color:#D8D2C4; text-align:center; }
+.f5coin__tot{ margin:3px 0 0; font-size:12px; font-weight:700; color:#8E897C; text-align:center; }
+
+/* ---- the buttons. Last, and nothing lands after them. ---- */
+.f5acts{ margin-top:auto; padding-top:12px; display:flex; flex-direction:column;
+  align-items:stretch; gap:8px; flex:none; }
+.f5go{ font-size:18px; min-height:0; padding:12px 0 13px; }
+.f5back{
+  align-self:center; border:0; background:none; cursor:pointer;
+  font-family:var(--font-display); font-weight:900; font-size:15px; color:#D8D2C4;
+  padding:9px 18px 10px; text-decoration:underline; text-underline-offset:3px;
+}
+
+/* ---- PART 2 · the disclosure's own surfaces are GONE. .f5scrim,
+   .f5sheet, .f5grab, .f5sheet__body and .f5close went with moreSheet();
+   the content opens on stickerModal() now and that component draws the
+   box, the scrim and the close. Only the things INSIDE it survive —
+   chips, links and the definition line — because those are content and
+   not surface. */
+.f5chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.f5chip{
+  border:0; cursor:pointer; padding:4px 11px 5px; border-radius:12px;
+  background:rgba(255,255,255,.16); color:#EFECE4;
+  font-family:var(--font-display); font-weight:900; font-size:13px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.f5def{ margin:0; font-size:14px; line-height:1.5; color:#E6E2D8; }
+/* inside the white modal the chips and links sit on paper, not on the
+   dark ground they were built for */
+.stmodal__box .f5chips{ margin-top:12px; justify-content:center; }
+.stmodal__box .f5chip{
+  background:rgba(19,19,16,.10); color:var(--ink);
+  box-shadow:inset 0 0 0 1.5px rgba(19,19,16,.28);
+}
+.stmodal__box .f5links{ margin-top:12px; }
+.stmodal__box .f5link{ color:#2B2926; }
+.f5links{ display:flex; flex-direction:column; gap:4px; }
+.f5link{
+  font-size:14px; font-weight:700; color:#EFECE4; text-decoration:underline;
+  text-underline-offset:3px; display:flex; gap:7px; align-items:center; padding:3px 0;
+}
+.f5link.is-missing{ opacity:.5; text-decoration:none; }
+.f5close{
+  align-self:center; flex:none; border:0; cursor:pointer;
+  font-family:var(--font-display); font-weight:900; font-size:14px;
+  color:#131310; background:#D8D2C4; border-radius:999px; padding:6px 18px 7px;
+  box-shadow:0 2px 0 rgba(0,0,0,.4);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .f5board, .f5coin, .f5sheet, .f5scrim, .f5maj{ transition:none; }
+}
+
+/* =====================================================================
+   §T · THE TACHLES → CASCADE TRANSITION
+   The player's vote leaves the button, assembles into a callout over the
+   chair, becomes the banner, and flies to its pin — while the bill slides
+   in behind it. One object the whole way; nothing is created, swapped or
+   faded into anything else mid-flight.
+   ===================================================================== */
+
+/* THE CALLOUT IS A SIBLING OF THE BANNER, not a relative of it: same B-5
+   construction, sized to its contents, skewed — but set down at the
+   opposite angle so the two read as the same kind of object caught at
+   two moments rather than as one object that slid. It carries NO cyan
+   halo. Only the pinned banner does; the callout is a way-station. */
+.tcal{
+  position:absolute; z-index:11; pointer-events:none;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 6px 7px 6px;
+  padding-inline-start:11px; padding-inline-end:12px;
+  font-family:var(--font-display); font-weight:900; font-size:22px;
+  color:var(--ink);
+  border:3px solid transparent; border-radius:13px;
+  transform-origin:50% 50%;
+  will-change:transform;
+}
+/* PHASE 1 · the letters travel. The sticker is not there yet — no fill,
+   no edge, no extrusion — so what leaves the button is the WORD, which is
+   the thing the player just chose. */
+.tcal__w{ display:block; line-height:1; white-space:nowrap; }
+.tcal:not(.is-sticker) .tcal__w{ color:var(--paper); text-shadow:0 2px 6px rgba(0,0,0,.6); }
+
+/* PHASE 2 · the avatar joins. It scales up from nothing at the point the
+   letters are passing through, so the pair assembles in flight. */
+.tcal__av{
+  display:block; width:30px; height:30px; flex:none;
+  opacity:0; transform:scale(.4);
+  transition:opacity var(--t-tc-av) linear, transform var(--t-tc-av) var(--e-land);
+}
+.tcal__av svg{ display:block; width:100%; height:100%; }
+.tcal.is-paired .tcal__av{ opacity:1; transform:none; }
+
+/* PHASE 3 · the construction resolves. The fill, the white die-cut, the
+   keyline and the extrusion arrive together on one transition, which is
+   what makes it read as the sticker being CUT rather than as a panel
+   fading up behind the words. */
+.tcal{
+  background:transparent;
+  box-shadow:0 0 0 0 var(--keyline), 0 0 0 rgba(0,0,0,0);
+  transition:transform var(--t-tc-letters) var(--e-settle),
+             background var(--t-tc-resolve) linear,
+             border-color var(--t-tc-resolve) linear,
+             box-shadow var(--t-tc-resolve) linear;
+}
+.tcal.is-sticker{
+  background:var(--paper);
+  border-color:var(--edge);
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+}
+.tcal.is-sticker .tcal__w{ color:var(--ink); text-shadow:none; }
+
+/* PHASE 4 · the travel. The longest step and the one the eye follows, so
+   it gets --e-land: it arrives and sets down rather than easing to a
+   stop. */
+.tcal.is-pinning{
+  transition:transform var(--t-tc-travel) var(--e-land),
+             background var(--t-tc-travel) linear,
+             box-shadow var(--t-tc-travel) linear;
+}
+
+/* the chosen chip's own label goes invisible the moment the letters
+   leave it — the word is now the flying object, and two of it on screen
+   would break the illusion that it travelled. */
+.v-a.is-chosen .v-a__lab{ opacity:0; transition:opacity 60ms linear; }
+
+/* ---- the surface behind, once the sequence has landed ----------------
+   THE BLUR HOLDS AT 3px RATHER THAN CLEARING. A fully-cleared blur with
+   nothing moving looks finished, and this beat is not finished — it is
+   waiting for a tap. The residual keeps the surface reading as a surface,
+   and the slow breath on it plus the affordance below are what say the
+   screen is alive rather than dead. */
+.ov--stage.is-held{
+  -webkit-backdrop-filter:blur(3px) saturate(.94);
+  backdrop-filter:blur(3px) saturate(.94);
+  transition:backdrop-filter var(--t-tc-next) linear,
+             -webkit-backdrop-filter var(--t-tc-next) linear;
+  animation:tc-breathe 2800ms ease-in-out 400ms infinite;
+}
+@keyframes tc-breathe{
+  0%,100%{ background:rgba(28,26,23,.52) }
+  50%    { background:rgba(28,26,23,.44) }
+}
+
+/* ---- THE TAP AFFORDANCE. It must be obvious: this beat must never look
+   like a dead screen. A pill on the sticker family with a moving chevron,
+   not a whispered line of small print — the whole surface is the target,
+   so the cue has to be as loud as the action is large. */
+.tctap{
+  position:absolute; z-index:10; left:50%; translate:-50% 0;
+  bottom:calc(26px + env(safe-area-inset-bottom));
+  display:inline-flex; align-items:center; gap:9px;
+  padding:9px 18px 10px; border-radius:999px;
+  background:var(--paper); color:var(--ink);
+  border:3px solid var(--edge);
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  font-family:var(--font-display); font-weight:900; font-size:15px;
+  white-space:nowrap; pointer-events:none;
+  opacity:0; transform:translateY(10px);
+  transition:opacity var(--t-tc-next) linear, transform var(--t-tc-next) var(--e-land);
+}
+.tctap.is-in{ opacity:1; transform:none; animation:tc-tap 2000ms ease-in-out 600ms infinite; }
+.tctap__c{ display:block; font-size:17px; line-height:1; }
+@keyframes tc-tap{
+  0%,100%{ transform:translateY(0)   }
+  50%    { transform:translateY(-4px) }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .tcal, .tcal__av{ transition:none; }
+  .tctap.is-in{ animation:none; }
+  .ov--stage.is-held{ animation:none; }
+}
+
+/* THE CHIP THE WORD CAME OUT OF. With its label gone it was a blank white
+   pill sitting there for the rest of the beat, which reads as a rendering
+   fault rather than as a choice that has been made. It becomes the SOCKET
+   instead — the die-cut sheet with the sticker peeled off it: the keyline
+   and the shape stay, the fill and the extrusion go. The option is not
+   hidden (the round never hides what it offered); it is visibly spent,
+   and the thing that was in it is now on its way to the banner. */
+.ovpane--vote.is-taken .b2votes .v-a.is-chosen{
+  background:transparent;
+  box-shadow:0 0 0 3px rgba(255,255,255,.34), 0 0 0 var(--ring-chip) rgba(0,0,0,.34);
+  transition:background var(--t-tc-letters) linear, box-shadow var(--t-tc-letters) linear;
+}
+
+/* =====================================================================
+   §S-1 AMENDMENTS · parts 1, 3 and 4
+   ===================================================================== */
+
+/* ---- PART 1 · the emptied banner leaves ------------------------------
+   Slide up and fade, 250ms, no pop and no scale. It is not being
+   dismissed — it has handed its content to the board and is vacating. It
+   goes to hidden at the end so it cannot be tabbed to or read out. */
+/* [hidden] IS A UA RULE AND .chyron SETS display:flex, so the class won
+   and the emptied banner stayed on screen for the whole of beat 5 —
+   grey, spent, and exactly the object Part 1 exists to remove. The
+   attribute has to be made to stick. */
+.chyron[hidden]{ display:none !important; }
+.chyron.is-exiting{
+  opacity:0; transform:translateY(-14px);
+  transition:opacity var(--t-f5-bnr-out) linear,
+             transform var(--t-f5-bnr-out) var(--e-in);
+}
+
+/* ---- PART 3 · the finale takes the round's chrome back ---------------
+   The banner's slot, the helper line and .round's top padding are 88px
+   reserved for a card that does not exist on this beat, and they were
+   what put the board 65-70px below centre. They collapse the moment beat
+   5 starts — BEFORE the banner leaves, not with it, because the banner
+   is absolute at stage level with its box already frozen: it does not
+   move when the slot goes, so the board is centred against the layout
+   that will exist after the exit and is never placed twice. */
+.sc-round.is-finale .chyron-slot{ min-height:0; margin:0; }
+.sc-round.is-finale .helper{ display:none; }
+.sc-round.is-finale .round{ padding-top:0; }
+/* .b5 > * is flex:none, which left .b5fit at its content height inside a
+   taller .beat — so `justify-content:center` was centring against the
+   content rather than against the screen. */
+.f5 > .b5fit{ flex:1; height:auto; }
+/* .b5's own clamp(14px,5vh,44px) top padding is the last of the chrome
+   that was pushing the board down — 42px at 844 — and on this beat it
+   pads nothing: the board centres itself and the buttons are pinned to
+   the floor by their own auto margin. Zeroed here rather than on .b5,
+   which the other beat-5 variants still use. */
+.f5{ padding-top:0; }
+
+/* ---- PART 4 · EVERY BLOCK SITS ON THE BOARD --------------------------
+   The rule is that nothing on beat 5 sits directly on the dot-grid
+   ground. The tally had a surface and the resolution, the guess line and
+   the prose did not, so the beat read as one object plus three captions
+   floating under it. They are all the same blackboard now — same fill,
+   same inset hairline, same extrusion, same scanline — at a quieter
+   padding than the tally, because the tally is still the peak.
+   ONE SURFACE, DECLARED ONCE. .f5board keeps its own paddings and its
+   glow; everything else takes the surface and nothing more. */
+.f5board, .f5plate, .f5surf{
+  background:#15130F; border-radius:14px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.10), 0 4px 0 rgba(0,0,0,.4);
+  position:relative; overflow:hidden; flex:none;
+}
+.f5surf::after, .f5plate::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.045) 0 1px,transparent 1px 3px);
+}
+.f5surf{ padding:11px 14px 12px; }
+.f5surf > *{ position:relative; z-index:1; }
+
+/* the resolution and the guess line are ONE surface, not two: they are
+   both the outcome — what happened, and what the player made of it —
+   and splitting them put a hairline between a sentence and its own
+   footnote. */
+.f5outcome{ display:flex; flex-direction:column; gap:7px; }
+.f5outcome .f5res, .f5outcome .f5shape{ margin:0; }
+.f5read{ padding:12px 14px 13px; }
+.f5read .f5more{ margin-top:11px; }
+
+/* ---- PART 4 · THE GLOW ----------------------------------------------
+   WARM YELLOW-CREAM, and it is neither of the two colours it could have
+   been mistaken for. Not --primary #FFD60A: that is the CTA and the coin,
+   and a saturated yellow halo on a non-tappable board would read as an
+   invitation to press it. Not cyan: that is the avatar token's identity,
+   the token LANDS on this board, and a cyan board would swallow the one
+   object whose whole job is to stay legible as the player.
+   #F5E3AA is warm, desaturated against the CTA, and carries no meaning
+   anywhere else in the app. It is a halo only — no ring, no hard rule —
+   so it can never read as an edge. */
+:root{ --f5-glow:245,227,170; }
+@keyframes f5-glow{
+  0%,100%{ box-shadow:inset 0 0 0 2px rgba(255,255,255,.10), 0 4px 0 rgba(0,0,0,.4),
+                      0 0 14px 1px rgba(var(--f5-glow),.26),
+                      0 0 34px 6px rgba(var(--f5-glow),.11); }
+  50%    { box-shadow:inset 0 0 0 2px rgba(255,255,255,.16), 0 4px 0 rgba(0,0,0,.4),
+                      0 0 22px 3px rgba(var(--f5-glow),.46),
+                      0 0 52px 12px rgba(var(--f5-glow),.20); }
+}
+/* it breathes while the board is the beat — through the count, the hold
+   and the landing — and settles the moment there is somewhere else for
+   the eye to go. */
+.f5board{ animation:f5-glow 2200ms ease-in-out infinite; }
+.f5board.is-glow-calm{
+  animation:none;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.10), 0 4px 0 rgba(0,0,0,.4),
+             0 0 12px 1px rgba(var(--f5-glow),.20),
+             0 0 28px 5px rgba(var(--f5-glow),.09);
+  transition:box-shadow var(--t-f5-in) linear;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .f5board{ animation:none;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.10), 0 4px 0 rgba(0,0,0,.4),
+               0 0 16px 2px rgba(var(--f5-glow),.30),
+               0 0 38px 7px rgba(var(--f5-glow),.13); }
+  .chyron.is-exiting{ transition:none; }
+}
+
+/* ---- PART A · THE SETTLED STACK RE-CENTRES, ONCE ---------------------
+   Holding the board at its centred position while the reading filled in
+   below it left 327px of bare ground above the stack at 390 and 6px
+   under it — correct to the letter of the last brief and wrong to look
+   at. After the buttons land, and only then, the whole stack centres in
+   the content box in ONE eased move.
+   .f5acts loses its auto margin for it: pinned to the floor, only the
+   top of the stack could move and the result would be a stretch rather
+   than a re-centre. It is the last motion on the beat — nothing is
+   appended after the buttons, so nothing follows it. */
+.f5 .b5fit.is-recentring{
+  transition:padding-top var(--t-f5-recentre) cubic-bezier(0,0,.35,1);
+}
+.f5 .b5fit.is-recentring .f5acts{ margin-top:0; }
+@media (prefers-reduced-motion: reduce){
+  .f5 .b5fit.is-recentring{ transition:none; }
+}
+
+/* =====================================================================
+   §1b · THE LOADING SCREEN'S EXIT — the chair flies into the player
+   Zooming into the chair IS sitting down in it. The 121st seat is the
+   game's title and this beat is the only place it is enacted rather
+   than stated.
+   ===================================================================== */
+
+/* THE STRUCTURAL FIX, and it is the same class of blocker the chyron
+   was. Two things stopped the destination co-existing under the loading
+   screen, not one:
+     1  showScreen() sets .hidden on every screen but the named one, so
+        rendering the map destroys the chair mid-flight.
+     2  even unhidden they could not overlap — .screen is flex:1 inside
+        .stage's flex COLUMN, so two visible screens stack vertically.
+   The intro is taken OUT OF FLOW for the whole loading beat instead.
+   showScreen()'s contract is untouched: it still hides the intro when
+   the map is shown, and the exit simply un-hides it again for the few
+   hundred ms it is still flying. Nothing is faked and no screenshot is
+   substituted for the live screen — the map underneath is the real map,
+   already rendered and already animating.
+   It goes absolute BEFORE the chair is measured, so no coordinate the
+   loading beat computes is invalidated by the switch. */
+.sc-intro.is-lifted{
+  position:absolute; inset:0; z-index:40;
+  padding:calc(10px + env(safe-area-inset-top))
+          calc(16px + env(safe-area-inset-right))
+          calc(12px + env(safe-area-inset-bottom))
+          calc(16px + env(safe-area-inset-left));
+}
+/* the plaza gradient is .sc-intro::before and would otherwise paint an
+   opaque band over the map for the whole zoom */
+.sc-intro.is-lifted.is-loading::before{ opacity:0; }
+
+/* the bar goes first, on its own */
+.i-load.is-out{
+  opacity:0;
+  transition:opacity var(--t-lx-bar) linear;
+}
+
+/* THE LAUNCH. Transform and opacity only — no width, height, margin or
+   layout property is touched, so the whole thing is compositor work and
+   holds frame rate on a cheap Android.
+   EASE-IN, and that is the point of it: a symmetrical ease reads as the
+   chair politely growing, and this has to read as the chair rushing the
+   camera. It accelerates all the way out.
+   THE FADE IS THE HANDOFF, not a cut, AND IT BELONGS TO THE SAME EVENT
+   as the zoom rather than being something that happens to the chair
+   afterwards. It begins on the frame the chair reaches full-screen and
+   reaches zero on the frame the scale does, so the object is dissolving
+   the whole time it is still visibly rushing at the camera. */
+/* the parent is in the selector because it has to be: the loading beat's
+   own rule is `.sc-intro.is-loading .i-chair` at (0,3,1) and this was
+   (0,2,1), so it lost — the chair got no opacity transition at all and
+   cut to nothing on the first frame of the zoom instead of fading over
+   the last 40% of it. */
+.sc-intro.is-loading .i-chair.is-launching{
+  transition:transform var(--t-lx-zoom) cubic-bezier(.55,0,1,.45),
+             opacity var(--t-lx-fade) cubic-bezier(0,0,.58,1) var(--t-lx-fade-at);
+  opacity:0;
+}
+
+/* the destination, entering underneath while the chair is still coming.
+   It overrides .sc-map's own 260ms/1.02 arrival — the same idea, given
+   longer and a little more travel so it is legible through the zoom. */
+.stage.is-launch .sc-map.is-arriving{
+  animation:lx-dest var(--t-lx-dest) var(--e-settle) both;
+}
+@keyframes lx-dest{ from{ opacity:0; transform:scale(1.04) } }
+
+@media (prefers-reduced-motion: reduce){
+  /* no zoom at all — a plain crossfade. A 10x accelerating object filling
+     the viewport is exactly what this setting is asked to suppress. */
+  .sc-intro.is-loading .i-chair.is-launching{
+    transition:opacity var(--t-lx-dest) linear;
+    transform:none !important;
+  }
+  .stage.is-launch .sc-map.is-arriving{ animation:none; opacity:1; }
+}

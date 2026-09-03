@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<!-- width=device-width, NOT width=390. A fixed width makes every phone that
+     is not exactly 390 CSS px wide scale the whole page: on a 375pt device the
+     layout viewport becomes 390/375 = 1.04x, so 100dvh resolves to 693px inside
+     a 667px window and the document scrolls by 26px no matter what the stage
+     does. The stage keeps its 390 ceiling with max-width instead. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14'%3E%F0%9F%AA%91%3C/text%3E%3C/svg%3E">
+<title>הח״כ ה-121 — prototype (s1)</title>
+
+<!-- The v16 handoff stylesheet, verbatim. Tokens in :root, then the components.
+     Loaded FIRST so proto.css can override the two motion tokens the brief
+     supersedes (--t-flip, --t-finale) and nothing else. -->
+<link rel="stylesheet" href="../prototype/hachach.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+
+<!-- SVG filters. hachach.css says the stamp's distressed edge cannot live in a
+     stylesheet; these are copied from the board's <defs>. #ink is driven from
+     proto.js so the ink-bleed ruptures AT CONTACT rather than arriving already
+     distressed. -->
+<svg class="defs" width="0" height="0" aria-hidden="true"><defs>
+
+  <filter id="ink" x="-30%" y="-30%" width="160%" height="160%"
+          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
+    <feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="2" seed="5" result="wob"/>
+    <feDisplacementMap id="inkDisp" in="SourceGraphic" in2="wob" scale="0"
+                       xChannelSelector="R" yChannelSelector="G" result="pressed"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.105" numOctaves="3" seed="13" result="dry"/>
+    <feColorMatrix in="dry" type="saturate" values="0" result="dryg"/>
+    <feComponentTransfer in="dryg" result="holes">
+      <feFuncA type="linear" slope="0.72" intercept="-0.70"/>
+    </feComponentTransfer>
+    <feComposite in="pressed" in2="holes" operator="out" result="inked"/>
+    <feGaussianBlur in="inked" stdDeviation="0.4"/>
+  </filter>
+
+  <!-- the 5px white die-cut edge every illustration carries -->
+  <filter id="dcw" x="-40%" y="-40%" width="180%" height="180%"
+          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="5" result="w1"/>
+    <feFlood flood-color="#fff" result="wf"/>
+    <feComposite in="wf" in2="w1" operator="in" result="cut"/>
+    <feMerge><feMergeNode in="cut"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- the same, at avatar scale -->
+  <filter id="dcw-sm" x="-60%" y="-60%" width="220%" height="220%"
+          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="a1"/>
+    <feFlood flood-color="#fff" result="af"/>
+    <feComposite in="af" in2="a1" operator="in" result="acut"/>
+    <feMerge><feMergeNode in="acut"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- §1 THE SAME INK, FOR AN HTML ELEMENT. The stamp's centre word is no
+       longer SVG <text> — WebKit lays Hebrew out left-to-right inside SVG
+       text — so it is an HTML span, and it has to take the same ink as the
+       disc it sits in or it reads as UI type pasted onto a stamp.
+       This is #ink verbatim with one change: its user space. #ink runs in
+       the art's viewBox units, where 1 unit = 1.9px on the 190px disc; a
+       CSS filter on an HTML element runs in CSS px. So every LENGTH here
+       is x1.9 and every FREQUENCY is /1.9, which puts the grain, the
+       dry-brush holes and the bleed at the identical rendered scale.
+       #inkDispH is driven by inkBleed() alongside #inkDisp, off the same
+       clock, so word and disc rupture together at contact. -->
+  <filter id="ink-h" x="-30%" y="-30%" width="160%" height="160%"
+          color-interpolation-filters="sRGB" primitiveUnits="userSpaceOnUse">
+    <feTurbulence type="fractalNoise" baseFrequency="0.01474" numOctaves="2" seed="5" result="wob"/>
+    <feDisplacementMap id="inkDispH" in="SourceGraphic" in2="wob" scale="0"
+                       xChannelSelector="R" yChannelSelector="G" result="pressed"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.05526" numOctaves="3" seed="13" result="dry"/>
+    <feColorMatrix in="dry" type="saturate" values="0" result="dryg"/>
+    <feComponentTransfer in="dryg" result="holes">
+      <feFuncA type="linear" slope="0.72" intercept="-0.70"/>
+    </feComponentTransfer>
+    <feComposite in="pressed" in2="holes" operator="out" result="inked"/>
+    <feGaussianBlur in="inked" stdDeviation="0.76"/>
+  </filter>
+
+  <!-- #d2ring, the arc the ring text ran along, is GONE with the ring
+       text. Curved type has no HTML equivalent that does not hand-place
+       glyphs in visual order, which is the source-string reversal this
+       pass exists to avoid. The ring survives as the two circles. -->
+</defs></svg>
+
+<!-- The spike's open decisions are QUERY PARAMETERS now, not a bar on the
+     screen: the game fills the viewport and nothing sits on top of it.
+       ?hold=long|short   ?swipe=true|false   ?cards=N   ?placeholders=on|off
+       ?coins=sheet|brief ?chyron=band|note|off  ?b5=a1|a2
+       ?screen=intro|map|round
+     swipe and hold are live research questions — the swipe mapping goes to
+     the teen playtest and the tempo is not settled — so they have to stay
+     switchable without a rebuild. See DEV in proto.js. -->
+
+<div class="stage" id="stage" data-screen="intro">
+
+  <!-- ONE HUD FOR THE WHOLE APP, not one per screen. The map and the round
+       are the same row — coins, a centre slot, the avatar — and building it
+       twice is how the two drift apart. Only the CENTRE slot swaps: the
+       topic title in the round, the x/8 count on the map. The intro hides
+       the row outright; there is nothing to count yet. -->
+  <!-- A4 · THE ROW IS AVATAR · COUNT · COINS, right to left. In RTL the
+       FIRST child renders rightmost, so the avatar leads and the coins sit
+       at the left edge. In a round the right slot swaps the avatar for an
+       ✕: the player has somewhere to be during the round and needs a way
+       out of it, and the avatar is not gone — from beat 2 it lives inside
+       the chyron next to their vote. -->
+  <header class="hud" id="hud">
+    <span class="hud-right">
+      <!-- §4.1 the default avatar, assigned instantly, no creation step.
+           Tappable IN PRINCIPLE — it is the door to customisation — but it
+           opens nothing in this build, so it is a sticker and not a
+           button: a control that does nothing is worse than no control. -->
+      <span class="as-d hud-you" id="hudAvatar"></span>
+      <button type="button" class="ib-b hud-x" id="hudX" hidden aria-label="יציאה מהסוגיה">✕</button>
+    </span>
+    <span class="hud-mid">
+      <!-- §B the topic this issue belongs to, read from data.js. Centred
+           between the coin chip and the avatar, on every beat. -->
+      <span class="hud-topic" id="hudTopic"></span>
+      <!-- the map's headline: TOPICS completed, never sub-issues (§3.2) -->
+      <span class="h-a hud-progress" id="hudProgress" hidden></span>
+    </span>
+    <span class="h-a hud-coins"><span class="coin-glyph" aria-hidden="true">●</span><span class="num" id="coinNum">0</span></span>
+  </header>
+
+  <!-- 1 · INT-D. One primary action, straight to the map. -->
+  <section class="screen sc-intro" id="scIntro" hidden></section>
+
+  <!-- 2 · THE PATH MAP. The one thing in the app that scrolls. -->
+  <section class="screen sc-map" id="scMap" hidden></section>
+
+  <!-- 3 · THE ROUND, exactly as it was — the helper line and the chyron
+       move inside it because they belong to a round and to nothing else. -->
+  <section class="screen sc-round" id="scRound" hidden>
+    <!-- THE PINNED CLAIM, as a chyron. It is a SIBLING of the round's
+         inner column, in flow above it, which is what makes "it never
+         overlaps the card" structural rather than a z-index argument: the
+         round — and so the card — begins below it.
+         It is filled at beat 2 and emptied at restart; it is never created
+         or destroyed, because it has to hold its box on beat 1 for the
+         card to be the same size on every beat. -->
+    <!-- THE SLOT, and only the slot. It reserves the banner's box in the
+         round's flow so the card is the same size on every beat, exactly
+         as the chyron itself used to; it never holds content. The banner
+         is #chyron and now lives at STAGE level — see the note there. -->
+    <div class="chyron-slot" id="chyronSlot" aria-hidden="true"></div>
+    <!-- A8 · THE ROUND'S ONE INSTRUCTION LINE, and it sits UNDER the
+         chyron now rather than above it. During the cascade it carries
+         "מה הוא/היא הצביע/ה?" at 1.5x its old size, because at 11px on a
+         dark ground the one question the beat asks was the quietest thing
+         on screen. Its box is reserved on every beat, so switching it on
+         cannot resize the card — moving it below the band cost nothing,
+         growing it costs the card 6px and that is the trade A8 asks for.
+         TEMPORARY: B2 picks the real treatment and this slot is where
+         option 1 would live. -->
+    <p class="helper is-empty" id="helper"></p>
+    <main class="round" id="round"></main>
+  </section>
+
+  <!-- THE PINNED BANNER, PROMOTED OUT OF #scRound.
+       It has to outrank every layer for the whole tachles transition: the
+       beat-2 surface is .ov--stage at z-index 9 and is a child of .stage,
+       so while the banner lived inside #scRound (a .screen at z-index 1)
+       its own z-index:12 was scoped to a stacking context that the
+       overlay sat on top of — the banner would have flown UNDER the blur
+       it is supposed to land in front of.
+       It is absolutely positioned over #chyronSlot, which still reserves
+       the box in the round's flow, so nothing downstream moved: the round
+       still begins where the band ends and the card is unchanged. Every
+       existing caller still finds it at #chyron. -->
+  <div class="chyron is-empty" id="chyron" aria-hidden="true"></div>
+
+  <!-- the coins fly here, over everything, out of every layout -->
+  <div class="coinfly" id="coinfly" aria-hidden="true"></div>
+</div>
+
+<script src="../../../data.js"></script>
+<script src="proto.js"></script>
+</body>
+</html>
