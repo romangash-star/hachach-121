@@ -219,6 +219,7 @@ const MODE_LABELS   = { vote:'הצבעה', stance:'עמדות' };
 let ghPat     = '';
 let fileSha   = '';
 let fileRaw   = '';   // full data.js text
+let fileTail  = '';   // everything after the `const DATA = {...};` statement (preserved on commit)
 let dataObj   = null; // parsed DATA object
 let issues    = {};   // id -> issue
 let dirty     = false;
@@ -278,11 +279,16 @@ async function loadFile() {
   try {
     const resp = await ghFetch(`/repos/${REPO}/contents/${FILE}?ref=${BRANCH}`);
     fileSha  = resp.sha;
-    fileRaw  = atob(resp.content.replace(/\n/g, ''));
+    // GitHub returns base64 of the raw UTF-8 bytes; atob alone leaves Hebrew as Latin-1 mojibake
+    fileRaw  = new TextDecoder().decode(Uint8Array.from(atob(resp.content.replace(/\n/g, '')), c => c.charCodeAt(0)));
 
-    // Parse: file is exactly `const DATA = {...};`
-    const jsonStr = fileRaw.slice('const DATA = '.length, fileRaw.lastIndexOf(';'));
-    dataObj = JSON.parse(jsonStr);
+    // Parse: the DATA statement is `const DATA = {...};`, terminated by the first `;`
+    // that is followed by a newline or end-of-file (inside JSON a `;` is never followed
+    // by a raw newline). Anything after that terminator is kept in fileTail.
+    const m = fileRaw.match(/^const DATA = ([\s\S]*?);(\r?\n|$)/);
+    if (!m) throw new Error('data.js אינו מתחיל ב-const DATA = {...};');
+    fileTail = m[2] + fileRaw.slice(m[0].length);
+    dataObj = JSON.parse(m[1]);
 
     issues = {};
     (dataObj.issues || []).forEach(iss => { issues[iss.id] = iss; });
@@ -353,7 +359,7 @@ function renderTopic(tid) {
 function buildRow(iss) {
   const ans = iss.tf_answer || 'false';
   const ansLabel  = ANSWER_LABELS[ans] || ans;
-  const modeLabel = MODE_LABELS[iss.mode] || iss.mode;
+  const modeLabel = MODE_LABELS[iss.mode] || iss.mode || '—';
 
   return `
 <div class="issue-row" id="row-${iss.id}">
@@ -388,6 +394,7 @@ function buildRow(iss) {
           </select></div>
         <div class="form-group"><label class="form-label">מצב (mode)</label>
           <select class="form-select" name="mode">
+            <option value=""       ${!iss.mode?'selected':''}>—</option>
             <option value="vote"   ${iss.mode==='vote'?'selected':''}>הצבעה (vote)</option>
             <option value="stance" ${iss.mode==='stance'?'selected':''}>עמדות (stance)</option>
           </select></div>
@@ -410,9 +417,9 @@ function buildRow(iss) {
         <div class="form-group"><label class="form-label">voteId</label>
           <input class="form-input ltr" name="voteId" value="${esc(iss.voteId||'')}" placeholder="מספר הצבעה"></div>
         <div class="form-group"><label class="form-label">בעד</label>
-          <input class="form-input ltr" type="number" min="0" name="tally_for" value="${iss.tally_for||0}"></div>
+          <input class="form-input ltr" type="number" min="0" name="tally_for" value="${iss._tally?.for ?? ''}"></div>
         <div class="form-group"><label class="form-label">נגד</label>
-          <input class="form-input ltr" type="number" min="0" name="tally_against" value="${iss.tally_against||0}"></div>
+          <input class="form-input ltr" type="number" min="0" name="tally_against" value="${iss._tally?.against ?? ''}"></div>
       </div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">אימות</label>
@@ -428,9 +435,9 @@ function buildRow(iss) {
       <div class="form-section-label">מקור</div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">שם</label>
-          <input class="form-input" name="source_name" value="${esc(iss.source_name||'')}"></div>
+          <input class="form-input" name="source_name" value="${esc(iss.source?.name||'')}"></div>
         <div class="form-group"><label class="form-label">קישור</label>
-          <input class="form-input ltr" name="source_url" value="${esc(iss.source_url||'')}" placeholder="https://..."></div>
+          <input class="form-input ltr" name="source_url" value="${esc(iss.source?.url||'')}" placeholder="https://..."></div>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary btn-sm">✓ עדכן שאלה</button>
@@ -463,15 +470,30 @@ function saveLocal(id) {
     bill_title:   fd.get('bill_title'),
     bill_date:    fd.get('bill_date'),
     bill_summary: fd.get('bill_summary'),
-    mode:         fd.get('mode'),
     verification: fd.get('verification'),
-    voteId:       fd.get('voteId'),
-    tally_for:    parseInt(fd.get('tally_for'))    || 0,
-    tally_against:parseInt(fd.get('tally_against'))|| 0,
-    knesset_url:  fd.get('knesset_url'),
-    source_name:  fd.get('source_name'),
-    source_url:   fd.get('source_url'),
+    source:       Object.assign({}, issues[id].source, { name: fd.get('source_name'), url: fd.get('source_url') }),
   });
+
+  // voteId / knesset_url: only written when non-empty
+  for (const k of ['voteId', 'knesset_url']) { const v = fd.get(k); if (v) issues[id][k] = v; else delete issues[id][k]; }
+
+  // mode: only written when non-empty (most issues have no mode and must stay that way)
+  const mode = fd.get('mode');
+  if (mode) issues[id].mode = mode; else delete issues[id].mode;
+
+  // _tally: nested {for, against}; an empty field is never written as 0
+  const tallyFor = fd.get('tally_for'), tallyAgainst = fd.get('tally_against');
+  if (tallyFor === '' && tallyAgainst === '') {
+    delete issues[id]._tally;
+  } else {
+    const t = Object.assign({}, issues[id]._tally);
+    if (tallyFor !== '') t.for = parseInt(tallyFor, 10); else delete t.for;
+    if (tallyAgainst !== '') t.against = parseInt(tallyAgainst, 10); else delete t.against;
+    issues[id]._tally = t;
+  }
+
+  // flat keys written by the previous version of this form (none exist in data.js today)
+  ['tally_for', 'tally_against', 'source_name', 'source_url'].forEach(k => delete issues[id][k]);
 
   dirty = true;
   updateCommitBtn();
@@ -501,7 +523,7 @@ async function commitToGitHub() {
     // Replace DATA.issues with updated array
     dataObj.issues = sorted;
     const newJson    = JSON.stringify(dataObj);
-    const newContent = `const DATA = ${newJson};`;
+    const newContent = `const DATA = ${newJson};${fileTail}`;
     const encoded    = btoa(unescape(encodeURIComponent(newContent)));
 
     const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', hour12: false });
