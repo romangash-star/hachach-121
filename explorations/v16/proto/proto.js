@@ -219,7 +219,15 @@ const DEV = {
   neon:   qPick('neon', { on:'on', off:'off' }, 'on'),
   /* §S-1 the finale bar's two fills. `spec` is the approved pair and
      ships; `neutral` is the valence-free pair, for the comparison. */
-  f5bar:  qPick('f5bar', { spec:'spec', neutral:'neutral' }, 'spec')
+  f5bar:  qPick('f5bar', { spec:'spec', neutral:'neutral' }, 'spec'),
+  /* ?reset · WIPE THE SAVE AND START CLEAN, and it is the flag that now
+     carries the guarantee PROGRESS's comment used to carry on its own.
+     A demo surface has to be able to open empty in front of a client;
+     that used to be free, because nothing was written down. Now that
+     progress and the wallet survive a reload, the guarantee needs a
+     switch, and this is it. Presence is enough — ?reset, not ?reset=1 —
+     so it is one word to type in a meeting. See THE SAVE below. */
+  reset:  Q.has('reset')
 };
 
 let M = null;                       /* manifest.json                     */
@@ -619,31 +627,55 @@ let wallet = 0;
    more than +25 without anyone having to read the number. */
 const coinCount = n => Math.max(3, Math.min(5, Math.round(n / 25) + 2));
 
+/* EVERY AWARD PAYS ITS OWN DELTA, AND IT PAYS IT WHEN THE TOKEN LANDS.
+   The old shape read `wallet` once at call time, kept the destination in
+   `to`, and assigned `wallet = to` when the last token arrived — a
+   read-modify-write straddling ~600ms of flight. Two awards overlapping
+   in that window both computed `to` from the same starting balance and
+   the second assignment silently erased the first: 25 coins gone, on the
+   one counter the player is watching.
+   It was not reachable while the only awards were a cascade's, ~9s
+   apart. The end-game closes that gap — the finale pays into the same
+   counter the allocation screen then spends from — so the race is fixed
+   before the beats that would trigger it, not after.
+   THE FIX IS TO NEVER HOLD A DESTINATION. `wallet` is read and written
+   in the same synchronous step, at land time, so concurrent awards
+   compose instead of clobbering: each adds only what it has just paid,
+   and the running total is correct after any interleaving. */
 function award(n, from) {
   if (!n) return;
   const chip = $('.hud-coins'), out = $('#coinNum');
-  const to = wallet + n;
   if (S) S.coins += n;             /* the round's own tally; null on the map */
 
   /* WITHOUT AN ORIGIN IT IS STILL A COUNT-UP, not a flight. Awards that
      have no point on screen to leave from — the deferred claim payout at
      beat 5 — must not fake one. */
   const pts = from ? coinFlight(from, chip, coinCount(n)) : null;
-  if (!pts) { countCoins(out, wallet, to, T.coin); wallet = to; chip.classList.add('is-awarding');
+  /* THE SAVE FOLLOWS THE VARIABLE, NOT THE ANIMATION. Both branches
+     write it on the frame `wallet` actually changes, so an award that is
+     still mid-flight when the tab closes is worth exactly what the
+     counter had already paid in. See THE SAVE. */
+  if (!pts) { const from0 = wallet; wallet += n; saveState();
+              countCoins(out, from0, wallet, T.coin);
+              chip.classList.add('is-awarding');
               setTimeout(() => chip.classList.remove('is-awarding'), T.coin); return; }
 
   /* THE CHIP COUNTS UP AS THEY LAND, not before them and not after: each
      token carries its own share of the award and pays it in on arrival. */
   const share = n / pts.length;
   let paid = 0, landed = 0;
-  pts.forEach((tok, i) => {
+  pts.forEach(tok => {
     tok.onLand = () => {
       landed++;
-      paid = (landed === pts.length) ? n : Math.round(share * landed);
-      out.textContent = wallet + paid;
+      /* what this award owes by now, minus what it has already paid —
+         so the number added to `wallet` is only ever this award's own */
+      const due = (landed === pts.length) ? n : Math.round(share * landed);
+      wallet += due - paid;
+      paid = due;
+      out.textContent = wallet;      /* the true running total, always */
+      saveState();
       chip.classList.remove('is-landing'); void chip.offsetWidth;
       chip.classList.add('is-landing');    /* a small pop PER arrival */
-      if (landed === pts.length) { wallet = to; out.textContent = to; }
     };
   });
 }
@@ -2558,6 +2590,20 @@ async function beat5() {
   const segsWas   = segsDone(issue.topic);
   const topicsWas = topicsDone();
   PROGRESS[issue.id] = true;
+  /* THE ROUND'S RECORD IS WRITTEN HERE AND NOWHERE ELSE. Every value it
+     keeps was already deposited on S by the beat that owns it —
+     claimCorrect by claimReveal(), position by the tachles chips,
+     guesses by the two verdict sites — so this reads them rather than
+     re-deciding anything, and it is the last frame before newRound()
+     reassigns S. A round abandoned through the ✕ writes nothing, which
+     is correct: the coins it earned are kept, the issue is not done. */
+  RECORD[issue.id] = {
+    claim: S.claimCorrect === true,
+    pos:   S.position || null,
+    hits:  roundHits(),
+    cards: S.dealt.length
+  };
+  saveState();
   assertProgress(issue, segsWas, topicsWas);
 
   /* =================================================================
@@ -3087,10 +3133,127 @@ Object.defineProperty(window, 'DEV', { get: () => DEV });
    array position instead.
    ===================================================================== */
 
-/* issueId -> true. In memory for the session only: the map is a demo
-   surface and a client meeting should open on a clean map, not on whatever
-   the last person did. Nothing here writes to localStorage. */
+/* issueId -> true. THIS NOW SURVIVES A RELOAD — see THE SAVE below.
+   The "a client meeting should open on a clean map" intent that used to
+   live here has not been dropped; it has moved to ?reset, because it can
+   no longer be a consequence of writing nothing down. */
 const PROGRESS = {};
+
+/* issueId -> what the end-game needs to say a true sentence about the
+   round. Written once per round, at the same moment as PROGRESS. */
+const RECORD = {};
+
+/* =====================================================================
+   THE SAVE · ONE KEY, ONE VERSION, AND ONLY WHAT THE END-GAME READS.
+
+   WHY IT EXISTS AT ALL. PROGRESS and the wallet were session-only by
+   choice, and the choice was right while the game ended by looping back
+   to the map. It stops being right the moment there is an end-game: a
+   player who reloads on issue 9 of 11 loses the run, and the end-game is
+   the one screen whose whole content is the run.
+
+   WHAT IS STORED, AND WHY EACH FIELD EARNS ITS PLACE. Nothing here is
+   speculative — every field is read by a beat that is specified:
+     wallet          the coins to allocate                    (beat 3)
+     progress        which issues are done; the map, and the
+                     completion test topicsDone() === TOPICS().length
+     record[id].claim   did the claim surprise them           (beats 2, 4)
+     record[id].pos     their own vote, for the alignment line (beat 2)
+     record[id].hits    correct MK predictions this round     (beats 2, 4)
+     record[id].cards   how many were asked, so `hits` has a
+                        denominator that is not re-derived later
+   The surprise count is (claim ? 0 : 1) + (cards - hits), summed. The
+   alignment record compares `pos` to _tally, which lives in data.js and
+   is therefore never stored.
+
+   WHAT IS DELIBERATELY NOT STORED. No timings. No per-MK answer history:
+   WHICH member was missed is answer history, the counts are the beat's
+   content, and only the counts are kept. No analytics of any kind. No
+   avatar, no settings — the DEV switches are URL state and stay that way.
+
+   FAILING OPEN, THREE WAYS. A save is discarded whole rather than
+   repaired, because a half-trusted save is how a broken map gets
+   rendered:
+     1 · version mismatch — the shape changed under it
+     2 · an issue id that is not in DATA — the content set moved and the
+         progress no longer describes anything real
+     3 · anything malformed — not an object, wallet not a finite number
+   In all three the store is cleared and the session starts clean, which
+   is exactly the behaviour of a first-ever visit.
+   ===================================================================== */
+const SAVE_KEY = 'h121.proto.save';
+const SAVE_VER = 1;
+
+
+/* the same fails-open contract as seenIntro(): private mode, a cleared
+   store and a browser with storage disabled all have to leave the game
+   playable, so every access is wrapped and every failure is "no save". */
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* fails open */ }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD
+    }));
+  } catch (e) { /* fails open — a full or disabled store must not break play */ }
+}
+
+/* CALLED ONCE, FROM boot(), BEFORE ANY SCREEN IS BUILT. Nothing stored
+   leaves PROGRESS, RECORD and wallet at their initial values, which is
+   the "behave exactly as today" case. */
+function restoreSave() {
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return; }
+  if (!raw) return;
+
+  let s = null;
+  try { s = JSON.parse(raw); } catch (e) { return discardSave('unparseable'); }
+
+  if (!s || typeof s !== 'object')      return discardSave('not an object');
+  if (s.v !== SAVE_VER)                 return discardSave('version ' + s.v);
+  if (!Number.isFinite(s.wallet) || s.wallet < 0)
+                                        return discardSave('wallet ' + s.wallet);
+  if (!s.progress || typeof s.progress !== 'object') return discardSave('no progress');
+  if (!s.record   || typeof s.record   !== 'object') return discardSave('no record');
+
+  /* THE CONTENT CHECK. Every id the save mentions has to still be in
+     data.js. An id that is gone means the set was re-cut under the save,
+     and a map drawn from it would show a topic complete on the strength
+     of an issue nobody can open. Retired issues (active:false) are still
+     IN data.js and are still valid here — topicIssues() filters those
+     out on its own, so a stale done-flag on one is inert. */
+  const known = new Set(DATA.issues.map(i => i.id));
+  const ids = Object.keys(s.progress).concat(Object.keys(s.record));
+  for (const id of ids) if (!known.has(id)) return discardSave('unknown issue ' + id);
+
+  Object.keys(s.progress).forEach(id => { if (s.progress[id] === true) PROGRESS[id] = true; });
+  Object.keys(s.record).forEach(id => {
+    const r = s.record[id];
+    if (r && typeof r === 'object') RECORD[id] = r;
+  });
+  wallet = s.wallet;
+}
+
+/* the reason is developer-facing and the recovery is silent: the player
+   gets a clean first-run map, never a broken one. */
+function discardSave(why) {
+  console.warn('[save] discarded —', why);
+  clearSave();
+}
+
+/* WHAT THE ROUND LEAVES BEHIND, read off S at the moment the round is
+   recorded. S is reassigned wholesale by newRound(), so this is the last
+   frame in which any of it exists. */
+function roundHits() {
+  if (!S.dealt.length) return 0;
+  /* the inverted round asks a different question — the guess is a
+     PERSON, not a vote — so its hit test is not the cascade's. Mirrors
+     the two verdict sites and the §1.8 line at beat 5. */
+  if (S.inv) return S.guesses[S.inv.shown.id] === S.inv.shown.id ? 1 : 0;
+  return S.dealt.filter(d => S.guesses[d.id] === d.vote).length;
+}
 
 /* ACTIVE ISSUES ONLY, in data.js's own array order.
    `active:false` retires an issue without deleting it — the row, its MK
@@ -3891,6 +4054,13 @@ function startRound(issueId) {
    no step where the player is asked to make one, and nothing gates on it. */
 function boot() {
   applyDev();
+  /* THE SAVE IS READ BEFORE ANY SCREEN IS BUILT, for the same reason the
+     DEV switches are: the map and the HUD are drawn from PROGRESS and
+     wallet, and restoring after the draw would render a clean map and
+     then correct it. ?reset clears first, so the restore that follows
+     finds nothing and the session starts as a first-ever visit. */
+  if (DEV.reset) clearSave();
+  restoreSave();
   $('#hudAvatar').innerHTML = AV3;
   pressable($('#hudX')).addEventListener('click', exitRound);
   $('#coinNum').textContent = wallet;
