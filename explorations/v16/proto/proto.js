@@ -458,6 +458,35 @@ const INV_SAME_VOTE_DISTRACTORS = 1;
 /* seeded so a screenshot is reproducible and a playtest is repeatable */
 const INV_SEED = (n => n > 0 ? n : 7)(parseInt(Q.get('invseed'), 10));
 
+/* THE GENERATOR THE SEED IS FOR, AND IT WAS MISSING. invPlan() called
+   lcg() and nothing defined it, so every call threw ReferenceError —
+   and because newRound() assigns `issue` on its first line but `S` forty
+   lines later, the throw left `issue` pointing at a2 while S still held
+   the PREVIOUS round. a2 could not be opened at all and the inverted
+   round was unreachable in the build.
+
+   IT HAS TO BE SEEDED, not Math.random(): the note above says so, ?invseed
+   exists to vary it deliberately, and the contrast with the normal deal
+   is the point — newRound() shuffles the cascade with Math.random() and
+   this one is repeatable so a screenshot and a playtest are.
+
+   THE CONSTANTS ARE THE ONES THE CALLER ALREADY DOCUMENTS. The note at
+   the call site records lcg()'s first output as x*1664525 + 1013904223,
+   which is the Numerical Recipes LCG over 2^32 returning a float in
+   [0,1). Rebuilt from that, it reproduces the observation that note was
+   written about: seeds 1, 7, 13, 42 and 99 return 0.236-0.274 on the
+   first call and land on the SAME index in a 3- or 6-item pool, which is
+   exactly the collision the scramble-and-burn below exists to defeat.
+   Math.imul keeps the multiply in 32 bits instead of drifting through a
+   double. */
+const lcg = seed => {
+  let x = seed >>> 0;
+  return () => {
+    x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
+    return x / 4294967296;
+  };
+};
+
 function invPlan(iss) {
   /* §V21 CONSTRAINT · THE ROUND MAY ONLY DEAL MKs THAT HAVE AN
      ILLUSTRATION. A card whose whole content is a face cannot fall back
