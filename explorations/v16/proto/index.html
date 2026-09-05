@@ -163,6 +163,13 @@
     <main class="round" id="round"></main>
   </section>
 
+  <!-- 4 · THE END-GAME. The fourth screen, built exactly like the other
+       three: an empty <section class="screen"> that its renderer fills.
+       It is the terminal state that replaces the old loop — the last
+       issue used to fall through to חזרה למפה and the map would sit at
+       6/6 replaying itself. See §E in proto.js. -->
+  <section class="screen sc-end" id="scEnd" hidden></section>
+
   <!-- THE PINNED BANNER, PROMOTED OUT OF #scRound.
        It has to outrank every layer for the whole tachles transition: the
        beat-2 surface is .ov--stage at z-index 9 and is a child of .stage,

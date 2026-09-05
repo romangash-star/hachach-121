@@ -204,7 +204,8 @@ const DEV = {
      playing up to it. Every other switch above keeps working from any of
      the three, because they are all read once, here, before any screen is
      built. Default is the intro — the app has a front door now. */
-  screen: qPick('screen', { intro:'intro', map:'map', round:'round' }, 'intro'),
+  screen: qPick('screen', { intro:'intro', map:'map', round:'round',
+                            end:'end' }, 'intro'),
   /* B1-2 · null means "ask localStorage". on/off force the overlay in
      either direction WITHOUT writing the flag, which is the only way to
      look twice at something that by definition happens once. */
@@ -2684,7 +2685,15 @@ async function beat5() {
   const acts = el('div', 'f5acts b5stage');
   const restIss = topicIssues(issue.topic).filter(x => !issueDone(x.id));
   const next = restIss[0];
-  if (next) {
+  /* §E · THE LAST ISSUE OF THE LAST TOPIC IS A DIFFERENT DOOR. The test
+     is asked BEFORE the per-topic one, because the old order could only
+     ever answer "is there another issue in THIS topic" and fell through
+     to חזרה למפה — which is exactly the loop the end-game replaces. */
+  if (gameDone()) {
+    const go = el('button', 'p-c f5go', 'סיימתם את כל הנושאים ›');   /* TAMAR */
+    pressable(go).addEventListener('click', () => endGame());
+    acts.appendChild(go);
+  } else if (next) {
     const go = el('button', 'p-c f5go', 'לסוגיה הבאה ›');            /* TAMAR */
     pressable(go).addEventListener('click', () => startRound(next.id));
     const back = el('button', 'f5back', 'חזרה למפה');                /* TAMAR */
@@ -3162,6 +3171,7 @@ const RECORD = {};
      record[id].hits    correct MK predictions this round     (beats 2, 4)
      record[id].cards   how many were asked, so `hits` has a
                         denominator that is not re-derived later
+     cf              whether the one celebration has been spent
    The surprise count is (claim ? 0 : 1) + (cards - hits), summed. The
    alignment record compares `pos` to _tally, which lives in data.js and
    is therefore never stored.
@@ -3184,6 +3194,18 @@ const RECORD = {};
 const SAVE_KEY = 'h121.proto.save';
 const SAVE_VER = 1;
 
+/* THE CONFETTI'S ONCE-ONLY FLAG LIVES IN THE SAVE, not in the session.
+   Scarcity is the whole argument for keeping confetti at all — it was cut
+   from every per-round reveal precisely so that finishing the map could
+   have it — and a flag that forgets on reload spends that scarcity for
+   free. It is the one piece of end-game state the save carries that is
+   not a number the beats read back, and it earns its place by being the
+   only thing protecting the rule.
+   NO VERSION BUMP. The field is additive and optional: a save written
+   before it simply has no `cf`, restores cleanly, and fires the
+   celebration once more. Bumping SAVE_VER would discard an eleven-round
+   run to protect one animation, which is the wrong trade. */
+let EG_CONFETTI_SPENT = false;
 
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
@@ -3195,7 +3217,8 @@ function clearSave() {
 function saveState() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD
+      v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD,
+      cf: EG_CONFETTI_SPENT
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
 }
@@ -3234,6 +3257,9 @@ function restoreSave() {
     if (r && typeof r === 'object') RECORD[id] = r;
   });
   wallet = s.wallet;
+  /* coerced rather than validated: a malformed `cf` is a cosmetic field
+     and must not be grounds for discarding eleven rounds of progress */
+  EG_CONFETTI_SPENT = s.cf === true;
 }
 
 /* the reason is developer-facing and the recovery is silent: the player
@@ -3297,11 +3323,19 @@ const topicDone  = id => { const l = topicIssues(id); return l.length > 0 && l.e
    more intimidating number for a one-minute game, and the topic is the
    unit the player actually chooses. */
 const topicsDone = () => TOPICS().filter(t => topicDone(t.id)).length;
+/* THE -1, RAISED INTO A STATE OF ITS OWN. findIndex returns -1 when no
+   topic is unfinished, and currentIdx() used to swallow it into "park on
+   the last node" because parking was the only thing there was to do with
+   it. It is now the game's completion test, named once and read by both
+   the map and beat 5. */
+const nextTopicIdx = () => TOPICS().findIndex(t => !topicDone(t.id));
+/* the guard matters: an empty topic list is not a finished game, and
+   TOPICS() is derived from data.js, which can be re-cut under us. */
+const gameDone = () => TOPICS().length > 0 && nextTopicIdx() < 0;
 /* the soft nudge, and the only ordering the map has. No lock follows it. */
 const currentIdx = () => {
-  const T = TOPICS();
-  const i = T.findIndex(t => !topicDone(t.id));
-  return i < 0 ? T.length - 1 : i;
+  const i = nextTopicIdx();
+  return i < 0 ? TOPICS().length - 1 : i;
 };
 
 /* =====================================================================
@@ -3310,15 +3344,19 @@ const currentIdx = () => {
 function showScreen(name) {
   const st = $('#stage');
   st.dataset.screen = name;
-  [['intro','#scIntro'], ['map','#scMap'], ['round','#scRound']].forEach(([n, sel]) => {
+  [['intro','#scIntro'], ['map','#scMap'], ['round','#scRound'],
+   ['end','#scEnd']].forEach(([n, sel]) => {
     const node = $(sel); if (node) node.hidden = (n !== name);
   });
   /* the HUD's centre slot and its RIGHT slot are what differ between the
      two screens. Centre: the issue title in a round, the x/N count on the
-     map. Right: the ✕ in a round, the avatar on the map — A4. */
+     map. Right: the ✕ in a round, the avatar on the map — A4.
+     THE END-GAME KEEPS THE MAP'S HUD, and deliberately: the count reads
+     6/6 there, which is the thing that just happened, and the coin chip
+     is the subject of beat 3. Only the round's two slots stay hidden. */
   const t = $('#hudTopic'), pr = $('#hudProgress');
   if (t)  t.hidden  = (name !== 'round');
-  if (pr) pr.hidden = (name !== 'map');
+  if (pr) pr.hidden = !(name === 'map' || name === 'end');
   const av = $('#hudAvatar'), x = $('#hudX');
   if (av) av.hidden = (name === 'round');
   if (x)  x.hidden  = (name !== 'round');
@@ -3757,7 +3795,16 @@ function renderMap() {
       '</div>' +
     '</div>' +
     '<button type="button" class="map-jump" id="mapjump">' +
-      '<i aria-hidden="true">↓</i>חזרה לנושא הנוכחי</button>';
+      '<i aria-hidden="true">↓</i>חזרה לנושא הנוכחי</button>' +
+    /* §E · THE WAY BACK INTO THE SUMMARY. Without it the end-game is a
+       one-way door: its own exit is the map, and a player who takes it
+       would be back in the loop the end-game exists to replace, with no
+       way to reach their card again. Rendered only when the game is
+       actually finished, so it cannot appear mid-run. */
+    (gameDone()
+      ? '<button type="button" class="map-done" id="mapdone">' +
+          esc('לסיכום שלכם ›') + '</button>'                          /* TAMAR */
+      : '');
 
   paintHud();
   /* SHOW IT BEFORE MEASURING IT. A hidden element has no clientHeight and
@@ -3944,6 +3991,8 @@ function drawPath(h) {
 function wireMap(cur, h) {
   const win = $('#mapwin'), jump = $('#mapjump');
   const curY = nodeY(cur, h);
+  const done = $('#mapdone');
+  if (done) pressable(done).addEventListener('click', () => endGame());
 
   /* PARK THE FIRST INCOMPLETE NODE IN THE LOWER THIRD. Two thirds down the
      window, so what is above it — everything still to play — is what fills
@@ -4019,6 +4068,468 @@ function openTopic(topicId) {
   }, T.screen);
 }
 
+/* =====================================================================
+   §E · THE END-GAME, FIVE BEATS.
+
+   WHAT IT REPLACES. The terminal state used to be a loop: beat 5's exit
+   was a per-topic question, so the last issue of the last topic fell
+   through to חזרה למפה, the map read 6/6, and tapping any node replayed
+   it (openTopic's `|| topicIssues(id)[0]` fallback). Nothing in the game
+   could say it was over. gameDone() says it now.
+
+   EVERY NUMBER ON THIS SCREEN IS DERIVED, and derived HERE. There is no
+   stored total anywhere: endStats() reads RECORD — written one round at
+   a time by beat 5 — and data.js, on every entry. Re-cut the content and
+   the end-game re-counts. That is why the brief's own example figures
+   (11 surprises, 5 of 8) appear nowhere in this file: they were written
+   against the 16-round set and would be a lie on this one.
+
+   THE FIVE BEATS ARE FOUR SCREENS. Beats 4 and 5 share one, because
+   "the buttons arrive last and stay" is a statement about the card's
+   screen — the exits arrive under the card and do not replace it.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   THE DERIVATIONS.
+
+   A SURPRISE IS A PREDICTION REALITY DID NOT MATCH, and both kinds
+   count: the claim at beat 1 and every MK at beat 4. That makes the
+   arithmetic closed — asked = correct + surprises — so the share card
+   and the record screen can never disagree, which is the §0.4 rule
+   about the game never lying about its own numbers.
+
+   THE ALIGNMENT DENOMINATOR IS THE ISSUES THAT CARRY A VOTE COUNT, and
+   it is small on purpose: only 4 of the 11 active issues have _tally, so
+   only 4 have a documented outcome to compare a position against. The
+   alternative — inferring a direction from some other field — would
+   invent an outcome the data does not state, on a product whose whole
+   credibility is documented votes. So the number stays 4 and the COPY
+   says what the 4 is.
+   AN ABSTENTION IS COUNTED AND NEVER MATCHES. Dropping נמנע from the
+   denominator would make it move per player and the sentence stop being
+   checkable; keeping it is also just true — an abstention is not a vote
+   with the majority.
+   HARD GUARDRAIL (§1.4c, sheet p.11): the comparison is to WHAT
+   HAPPENED, never to who the player resembles. There is no party, bloc
+   or MK anywhere in this section, and there must never be one.
+   --------------------------------------------------------------------- */
+function endStats() {
+  const ids = Object.keys(RECORD);
+  let asked = 0, correct = 0, alignHits = 0, alignOf = 0;
+  ids.forEach(id => {
+    const r = RECORD[id];
+    if (!r) return;
+    /* one claim per round, plus however many MKs it asked about */
+    asked   += 1 + (r.cards || 0);
+    correct += (r.claim ? 1 : 0) + (r.hits || 0);
+    const iss = DATA.issues.find(i => i.id === id);
+    const tal = iss && iss._tally;
+    if (tal && r.pos) {
+      alignOf++;
+      const majority = tal.for > tal.against ? 'for' : 'against';
+      if (r.pos === majority) alignHits++;
+    }
+  });
+  return { rounds: ids.length, asked, correct, surprises: asked - correct,
+           alignHits, alignOf, coins: wallet };
+}
+
+/* the topic's own drawn object, exactly as the map's nodes resolve it —
+   same manifest entry, same fallback to data.js's glyph. */
+function topicFace(t, px) {
+  const A = M.topics && M.topics[t.id];
+  const art = A && (A['256'] || A['128'] || A['64']);
+  if (!art) return '<span class="eg-ico" aria-hidden="true">' + t.icon + '</span>';
+  const a = A.aspect || 1;
+  const w = a >= 1 ? px : px * a, h = a >= 1 ? px / a : px;
+  return '<img class="eg-ico" src="' + ROOT + art + '" alt="" style="width:' +
+    w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px">';
+}
+
+/* the allocation, in memory only. It is NOT in the save: the brief's
+   "do not persist anything else" is a rule about the store, and this is
+   a decision the player makes on one screen and carries to the next.
+   `wallet` is never mutated by it either — the earned total is a fact
+   about the run and the allocation is a view over it, so the HUD chip
+   keeps reading what was earned while this screen counts what is left. */
+let ALLOC = {};
+
+/* =====================================================================
+   THE END-GAME ROUTER. One screen, four stages, each replacing the last
+   — the same shape as the round's beats, and for the same reason: the
+   stage is a fixed box with overflow:hidden and a scrolling column here
+   would be the second scrolling surface in an app that has exactly one.
+   ===================================================================== */
+async function endGame() {
+  ALLOC = {};
+  showScreen('end');
+  /* THE HUD HAS TO BE REPAINTED HERE. Its count and coin chip were only
+     ever written by renderMap(), because the map was the only screen
+     that showed them; the end-game shows the same two and would
+     otherwise inherit whatever the last map render left — 0/6 on a
+     deep-link, or a stale count on a save restored straight into the
+     summary. */
+  paintHud();
+  await egBeat1();
+}
+
+function egStage() {
+  const r = $('#scEnd');
+  r.innerHTML = '<div class="eg-fx" id="egFx" aria-hidden="true"></div>' +
+                '<div class="eg-col" id="egCol"></div>';
+  return $('#egCol', r);
+}
+
+const egReduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const egStep = ms => wait(egReduced() ? 0 : ms);
+
+/* =====================================================================
+   BEAT 1 · THE CONFETTI.
+
+   THE ONLY CONFETTI IN THE GAME. It was cut from every per-round reveal
+   for two reasons the sheet records as a High bug (§0.4-1): it fired at
+   3/5, and it covered the results table. Both are answered here by the
+   same two rules — it fires ONCE, on completing the map, and it lands
+   AFTER the screen has settled.
+
+   NEVER OVER CONTENT, STRUCTURALLY. #egFx is a sibling BEFORE .eg-col
+   and sits at a lower z-index, so the pieces fall BEHIND the words. That
+   is a stacking fact rather than a timing promise: even if the copy grew
+   or the beat were re-ordered, the payload cannot be covered.
+
+   NOT THE SIX TOPIC HUES. Cycling the topic palette would draw a rainbow
+   across the screen, which is the exact thing lsGlyph() rejected on the
+   title for a reason that has not changed: in Israel a rainbow reads as
+   a pride symbol, one of the six live topics is מגדר ושוויון, and a
+   celebration is the last place to make an unintended political
+   statement. The pieces take the app's own neutrals and the coin's gold.
+
+   ONCE, AND ONCE MEANS ONCE. EG_CONFETTI_SPENT is carried in the save,
+   so a reload does not buy a second celebration — see the note beside it
+   in THE SAVE. ?reset clears the store and therefore re-arms it, which
+   is correct: that flag exists to hand a demo a clean first run.
+   ===================================================================== */
+const EG_CONFETTI_N = 34;
+function egConfetti() {
+  if (EG_CONFETTI_SPENT || egReduced()) return;
+  EG_CONFETTI_SPENT = true;
+  saveState();                    /* spent is spent, across reloads too */
+  const fx = $('#egFx'); if (!fx) return;
+  for (let i = 0; i < EG_CONFETTI_N; i++) {
+    const p = el('i', 'eg-cf eg-cf--' + (i % 3));
+    p.style.left = (Math.random() * 100).toFixed(2) + '%';
+    p.style.animationDelay = (Math.random() * 620).toFixed(0) + 'ms';
+    p.style.animationDuration = (1500 + Math.random() * 900).toFixed(0) + 'ms';
+    p.style.setProperty('--cf-spin', (Math.random() * 720 - 360).toFixed(0) + 'deg');
+    p.style.setProperty('--cf-drift', (Math.random() * 44 - 22).toFixed(0) + 'px');
+    fx.appendChild(p);
+  }
+  setTimeout(() => { fx.innerHTML = ''; }, 3200);
+}
+
+async function egBeat1() {
+  const c = egStage();
+  const done = topicsDone(), total = TOPICS().length;
+  c.innerHTML =
+    '<div class="eg-b1">' +
+      '<p class="eg-eyebrow">' + esc('סיימתם') + '</p>' +              /* TAMAR */
+      '<h1 class="eg-h1">' + esc('כל הנושאים') + '</h1>' +             /* TAMAR */
+      '<p class="eg-sub">' + N(done + '/' + total) + ' ' +
+        esc('נושאים · ') + N(Object.keys(RECORD).length) +             /* TAMAR */
+        esc(' סוגיות') + '</p>' +
+    '</div>';
+  const b1 = $('.eg-b1', c);
+  requestAnimationFrame(() => b1.classList.add('is-in'));
+
+  /* THE CELEBRATION WAITS FOR THE SCREEN TO STOP MOVING. The block's own
+     entrance is --t-f5-in; the confetti is fired after it, not with it. */
+  await egStep(T.f5In + T.f5Gap);
+  egConfetti();
+  await egStep(T.f5CoinHold);
+
+  const go = el('button', 'p-c eg-go', 'מה יצא לכם ›');                /* TAMAR */
+  pressable(go).addEventListener('click', () => egBeat2());
+  c.appendChild(go);
+  requestAnimationFrame(() => go.classList.add('is-in'));
+}
+
+/* =====================================================================
+   BEAT 2 · YOUR RECORD.
+
+   WHY IT EXISTS: without it the allocation arrives from nowhere. This is
+   the bridge between "I finished" and "here is what I am deciding" —
+   the sheet's §1.4c argument that the values screen has to be introduced
+   by the positions the player already took.
+
+   ONE NUMBER AT A TIME. The consolidated NEVERs forbid >1 number at the
+   emotional peak. The two lines here are staged rather than simultaneous
+   — the surprise count lands, holds alone, and only then does the
+   alignment line arrive — so the beat never presents two figures for the
+   eye to choose between.
+
+   THE FRAMING IS §1.3: the Knesset surprised you, you did not fail.
+   There is no "wrong", no score colour, and no correctness treatment on
+   this screen at all.
+   ===================================================================== */
+async function egBeat2() {
+  const c = egStage();
+  const s = endStats();
+  c.innerHTML = '<h2 class="eg-h2">' + esc('מה יצא לכם') + '</h2>';    /* TAMAR */
+  const h2 = $('.eg-h2', c);
+  requestAnimationFrame(() => h2.classList.add('is-in'));
+  await egStep(T.f5In);
+
+  /* ---- the surprise count, alone ---- */
+  const surf = el('div', 'eg-card f5surf');
+  surf.innerHTML =
+    /* KEY RIGHT, VALUE LEFT — the phone-sweep rule, and it decides the
+       DOM order: in RTL the first flex child renders rightmost, so the
+       label has to come first and the numeral second. */
+    '<p class="eg-stat">' +
+      '<span class="eg-stat__l">' + esc('פעמים שהכנסת הפתיעה אתכם') +   /* TAMAR */
+      '</span><b class="eg-num">' + N(s.surprises) + '</b></p>' +
+    '<p class="eg-stat__sub">' + esc('מתוך ') + N(s.asked) +           /* TAMAR */
+      esc(' ניחושים לאורך המשחק') + '</p>';                            /* TAMAR */
+  c.appendChild(surf);
+  requestAnimationFrame(() => surf.classList.add('is-in'));
+  await egStep(T.f5CoinHold);
+
+  /* ---- the alignment line, second, and only if it can be true ----
+     alignOf is 0 when nothing the player finished carries a _tally, and
+     the line is then simply absent. A "0 מתוך 0" is not a fact about
+     the player, it is a fact about the content. */
+  if (s.alignOf > 0) {
+    const al = el('div', 'eg-card f5surf eg-card--quiet');
+    al.innerHTML =
+      '<p class="eg-stat eg-stat--sm">' +
+        '<span class="eg-stat__l">' + esc('הצבעתם עם הרוב') +          /* TAMAR */
+        '</span><b class="eg-num">' +
+        N(s.alignHits + '/' + s.alignOf) + '</b></p>' +
+      /* the denominator has to explain itself or it reads as a bug next
+         to eleven finished issues — Lion, 5 Sep */
+      '<p class="eg-stat__sub">' +
+        esc('מתוך ') + N(s.alignOf) +
+        esc(' סוגיות שבהן יש ספירת קולות') + '</p>';                   /* TAMAR */
+    c.appendChild(al);
+    requestAnimationFrame(() => al.classList.add('is-in'));
+    await egStep(T.f5CoinHold);
+  }
+
+  const go = el('button', 'p-c eg-go', 'עכשיו תורכם ›');               /* TAMAR */
+  pressable(go).addEventListener('click', () => egBeat3());
+  c.appendChild(go);
+  requestAnimationFrame(() => go.classList.add('is-in'));
+}
+
+/* =====================================================================
+   BEAT 3 · THE ALLOCATION.
+
+   THE TARGETS ARE THE GAME'S OWN TOPICS, and that is the whole argument
+   (§0.3b): a curated list of "legitimate causes" is itself an editorial
+   act — who decided ביטחון counts and זכויות עובדים does not — and the
+   six topics the player has just spent eleven rounds inside sidestep it
+   entirely. TOPICS() is read live, so a re-cut content set re-cuts this
+   screen and nothing here has to be told.
+
+   CHIPS AND A SIMPLE SPLIT, NOT A SLIDER. The sheet's minimal v1
+   (p.4, option b) verbatim. A tap adds one portion; the portion is a
+   tenth of what was earned, rounded to the game's own 25-coin unit, so
+   the numbers on screen stay in the vocabulary the round taught.
+
+   EVERY COIN IS ALLOCATABLE. The last portion is whatever is left rather
+   than a fixed step — without that, a 1,900 wallet and a 200 step strand
+   100 coins nobody can place, which would make "distribute your coins" a
+   promise the screen does not keep. That was the original build's whole
+   failure and it is not being repeated in a new shape.
+
+   LEAVING COINS UNSPENT IS A VALID END STATE. The continue button is
+   never gated on a full allocation: this is a statement of priorities,
+   not a puzzle with a solution, and a completion gate would turn it into
+   one. NO SCARCITY, NO TIMER, NO PRESSURE COPY.
+
+   THE HUD CHIP DOES NOT MOVE. It keeps showing what was earned, because
+   that is a fact about the run; what is left to place is this screen's
+   own line. Spending out of the HUD would also mean writing a smaller
+   number into the save, and the save records the run, not this screen.
+   ===================================================================== */
+const egPortion = () => {
+  const tenth = wallet / 10;
+  return Math.max(25, Math.round(tenth / 25) * 25);
+};
+const egPlaced    = () => Object.values(ALLOC).reduce((a, b) => a + b, 0);
+const egRemaining = () => wallet - egPlaced();
+
+/* the topic with the most placed on it. Ties resolve to data.js's own
+   order — first wins — so the card names something stable rather than
+   whichever key the engine happened to enumerate first. */
+function egTopTopic() {
+  let best = null;
+  TOPICS().forEach(t => {
+    const v = ALLOC[t.id] || 0;
+    if (v > 0 && (!best || v > best.v)) best = { t, v };
+  });
+  return best;
+}
+
+async function egBeat3() {
+  const c = egStage();
+  c.innerHTML =
+    '<h2 class="eg-h2 is-in">' + esc('במה להשקיע?') + '</h2>' +        /* TAMAR */
+    '<p class="eg-lede">' +
+      esc('חילקו את המטבעות שצברתם בין הנושאים ששיחקתם.') +            /* TAMAR */
+    '</p>' +
+    '<p class="eg-left" id="egLeft"></p>' +
+    '<div class="eg-chips" id="egChips"></div>' +
+    '<div class="eg-acts" id="egActs"></div>';
+
+  const chips = $('#egChips', c);
+  TOPICS().forEach(t => {
+    const b = el('button', 'eg-chip');
+    b.type = 'button';
+    b.dataset.topic = t.id;
+    b.innerHTML =
+      '<span class="eg-chip__ico">' + topicFace(t, 30) + '</span>' +
+      '<span class="eg-chip__name">' + esc(t.label) + '</span>' +
+      '<span class="eg-chip__v" aria-hidden="true"></span>';
+    pressable(b).addEventListener('click', () => {
+      const left = egRemaining();
+      if (left <= 0) return;
+      /* the last portion is the remainder, so the wallet can always be
+         emptied exactly — see the note above */
+      ALLOC[t.id] = (ALLOC[t.id] || 0) + Math.min(egPortion(), left);
+      b.classList.remove('is-bump'); void b.offsetWidth; b.classList.add('is-bump');
+      egPaint();
+    });
+    chips.appendChild(b);
+  });
+
+  const acts = $('#egActs', c);
+  const clear = el('button', 'eg-clear', 'התחלה מחדש');                /* TAMAR */
+  clear.type = 'button';
+  pressable(clear).addEventListener('click', () => { ALLOC = {}; egPaint(); });
+  const go = el('button', 'p-c eg-go', 'לכרטיס שלכם ›');               /* TAMAR */
+  pressable(go).addEventListener('click', () => egBeat4());
+  acts.append(clear, go);
+
+  egPaint();
+  requestAnimationFrame(() => {
+    $('.eg-lede', c).classList.add('is-in');
+    chips.classList.add('is-in');
+    acts.classList.add('is-in');
+  });
+}
+
+/* one painter for the whole screen, so the left-to-place line and every
+   chip can never disagree about the same numbers */
+function egPaint() {
+  const left = egRemaining();
+  const L = $('#egLeft');
+  if (L) {
+    /* THREE STATES, NOT TWO. "you have distributed all your coins" is
+       false when there were none to distribute — reachable on the
+       ?screen=end demo link against a clean store, and a screen that
+       congratulates you for spending nothing is the kind of small lie
+       this file does not ship. */
+    L.innerHTML = wallet <= 0
+      ? esc('אין מטבעות לחלוקה')                                        /* TAMAR */
+      : left > 0
+        ? esc('נותרו לחלוקה ') + '<b>' + N(left) + '</b> ' + esc('מטבעות') /* TAMAR */
+        : esc('חילקתם את כל המטבעות') + ' ●';                            /* TAMAR */
+    L.classList.toggle('is-spent', wallet > 0 && left <= 0);
+  }
+  $('#egChips') && $$('.eg-chip', $('#egChips')).forEach(b => {
+    const v = ALLOC[b.dataset.topic] || 0;
+    const out = $('.eg-chip__v', b);
+    out.innerHTML = v > 0 ? N(v) : '';
+    b.classList.toggle('has-v', v > 0);
+    /* the control disables itself when there is nothing left to place —
+       it is not an error state, it is the end of the supply */
+    b.disabled = left <= 0;
+  });
+  const clear = $('.eg-clear');
+  if (clear) clear.hidden = egPlaced() === 0;
+}
+
+/* =====================================================================
+   BEATS 4 AND 5 · THE CARD, THEN THE WAY OUT.
+
+   THE HEADLINE IS THE SURPRISE COUNT AND IT IS NOT NEGOTIABLE (§5.3).
+   A card that leads with the prediction record self-selects twice over:
+   players who did badly quietly do not share it, and the ones who do
+   share it learn that doing badly is the shameful outcome — which
+   contradicts the §1.3 framing the entire round is built on. The
+   surprise count is HIGH when the player did badly, so the shame
+   inverts and the metric is on-thesis: the game is about the Knesset
+   being surprising, not about the player being right.
+
+   SECONDARY: the top topic, NAMED FROM data.js. Never the full split —
+   how you divide between topics maps loosely onto political camps and
+   the sheet holds that back for an opt-in variant that does not exist
+   yet. Never the free text either: unvalidated user text next to the
+   NGO's hashtag is §0.4-8, and the reason the אחר field does not ride
+   here even once it exists in-game.
+
+   THE PREDICTION RECORD IS PRESENT AND DEMOTED — one quiet line under
+   the rule, which is what "secondary line, not the headline" means.
+
+   NO SHARE ACTION IS WIRED. The card is the artifact; actually
+   publishing it raises the opt-in and hashtag questions §5.3 leaves
+   open, and those are Tamar/NGO decisions rather than build ones.
+   ===================================================================== */
+async function egBeat4() {
+  const c = egStage();
+  const s = endStats();
+  const top = egTopTopic();
+
+  c.innerHTML = '<h2 class="eg-h2">' + esc('הכרטיס שלכם') + '</h2>';   /* TAMAR */
+  requestAnimationFrame(() => $('.eg-h2', c).classList.add('is-in'));
+  await egStep(T.f5In);
+
+  const card = el('div', 'eg-share');
+  card.innerHTML =
+    '<p class="eg-share__tag">' + esc('הח״כ ה-121') + '</p>' +          /* TAMAR */
+    '<p class="eg-share__lead">' +
+      '<span>' + esc('פעמים שהכנסת הפתיעה אותי') + '</span>' +          /* TAMAR */
+      '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
+    (top
+      ? '<p class="eg-share__topic">' +
+          '<span class="eg-share__ico">' + topicFace(top.t, 22) + '</span>' +
+          esc('הכי הרבה הקצאתי ל') + esc(top.t.label) + '</p>'          /* TAMAR */
+      : '') +
+    '<hr class="eg-share__rule">' +
+    '<p class="eg-share__second">' + esc('ניחשתי נכון ') + N(s.correct) +
+      esc(' מתוך ') + N(s.asked) + '</p>';                             /* TAMAR */
+  c.appendChild(card);
+  requestAnimationFrame(() => card.classList.add('is-in'));
+
+  /* BEAT 5 · the buttons arrive last and stay. Nothing is appended after
+     them, so this is the end of the screen and of the game. */
+  await egStep(T.f5CoinHold);
+  const acts = el('div', 'eg-acts eg-acts--exit');
+  /* TWO DOORS AND NOTHING AFTER THEM. The map is the primary — it is
+     where every topic can be reopened, and openTopic()'s existing
+     fallback already replays a finished one. The secondary names ONE
+     topic rather than saying "replay a topic" abstractly, and the one it
+     names is the player's own top allocation: the only non-arbitrary
+     choice available, and a callback to the decision they just made. It
+     is absent when nothing was allocated, because there is then no
+     topic this screen has any business naming. */
+  if (top) {
+    const again = el('button', 'eg-clear',
+      'לשחק שוב: ' + top.t.label);                                    /* TAMAR */
+    again.type = 'button';
+    pressable(again).addEventListener('click', () => {
+      showScreen('map'); openTopic(top.t.id);
+    });
+    acts.appendChild(again);
+  }
+  const back = el('button', 'p-c eg-go', 'חזרה למפה ›');               /* TAMAR */
+  pressable(back).addEventListener('click', () => goMap());
+  acts.appendChild(back);
+  c.appendChild(acts);
+  requestAnimationFrame(() => acts.classList.add('is-in'));
+}
+
 /* ===================== boot ========================================= */
 /* THE ROUND, which is now one screen of three rather than the whole app.
    It no longer resets the coin count: the wallet belongs to the session
@@ -4071,6 +4582,11 @@ function boot() {
      only way to reach the inverted a2 without playing a1 first */
   if (DEV.screen === 'round')      startRound(Q.get('issue') || undefined);
   else if (DEV.screen === 'map')   goMap();
+  /* §E ?screen=end drops straight into the summary, which is the only
+     way to show it in a meeting without playing eleven rounds first. It
+     reads whatever RECORD the save holds — so on a clean store the
+     numbers are honestly zero rather than invented. */
+  else if (DEV.screen === 'end')   endGame();
   else                             renderIntro();
 }
 
