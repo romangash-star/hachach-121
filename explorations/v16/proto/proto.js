@@ -50,6 +50,8 @@ const T = {
   press:     ms('--t-press'),
   stamp:     ms('--t-stamp'),
   stampDrop: ms('--t-stamp-drop'),
+  stampDropMk: ms('--t-stamp-drop-mk'),  /* ITEM 7 · contact on an MK card */
+  stampLand:   ms('--t-stamp-land'),     /* ITEM 47 · the shared landing, end to end */
   stampBleed:ms('--t-stamp-bleed'),
   flip:      ms('--t-flip'),
   swipe:     ms('--t-swipe'),
@@ -86,9 +88,15 @@ const T = {
   f5CoinOut: ms('--t-f5-coin-out'),
   f5In:      ms('--t-f5-in'),
   f5Recentre:ms('--t-f5-recentre'),
+  f5Board:   ms('--t-f5-board'),    /* ITEM 8 · the board's move up      */
+  f5Panel:   ms('--t-f5-panel'),    /* ITEM 8 · one step of the stagger  */
+  f5Hold:    ms('--t-f5-hold'),     /* ITEM 11a · the record, alone      */
+  f5TickAt:  ms('--t-f5-tick-at'),  /* ITEM 11c · after the token lands  */
+  f5Tick:    ms('--t-f5-tick'),     /* ITEM 11d · the +1                 */
   f5BnrOut:  ms('--t-f5-bnr-out'),
   claimHold: ms('--t-claim-hold'),
   claimBeat: ms('--t-claim-beat'),
+  claimLift: ms('--t-claim-lift'),   /* ITEM 2 · the reveal's reflow, played */
   seatFill:  ms('--t-seat-fill'),
   seatCross: ms('--t-seat-cross'),
   markGap:   ms('--t-mark-gap'),
@@ -315,7 +323,22 @@ function fitBeat() {
      bottom of a short phone while believing it had fitted. */
   const avail = par.clientHeight
     - (parseFloat(pcs.paddingTop) || 0) - (parseFloat(pcs.paddingBottom) || 0);
-  const need = fit.scrollHeight;
+  /* ITEM 8 · MEASURE THE PADDING IT IS GOING TO HAVE, NOT THE ONE IT IS
+     PASSING THROUGH. scrollHeight includes padding-top, and on the finale
+     that padding is the board's move — 315px easing to 128. Called on the
+     frame the move starts, this measured 868px of stack against 786 of
+     room, scaled the WHOLE beat to 0.905, and only the delayed call after
+     the move had landed put it back: a 9.5% shrink and a snap back, on
+     the one beat whose brief says the board must never jump. It was
+     invisible before this item only because the board demoted to a strip
+     first and the sums happened to land inside the room either way.
+     The inline value is the target f5Place() set; the computed one is
+     wherever the transition has got to. Swap one for the other and the
+     measurement is of the layout that is arriving. NOT by suspending the
+     transition — that would commit the end value and cancel the move. */
+  const used   = parseFloat(getComputedStyle(fit).paddingTop) || 0;
+  const target = fit.style.paddingTop ? (parseFloat(fit.style.paddingTop) || 0) : used;
+  const need = fit.scrollHeight - used + target;
   if (need > avail && avail > 0) {
     fit.style.transform = 'scale(' + (avail / need).toFixed(4) + ')';
   }
@@ -701,11 +724,12 @@ function paintHudAvatar() { const h = $('#hudAvatar'); if (h) h.innerHTML = avat
    are visible inside any round: the beat-2 framing line, the tap hint,
    and the exit confirm's question. */
 const COPY = {
-  b2frame: {
-    p: 'זו הצעת חוק אמיתית. כח״כ ה-121, אתם מצביעים במליאה — ואז נראה איך הצביעו האחרים.',    /* TAMAR */
-    m: 'זו הצעת חוק אמיתית. כח״כ ה-121, אתה מצביע במליאה — ואז נראה איך הצביעו האחרים.',      /* TAMAR */
-    f: 'זו הצעת חוק אמיתית. כח״כית ה-121, את מצביעה במליאה — ואז נראה איך הצביעו האחרים.',    /* TAMAR */
-  },
+  /* ITEM 30 · b2frame IS RETIRED. Its three voice variants went with the
+     translucent banner beat 2 no longer carries; the conceit they carried
+     ("כח״כ ה-121") is now in the vote question itself. Removed rather than
+     left dangling, so nothing reads a slot that no longer paints — but
+     noted here because those were three of Tamar's approved strings and
+     this is where they were. */
   tapNext: {
     p: 'הקישו להמשך',                                                /* TAMAR */
     m: 'הקש להמשך',                                                  /* TAMAR */
@@ -1300,6 +1324,9 @@ function wirePeel(card) {
     if (cov.dataset.done) return;
     cov.dataset.done = '1';
     cov.disabled = true;
+    /* the hint has been taken; it must not still be wiggling under the
+       peel it just asked for */
+    cov.classList.remove('is-nudging');
     if (reduced) { cov.remove(); chip.classList.add('is-open'); return; }
     /* 1 · the sheet lifts from the leading edge and curls as it goes,
            uncovering the party line behind it */
@@ -1342,7 +1369,27 @@ async function flipUp() {
   }
   setPile(i + 1);
   await wait(T.cardFlip);
+  /* ITEM 6 · THE TAPE'S AFFORDANCE NUDGE. The cover says מפלגה and is a
+     button, but nothing on a still card says it can be taken off. Two
+     small wiggles 400ms after the turn settles is the smallest thing
+     that reads as "this moves" without reading as an error state.
+     HERE, NOT AT DEAL. The class is added after the flip has been
+     awaited, so the 400ms in the CSS is measured from the card being
+     settled rather than from it starting to turn.
+     ONCE PER CARD is structural, not a flag: every card is a fresh node
+     and the class is added exactly once, on the frame it settles. */
+  nudgeCover(d);
   return $('.mf-b', d);
+}
+/* prefers-reduced-motion SKIPS IT ENTIRELY — the class is never added, so
+   there is no 1ms stub of it either. The global reduce rule only shortens
+   animations, and an affordance hint that fires in 1ms is worse than one
+   that does not fire: it is a flicker with no meaning. */
+function nudgeCover(card) {
+  if (!card) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cov = $('.pcov', card);
+  if (cov && !cov.dataset.done) cov.classList.add('is-nudging');
 }
 /* the resolved card is swiped off the stack. The stamp rides with it —
    it is parented to .cardwrap, not to the card, so it has to be told. */
@@ -1754,7 +1801,49 @@ async function commitClaim(ans, card, dir) {
   }
   /* the card gives up room for the panel: the art yields, the claim does
      not. See .b1card.is-revealing. */
+  /* ITEM 2 · THE LIFT IS PLAYED, NOT SNAPPED, and it is a FLIP because the
+     move is a REFLOW: .is-revealing hides the two answer buttons and frees
+     the claim's flex, so the claim's box lands 163.6px higher on the very
+     next frame (measured, s1 at 390x844: 576.6 -> 413.0). There is no
+     from-value for CSS to interpolate against, so the positions are read
+     before the class, re-read after it, and the difference is applied as
+     an inverse transform that is then released — layout is final the whole
+     time and only the paint moves.
+     TRANSFORM, NOT LAYOUT, which is what keeps the measuring routines
+     honest: sizeStage() reads offsetHeight and f5Place()/fitBeat() read
+     scrollHeight, none of which a transform touches. The one reader that
+     WOULD see it is claimReveal()'s panel cap, which measures
+     .b1claim's bounding rect — and that runs after --t-claim-beat (400ms),
+     140ms after this settles, so it never reads mid-transition.
+     The art is included for completeness and in practice does not move
+     (224.5 -> 224.5): only the claim does. */
+  const flip = ['.b1art', '.b1claim']
+    .map(sel => $(sel, card))
+    .filter(Boolean)
+    .map(n => ({ n, y: n.getBoundingClientRect().top }));
   card.classList.add('is-revealing');
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const moved = flip.filter(f => {
+      f.dy = f.y - f.n.getBoundingClientRect().top;
+      return Math.abs(f.dy) > 0.5;
+    });
+    if (moved.length) {
+      moved.forEach(f => {
+        f.n.style.transition = 'none';
+        f.n.style.transform  = 'translateY(' + f.dy.toFixed(1) + 'px)';
+      });
+      void card.offsetHeight;                    /* commit the inverse */
+      moved.forEach(f => {
+        f.n.style.transition = 'transform ' + T.claimLift + 'ms ' + CLAIM_LIFT_EASE;
+        f.n.style.transform  = '';
+      });
+      /* the inline styles come off once it has landed, so nothing on this
+         card carries a stale transition into the exit throw */
+      setTimeout(() => moved.forEach(f => {
+        f.n.style.transition = ''; f.n.style.transform = '';
+      }), T.claimLift + 40);
+    }
+  }
 
   /* §1.1 step 2 · the beat. The answer is registered and NOTHING moves:
      no stamp yet, no panel, no exit. --t-claim-beat is ~400ms. */
@@ -1792,9 +1881,16 @@ async function commitClaim(ans, card, dir) {
    `partial` resolves as correct and prints חלקית — the player cannot be
    wrong about a claim the data calls partly true. Unreachable across all
    11 active issues; kept because tf_answer is Tamar's field, not ours. */
+/* ITEM 2 · the lift's own duration and curve. Named here rather than
+   inlined so the JS-driven move is as findable as the CSS ones. */
+const CLAIM_LIFT_EASE = 'cubic-bezier(.2,.8,.2,1)';
+
+/* ITEM 3 · both marks gain the exclamation. הופתעתם is the surprise the
+   locked rule asks for — something that happened TO the player — and the
+   mark is what keeps it an event rather than a label. */
 const CLAIM_MARK = {                      /* TAMAR */
-  ok:  'צדקתם',
-  bad: 'הופתעתם',
+  ok:  'צדקתם!',
+  bad: 'הופתעתם!',
 };
 
 async function claimReveal(ans, card) {
@@ -1816,6 +1912,9 @@ async function claimReveal(ans, card) {
   mark.classList.add('d2--neutral', 'd2--claim');
   wrap.appendChild(mark);
   card.classList.add('is-stamped');
+  /* ITEM 7 DELIBERATELY DOES NOT REACH HERE. The claim stamp keeps its
+     190ms fall and its 1.8/1.06 landing; only the MK card's stamp was
+     asked to land harder. Its contact stays --t-stamp-drop. */
   inkBleed();
   setTimeout(() => buzz(25), T.stampDrop);
 
@@ -1855,8 +1954,17 @@ async function claimReveal(ans, card) {
      shape. The mark is held back until the stamp has settled because a
      coloured chip moving during the fall competes with it — that is what
      made this beat read as five things happening at once. */
-  await wait(T.stamp);
-  await wait(T.markGap);
+  /* ITEM 47B · TWO BEATS. The stamp lands alone over --t-stamp-land, is
+     HELD for --t-mark-gap with nothing else moving, and only then does the
+     verdict arrive. The wait was T.stamp (340ms) against a landing that is
+     now 360, which would have started the pill 20ms before the stamp had
+     finished settling — the one thing this sequence must not do.
+     REDUCED MOTION SKIPS THE STAGGER, not just the motion: both are in
+     their final state on the same tick, because a 500ms wait with the
+     animation stripped out is a blank pause, not an accessible version. */
+  const reducedSeq = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  await wait(reducedSeq ? 0 : T.stampLand);
+  await wait(reducedSeq ? 0 : T.markGap);
   requestAnimationFrame(() => chip.classList.add('is-in'));
   await wait(T.flip + T.panelGap);
 
@@ -1886,7 +1994,6 @@ async function claimReveal(ans, card) {
     '<button type="button" class="p-c creveal__go">' +
       esc('הלאה') + ' <i aria-hidden="true">›</i></button>';
   wrap.appendChild(panel);
-  requestAnimationFrame(() => panel.classList.add('is-in'));
   const go = $('.creveal__go', panel);
 
   /* THE PANEL IS CAPPED SO IT CANNOT COVER THE CLAIM — back with the
@@ -1901,10 +2008,36 @@ async function claimReveal(ans, card) {
     panel.style.maxHeight = Math.max(170, room / sc) + 'px';
   }
 
-  /* NO MEASURED CAP ANY MORE. The panel used to be absolutely positioned
-     over the card's foot and JS computed a max-height so it could not
-     cover the claim. With the card lifted the panel simply takes the
-     space the card left, so the geometry that needed guarding is gone. */
+  /* ---- 4b · A CUT BLOCK HAS TO LOOK CUT ON PURPOSE -----------------
+     The scroller above is the cap doing its job: on six of the twenty-two
+     issues tf_explain is longer than the room under the claim, and the
+     four longest lose 58, 41, 23 and 13px of a line at 390x844 — more at
+     360x640. It has always scrolled. What it has never done is SAY so:
+     macOS and iOS both draw an overlay scrollbar, which is invisible at
+     rest and takes no width, so what the player sees is a paragraph
+     sliced horizontally through the middle of a line of Hebrew. That is
+     indistinguishable from a rendering fault, and the reflex it produces
+     is to tap הלאה rather than to drag.
+     .has-more masks the scroller's bottom edge, and .is-atend takes the
+     mask off again once there is nothing left below — a fade that stays
+     up at the end of the text says there is more when there is not.
+
+     ESTABLISHED BEFORE THE BEAT, NOT DURING IT. maxHeight above is the
+     last thing on this panel that changes layout, so the scroller's
+     geometry is final on this line — synchronously, before the rAF that
+     starts .is-in. The reveal then animates opacity and transform only,
+     and neither the scroll container nor the mask is touched while it
+     runs. The state is re-read on scroll and on nothing else. */
+  const scEl = $('.creveal__scroll', panel);
+  const syncFade = () => {
+    const over = scEl.scrollHeight - scEl.clientHeight > 1;
+    panel.classList.toggle('has-more', over);
+    panel.classList.toggle('is-atend',
+      over && scEl.scrollTop + scEl.clientHeight >= scEl.scrollHeight - 2);
+  };
+  syncFade();
+  scEl.addEventListener('scroll', syncFade, { passive: true });
+
   requestAnimationFrame(() => panel.classList.add('is-in'));
 
   panel.addEventListener('click', e => {
@@ -1968,11 +2101,31 @@ async function claimReveal(ans, card) {
    and no MK is dropped; both issues carry `spoiler_risk:true` in data.js
    and stay on her list. The treatment cannot fix that; only her copy can.  */
 function stickerModal(o) {
+  o = o || {};
+  /* ITEM 9 · THE RESERVED HERO. 96px at the top of every sticker, held
+     whether or not there is art to put in it, so the modal has one
+     silhouette instead of a tall one and a short one. It REPLACES the old
+     .stmodal__art slot rather than sitting above it — two graphics
+     stacked at the top of a 312px box is not a hero, it is a pile.
+     RESOLUTION ORDER: caller art, else the "?" fallback. `hero:false`
+     opts out entirely, which is what the two profile modals do: 2b and
+     the invitation carry their own 156px round token on a dashed well,
+     and a second hero above it would be the same pile by another route.
+     The "?" is HTML — a span with a background and rings — not SVG text,
+     so it takes the sticker construction the rest of the app uses and
+     scales with the box rather than with a viewBox. */
+  const hero = o.hero === false ? '' :
+    '<div class="sthero"' +
+      (o.heroKey ? ' data-hero="' + esc(o.heroKey) + '"' : '') + '>' +
+      (o.art
+        ? '<img class="sthero__art" src="' + o.art + '" alt="">'
+        : '<span class="sthero__q" aria-hidden="true">?</span>') +
+    '</div>';
   const m = el('div', 'stmodal');
   m.innerHTML =
     '<div class="stmodal__box" role="dialog" aria-modal="true">' +
       '<button type="button" class="stmodal__x" aria-label="סגירה">✕</button>' +
-      (o.art ? '<img class="stmodal__art" src="' + o.art + '" alt="">' : '') +
+      hero +
       '<h2 class="stmodal__title">' + esc(o.title || '') + '</h2>' +
       (o.meta ? '<p class="stmodal__meta">' + esc(o.meta) + '</p>' : '') +
       (o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
@@ -1998,21 +2151,47 @@ function stickerModal(o) {
   return m;
 }
 
-/* the law. Title is bill_title, body is bill_summary, graphic is the
-   police hat from the MANIFEST rather than a literal path — it moved to
-   assets/topics/ when the topic icons were framed and the hard-coded
-   assets/mk/ path 404'd. internal_sec's entry is the hat. */
+/* the law. Title is bill_title, body is bill_summary, graphic is THIS
+   ISSUE'S topic icon from the manifest rather than a literal path — the
+   icons moved to assets/topics/ when they were framed and the hard-coded
+   assets/mk/ path 404'd.
+   ITEM 45 · IT USED TO READ M.topics.internal_sec, FULL STOP. Not a
+   fallback and not a default — the key was hard-coded, so all 22 issues
+   opened the bill detail under the police hat whatever their topic was.
+   Fixed to the same lookup every other topic-icon site in this file
+   already uses, `M.topics[issue.topic]`, so the modal draws the icon the
+   map and the HUD are drawing for the same issue. */
 function lawModal() {
-  /* 65 CSS px x DPR 3 = 195, so 256 is the right entry and 384 would be
-     paying for detail no screen can show — over-target is a defect in bytes
-     the same way under-target is one in pixels. It was on the 128. */
-  const T_ = M.topics && M.topics.internal_sec;
-  const h = T_ && (T_['256'] || T_['128']);
+  /* ITEM 46 · THE 576, CHOSEN ON CACHING RATHER THAN ON SIZE. The 256 was
+     picked against a 65px target, where 65 x DPR 3 = 195; item 45's band
+     changed that target, and at 96 tall the wide icons were being served
+     at 1.74-2.53x — under 2x on the police hat.
+     THE 384 WOULD HAVE BEEN A THIRD COPY OF A PICTURE ALREADY IN CACHE.
+     claimArt() loads T_['576'] for the issue's topic at beat 1, and 20 of
+     the 22 issues have no issue art of their own, so that fallback fires
+     and the 576 is already fetched one beat before the player can open
+     this modal. Asking for the 384 here would download a second size of
+     the same illustration — the map node has already taken the 256 — to
+     get a WORSE result than the file sitting in cache.
+     So: 0 marginal bytes on 20 of 22 issues, and every topic clears 3x
+     (3.92x on the widest, 6.00x on the narrowest) rather than the 384's
+     2.61x floor. The two that do pay are s1 and s2, which have issue art
+     at beat 1 and therefore never warm it; they share the internal_sec
+     topic, so the second of them is cached by the first.
+     384 then 256 stay underneath as fallbacks, so a topic missing the
+     576 still draws rather than rendering an empty hero. */
+  const T_ = M.topics && M.topics[issue.topic];
+  const h = T_ && (T_['576'] || T_['384'] || T_['256']);
   return stickerModal({
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
     body:  issue.bill_summary || '',
     art:   h ? ROOT + h : '',
+    /* ITEM 9 · the hook a per-issue graphic drops into later. It is on the
+       hero, not on the modal, so whatever fills it does not have to know
+       anything about the dialog around it. Until that art exists the slot
+       carries the topic icon this lookup returns. */
+    heroKey: 'issue',
   });
 }
 
@@ -2070,7 +2249,7 @@ const PROF_COPY = {
 };
 
 function profileModal() {
-  const m = stickerModal({ extra: '<div class="prof" data-prof></div>' });
+  const m = stickerModal({ hero: false, extra: '<div class="prof" data-prof></div>' });
   m.dataset.profile = '';
   renderProfile(m);
   return m;
@@ -2449,40 +2628,48 @@ function beat2() {
            object, not an illustration with a caption under it. */
         '<div class="b2seat">' +
           '<img class="b2chair" src="' + ROOT + (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
+          /* ITEM 36 · VARIANT E · THE HEADLINE IS A KRAFT TAPE BEHIND THE
+             CHAIR'S FOOT, not type on the cushion. It is still a child of
+             .b2seat because it is positioned off the seat's own box —
+             top:calc(100% - 5px) puts its top edge just under the chair, so
+             the foot's die-cut overlaps it and the tape reads as passing
+             BEHIND the chair. The chair takes a z-index above it for that
+             to hold; see .b2tape and .b2chair.
+             The copy is unchanged from item 34. */
+          '<p class="b2tape">' + esc('אז מה באמת קורה בכנסת?') + '</p>' +  /* TAMAR */
           /* .b2taken is gone: the confirmation is no longer a chip that
              APPEARS on the chair, it is the callout that ARRIVES there
              and then leaves for the pin. .b2seat is still the anchor the
              callout is positioned from — see tachlesTransition(). */
         '</div>' +
-        /* §2 · THE FRAMING LINE, and it is the first and only place the
-           121st-MK conceit is stated in words. Until now the bill arrived
-           with no introduction at all: the player was asked בעד או נגד on
-           legislation they had never been shown. This is the Zeigarnik
-           consent line the research asked for and that was never built —
-           it says what the thing is (a real bill), who the player is in
-           the room (the 121st member), and what they get for answering
-           (they find out how the others voted).
-           IT IS CHROME, NOT CARD CONTENT. It sits above the prompt inside
-           the beat's own pane, at the chyron's weight rather than a
-           footnote's — see .b2frame. The law modal is untouched and still
-           carries bill_summary on a tap; this is the default-visible
-           framing, that is the detail on request. */
-        '<p class="b2frame">' +
-          esc(t('b2frame')) +                              /* TAMAR · COPY.b2frame */
+        /* ITEM 34b · THE TITLE IS THE TAP TARGET, and the sentence is built
+           around it. The underlined run is issue.title — the short subject,
+           the same field the HUD pill carries — because that is the word
+           the player recognises. THE MODAL IS UNCHANGED: lawModal() still
+           shows bill_title and bill_summary. The two fields are not
+           swapped; the short one is the handle, the long one is inside.
+           ITEM 34c · the separate .b2bill--link line is gone; this is where
+           its job went. */
+        '<p class="b2head">' +
+          esc('הצעת חוק אמיתית לעניין ') +                     /* TAMAR */
+          '<button type="button" class="b2title-link" data-law>' +
+            esc(issue.title || '') + '</button>' +
         '</p>' +
-        /* A7 · THE PROMPT IS TAMAR'S, from the sheet's תכלס- בגדול column.
-           It replaces our generic "איך הייתם מצביעים?" with the issue's
-           own framing — "פטור משירות עבור החרדים - בעד או נגד?" — so the
-           question names the thing being voted on. Falls back to the old
-           line only if the field is empty, which it is on none of the
-           eleven active issues. */
-        '<p class="b2q">' + esc(issue.tachles_prompt || 'איך הייתם מצביעים?') + '</p>' +
-        /* A7 · the law's name, small and tappable, opening the modal. It is
-           a SEPARATE field from the prompt — the prompt is the plain-language
-           question, this is the bill's formal name — so it is never dug out
-           of the prompt text. */
-        '<button type="button" class="b2bill b2bill--link" data-law>' +
-          esc(issue.bill_title || '') + '</button>' +
+        /* ITEM 34d · ONE SLOT, THREE STATES, AND THE FALLBACK SHIPS.
+           tachles_prompt when it exists; otherwise the vote question, which
+           is real copy and is meant to be seen. The risk in a shipping
+           fallback is that it hides the gap — so ?placeholders=on swaps it
+           for the marked placeholder instead, which is how anyone auditing
+           content can see which issues are actually carrying a תכלס.
+           NOT ph(): body.no-ph is the default build and would erase it.
+           NOTHING IS SUBSTITUTED — bill_summary is the modal's content and
+           never this line. */
+        (issue.tachles_prompt
+          ? '<p class="b2q">' + esc(issue.tachles_prompt) + '</p>'
+          : DEV.ph
+            ? '<p class="b2q pr-ph">' + esc('[טקסט — תמר: תכלס]') + '</p>'
+            : '<p class="b2q">' +
+                esc('כח״כ ה-121 — מה אתה היית מצביע?') + '</p>') +  /* TAMAR */
         '<div class="v-a-row b2votes">' +
           /* the label is its own span so the transition can hide THIS
              copy of the word the instant the flying one leaves — two of
@@ -2496,11 +2683,24 @@ function beat2() {
            whether or not the line was there. */
       '</div>' +
     '</div>' +
+    /* ITEM 31 · BEAT 3 IS TITLE AND DATE, IN ONE SENTENCE, AND NOTHING
+       ELSE. It was a 30px display title, a date chip and a closing hint;
+       it is now the brief's two lines. The constraint is locked: no
+       summary, no sources, no tally here — bill_summary stays behind the
+       bill button at beat 2, and the tally is beat 5's.
+       The date and the title are marked inside the sentence rather than
+       set as their own blocks, so the screen reads as one statement
+       followed by one question. */
     '<div class="ovpane ovpane--bill is-below">' +
       '<div class="ov-inner b3inner">' +
-        '<p class="b3title">' + esc(issue.bill_title) + '</p>' +
-        '<span class="b3date">' + esc(issue.bill_date) + '</span>' +
-        '<p class="b3go" data-ph>' + ph('[טקסט — תמר: רמז לסגירה]') + '</p>' +
+        '<p class="b3say">' +
+          esc('בתאריך ') +                                        /* TAMAR */
+          '<b class="b3say__d">' + esc(issue.bill_date || '') + '</b>' +
+          esc(' הועלתה להצבעה הצעת החוק: ') +                      /* TAMAR */
+          '<b class="b3say__t">' + esc(issue.bill_title || '') + '</b>' +
+          esc('.') +
+        '</p>' +
+        '<p class="b3ask">' + esc('מה לדעתך הצביעו הח״כים?') + '</p>' +  /* TAMAR */
       '</div>' +
     '</div>';
   $('#stage').appendChild(ov);
@@ -2764,11 +2964,12 @@ async function verdict(guess, foot, card) {
   const mark = stamp(ok);
   $('.cardwrap').appendChild(mark);
   card.classList.add('is-stamped');
-  inkBleed();
-  /* §5 25ms AT CONTACT, not when the stamp is appended: --t-stamp-drop is
-     the frame the disc actually hits the card, and the jolt is keyed to
-     the same number. The buzz and the hit are one event or neither. */
-  setTimeout(() => buzz(25), T.stampDrop);
+  inkBleed(T.stampDropMk);
+  /* §5 25ms AT CONTACT, not when the stamp is appended: --t-stamp-drop-mk
+     is the frame the disc actually hits the card, and the jolt is keyed to
+     the same number. The buzz and the hit are one event or neither.
+     ITEM 7 moved that frame 190 -> 200ms, so all three moved together. */
+  setTimeout(() => buzz(25), T.stampDropMk);
 
   const table = COIN_TABLES[DEV.coins];
   /* §4 THE COINS LEAVE THE STAMP. Fired after the stamp has fully landed
@@ -2783,7 +2984,7 @@ async function verdict(guess, foot, card) {
   S.ci++;
   leaveCard();
   await wait(T.cardExit);
-  if (S.ci >= S.dealt.length) return beat5();
+  if (S.ci >= S.dealt.length) return preReveal();
   const spent = $('.deckcard.is-leaving'); if (spent) spent.remove();
   const spentStamp = $('.d2.is-leaving');  if (spentStamp) spentStamp.remove();
   await flipUp();
@@ -2935,8 +3136,10 @@ async function invResolve(pid, foot, card, btn) {
   const mark = stamp(ok);
   $('.cardwrap').appendChild(mark);
   card.classList.add('is-stamped');
-  inkBleed();
-  setTimeout(() => buzz(25), T.stampDrop);
+  /* ITEM 7 · the inverted round stamps the same MK card with the same
+     disc, so it lands on the same 200ms contact as the cascade's. */
+  inkBleed(T.stampDropMk);
+  setTimeout(() => buzz(25), T.stampDropMk);
 
   /* the floor plus the decaying bonus, paid from the stamp like every
      other cascade award — and shown for the first time here */
@@ -2947,7 +3150,7 @@ async function invResolve(pid, foot, card, btn) {
   S.ci++;
   leaveCard();
   await wait(T.cardExit);
-  return beat5();
+  return preReveal();
 }
 
 /* ---- the guess-vs-reality axis. The payload of the beat. -------------
@@ -3107,7 +3310,12 @@ function stamp(ok, override) {
    viewBox units and #ink-h in CSS px, so the same rupture is 2.2 there and
    2.2 * 1.9 here — the disc and the word break up at one rate. */
 const INK_PX = 190 / 100;              /* .d2 is 190px; the viewBox is 100 */
-function inkBleed() {
+/* ITEM 7 · `drop` IS THE CONTACT TIME, and it has to be a parameter rather
+   than a constant: the claim stamp still falls for 190ms and the cascade's
+   now falls for 200, and the ink has to rupture on whichever frame the
+   disc it belongs to actually hits. Defaulting to T.stampDrop keeps every
+   existing caller on the claim's clock. */
+function inkBleed(drop) {
   const d = $('#inkDisp'), h = $('#inkDispH');
   d.setAttribute('scale', 0);
   h.setAttribute('scale', 0);
@@ -3119,7 +3327,7 @@ function inkBleed() {
       h.setAttribute('scale', (2.2 * INK_PX * k).toFixed(2));
       if (k < 1) requestAnimationFrame(tick);
     })(t0);
-  }, T.stampDrop);
+  }, drop == null ? T.stampDrop : drop);
 }
 
 /* ===== THE SEAT GRID · v20 option 4 ==================================
@@ -3201,6 +3409,56 @@ function explainSplit(text) {
   return { first: first.trim(), rest: rest.trim() };
 }
 
+/* ===================== 4.5 · THE PRE-REVEAL =========================
+   ITEM 32. A held screen between the last MK card and the finale: the
+   cascade has ended, nothing has been revealed, and the player presses to
+   see the result. It exists so the reveal is something they ASK for
+   rather than something that arrives while the last card is still
+   leaving.
+
+   NO CONFETTI AND NO COUNT-UP. Both belong elsewhere and both are locked:
+   confetti to 8/8 map completion, the count to the finale board. This
+   screen holds still.
+
+   THE COPY IS NOT WRITTEN. Tamar has not supplied either string, so both
+   are placeholders and both are marked. They do NOT go through ph():
+   that helper's marker is hidden by body.no-ph, which is the default
+   build, and a screen whose only two strings vanish is not a placeholder
+   screen, it is an empty one with a button. .pr-ph therefore carries the
+   same hazard treatment ph() draws but is not subject to that switch —
+   it is meant to be impossible to miss and impossible to ship.
+
+   S.beat is 4.5 on purpose: exitRound() treats > 1 and < 5 as mid-round,
+   so leaving here still asks for confirmation, which is right — the
+   record is written by beat 5 and nothing is saved yet. */
+async function preReveal() {
+  S.beat = 4.5;
+  const r = $('#round'); r.innerHTML = '';
+  helper('');
+  repin();
+
+  const b = el('div', 'beat prereveal');
+  b.innerHTML =
+    '<div class="pr-inner">' +
+      '<p class="pr-ph pr-head">' + esc('[טקסט — תמר: כותרת מסך הגילוי]') + '</p>' +
+    '</div>' +
+    '<div class="pr-acts">' +
+      '<button type="button" class="p-c pr-go">' +
+        esc('[טקסט — תמר: כפתור הגילוי]') + '</button>' +
+    '</div>';
+  r.appendChild(b);
+  sizeStage();
+
+  const head = $('.pr-head', b), acts = $('.pr-acts', b);
+  head.classList.add('b5stage'); acts.classList.add('b5stage');
+  requestAnimationFrame(() => {
+    head.classList.add('is-in');
+    acts.classList.add('is-in');
+  });
+
+  pressable($('.pr-go', b)).addEventListener('click', () => beat5(), { once:true });
+}
+
 /* ===================== BEAT 5 · THE REVEAL ========================== */
 /* B5-A. LESS on screen, in a strict order. §8 forbids >1 number at the
    emotional peak, so the tally counts up ALONE and the score and the
@@ -3243,18 +3501,48 @@ async function beat5() {
      every other block below is appended only after the count has
      settled. That ordering IS the rule, not a comment about it.
      ================================================================= */
-  const board = el('div', 'f5board b5stage' + (tally ? ' f5board--num' : ' f5board--prose'));
-  board.innerHTML = tally
+  /* THE BOARD IS NOT BUILT WHEN IT WOULD BE EMPTY, and that is a change of
+     kind rather than of degree. Without a tally the board's whole content
+     is issue.vote_result, and that field is empty on every active issue —
+     so what shipped was .f5board--prose collapsed to its own 11px/10px
+     padding: a 21px lit bar, keeping its fill, its inset hairline, its
+     extrusion and its glow, and arriving FIRST, as the peak of the beat.
+     An empty lit bar at the peak is worse than no bar.
+     There is no substitute copy and no hairline fallback: with nothing to
+     say, the board does not exist, the plate becomes the first object, and
+     the beat's own rule still holds — the loudest thing on screen is the
+     only account of the outcome there is. The placeholder branch goes with
+     it, so this beat cannot paint a hazard stripe even with ?placeholders=on. */
+  /* ITEM 11b · WHERE THE TOKEN LANDS IS THE PLAYER'S VOTE, and until now
+     it was always בעד: #f5slot was written into the FOR cell whatever the
+     player had said, so a נגד vote flew across the board and landed beside
+     a number it had not contributed to. The slot is built into the side
+     that matches instead, and נמנע gets the majority line — see
+     .f5slot--maj. It is still ONE slot, holding its size from the first
+     frame, so the numerals do not shift when the avatar arrives.
+     NO POSITION IS TREATED AS נמנע. S.position is null only if beat 5 is
+     reached without a vote, which the round does not do today; landing on
+     the line and ticking nothing is the honest degradation, and it can
+     never add a vote the player did not cast. */
+  const mySide = S.position === 'for' ? 'for'
+               : S.position === 'against' ? 'ag' : 'maj';
+  const slotIn = k => mySide === k ? '<span class="f5slot" id="f5slot"></span>' : '';
+  const hasBoard = !!(tally || issue.vote_result);
+  const board = hasBoard
+    ? el('div', 'f5board b5stage' + (tally ? ' f5board--num' : ' f5board--prose'))
+    : null;
+  if (board) board.innerHTML = tally
     ? '<div class="f5row">' +
         '<div class="f5cell">' +
           '<p class="f5lab">' + esc(VLABEL.for) + '</p>' +
           '<div class="f5n f5n--for"><b id="f5for">0</b>' +
-            '<span class="f5slot" id="f5slot"></span></div>' +
+            slotIn('for') + '</div>' +
         '</div>' +
         '<div class="f5dash" aria-hidden="true">—</div>' +
         '<div class="f5cell">' +
           '<p class="f5lab">' + esc(VLABEL.against) + '</p>' +
-          '<div class="f5n f5n--ag"><b id="f5ag">0</b></div>' +
+          '<div class="f5n f5n--ag"><b id="f5ag">0</b>' +
+            slotIn('ag') + '</div>' +
         '</div>' +
       '</div>' +
       /* THE THIRD SEGMENT IS THE UNFILLED REMAINDER, and it is what makes
@@ -3265,15 +3553,21 @@ async function beat5() {
       '<div class="f5bar"><i class="f5bar__f"></i><i class="f5bar__a"></i>' +
         '<i class="f5bar__r"></i>' +
         '<span class="f5maj"></span>' +
-        '<span class="f5majlab">' + N(MAJORITY) + '</span></div>'
-    : '<p class="f5prose">' +
-        (issue.vote_result ? esc(issue.vote_result)
-                           : ph('[טקסט — תמר: תוצאות ההצבעה]')) + '</p>';
-  b.appendChild(board);
-  requestAnimationFrame(() => { board.classList.add('is-in'); f5Place(b, board); fitBeat(); });
+        '<span class="f5majlab">' + N(MAJORITY) + '</span>' +
+        (mySide === 'maj'
+          ? '<span class="f5slot f5slot--maj" id="f5slot"></span>' : '') +
+        '</div>'
+    : '<p class="f5prose">' + esc(issue.vote_result) + '</p>';
+  if (board) {
+    b.appendChild(board);
+    requestAnimationFrame(() => { board.classList.add('is-in'); f5Place(b, board); fitBeat(); });
+  }
 
   if (tally) await runCount(board, tally);
-  else await step(T.f5Prose);
+  /* the prose hold is the board's own beat. With no board there is nothing
+     on screen to hold ON, so waiting here would be a pause on an empty
+     stage before the plate arrives. */
+  else if (board) await step(T.f5Prose);
 
   /* =================================================================
      BEAT 2 · THE FLIGHT, and it happens in BOTH versions.
@@ -3294,8 +3588,19 @@ async function beat5() {
     b.appendChild(plate);
     requestAnimationFrame(() => { plate.classList.add('is-in'); f5Place(b, board); fitBeat(); });
   }
-  await step(T.f5Gap);
+  /* ITEM 11a · THE RECORD HOLDS, ALONE, BEFORE ANYTHING IS ADDED TO IT.
+     500ms with the count settled and nothing else on screen. This is the
+     historical result — what the Knesset actually did — and it has to be
+     readable as that before the player's own vote is put on top of it,
+     or the two are one number and the distinction the beat exists to
+     make is gone. The twin keeps the shorter --t-f5-gap: it has no count
+     to hold on, and 500ms of a settled prose board is a pause. */
+  await step(tally ? T.f5Hold : T.f5Gap);
   await flyToken($('#f5slot', b));
+  /* ITEM 11c/d · and then, once the token has settled, the board counts
+     it. Awaited in full, so nothing else on the beat starts while it
+     runs. */
+  if (tally) { await step(T.f5TickAt); await tickVote(board, tally); }
 
   /* the resolution line writes beneath the landing. Only the version
      with numbers can state a with-you total; the twin has already said
@@ -3352,22 +3657,35 @@ async function beat5() {
   await coinMoment(b, topicsWas);
 
   /* =================================================================
-     BEAT 4 · THE READING AND THE BUTTONS. The board shrinks to a strip
-     and everything that is left arrives together. Nothing lands after
-     the buttons.
+     BEAT 4 · THE READING AND THE BUTTONS.
+     ITEM 8 · THE BOARD DOES NOT DEMOTE. It kept its numbers and its bar
+     but at 32px on one line — 153px of board becoming 73 — which is the
+     record being cleared away to make room for the reading, one beat
+     after the whole beat was built to make the record the loudest thing
+     on screen. It now holds its full size and RISES to its final place
+     instead, and the reading and the buttons come up from underneath it.
+     THE ORDER IS INVERTED, and that is the substantive change rather
+     than the class that is no longer added. Every block used to arrive
+     first, each one re-measuring and nudging the column, and the eased
+     re-centre ran last to clean up after them. Now all of them are in
+     the DOM and in layout — held at opacity 0 — BEFORE anything moves,
+     so f5Place() measures the final stack once, the board makes one
+     eased move to a value that is already correct, and the panels fade
+     up behind it on the stagger. Nothing is measured while it moves and
+     nothing moves after the measurement.
      ================================================================= */
-  /* THE STRIP LEAVES THE PADDING ALONE. Recomputing an offset here moved
-     the board 40px (the board halves, 153 to 73), and PINNING its centre
-     across the change cost more than it bought: holding the centre needs
-     40px more padding than the content can afford at 360, and fitBeat()
-     answered that by scaling the whole beat to 85% — a 15% shrink of the
-     type sizes the spec raised on purpose.
-     Untouched, the board's top holds and its centre rises 40px. That
-     happens inside the same ~30ms as the guess line, the reading and the
-     buttons, and the one eased re-centre starts immediately after it, so
-     it is absorbed into the move rather than read as one. */
-  board.classList.add('is-strip');
-  fitBeat();
+  /* the blocks that arrive behind the board's move, in the order they
+     take their step of the stagger. */
+  const late = [];
+  /* NO fitBeat() WHILE THE BLOCKS GO IN, and that is not tidying. Each
+     call measures the stack against a padding-top that is still the
+     board's PRE-move 315px, so the moment the reading and the buttons
+     were in the DOM it read 868px of stack against 786 of room and
+     scaled the whole beat to 0.905 — for one frame, until the move
+     retargeted the padding and the next call put it back. A 9.5% flash
+     on the frame before the move. The call inside the move's own handler
+     runs after f5Place() has set the target, sees the layout that is
+     arriving, and is the only one that needs to run at all. */
 
   /* §1.8 the SHAPE of the guess. Skipped without a cascade — there is
      nothing to have guessed, which is why the twin has no such line. */
@@ -3383,11 +3701,16 @@ async function beat5() {
     /* no f5Place from here on: the board HOLDS and the single re-centre
        after the buttons owns all the movement. A holding call here put a
        39px instant step in front of the eased move, which is two moves. */
-    if (outcome) { outcome.appendChild(shape); fitBeat(); }
+    /* it joins an outcome panel that is already on screen — the shape is
+       part of the same account, and a panel that has been read for two
+       beats does not re-enter to gain a line. On the twin there is no
+       such panel and it takes a surface of its own, which DOES arrive
+       with the rest. */
+    if (outcome) { outcome.appendChild(shape); }
     else {
-      const w = el('div', 'f5outcome f5surf b5stage');
+      const w = el('div', 'f5outcome f5surf b5stage f5late');
       w.appendChild(shape); b.appendChild(w);
-      requestAnimationFrame(() => { w.classList.add('is-in'); fitBeat(); });
+      late.push(w);
     }
   }
 
@@ -3402,13 +3725,13 @@ async function beat5() {
   const hasMore = !!(ex.rest || terms.length || links.length);
 
   if (ex.first || hasMore) {
-    const read = el('div', 'f5read f5surf b5stage');
+    const read = el('div', 'f5read f5surf b5stage f5late');
     read.innerHTML =
       (ex.first ? '<p class="f5exp">' + markGlossary(ex.first) + '</p>' : '') +
       (hasMore ? '<button type="button" class="f5more">' +
                    esc('עוד על ההצבעה ›') + '</button>' : '');       /* TAMAR */
     b.appendChild(read);
-    requestAnimationFrame(() => { read.classList.add('is-in'); fitBeat(); });
+    late.push(read);
     const more = $('.f5more', read);
     if (more) pressable(more).addEventListener('click',
       () => moreModal(ex.rest, terms, links));
@@ -3417,7 +3740,7 @@ async function beat5() {
   /* ---- the way out. Unchanged: if the topic has another unplayed
      issue the PRIMARY action opens it directly, because going back to
      the map to come straight back buys nothing. */
-  const acts = el('div', 'f5acts b5stage');
+  const acts = el('div', 'f5acts b5stage f5late');
   const restIss = topicIssues(issue.topic).filter(x => !issueDone(x.id));
   const next = restIss[0];
   /* §E · THE LAST ISSUE OF THE LAST TOPIC IS A DIFFERENT DOOR. The test
@@ -3440,42 +3763,58 @@ async function beat5() {
     acts.appendChild(go);
   }
   b.appendChild(acts);
-  requestAnimationFrame(() => {
-    acts.classList.add('is-in');
+  late.push(acts);
+
+  /* ITEM 8 · THE ONE MOVE, AND THE PANELS BEHIND IT.
+     Two frames of settling first, as before: the blocks that were just
+     appended are still being laid out when this handler runs, and
+     fitBeat() has yet to decide on a scale. Measuring inside the same
+     frame read a layout that then changed under it. */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    /* .is-recentring arms the 320ms ease-out and drops .f5acts's auto
+       margin — pinned to the floor, only the top of the stack could move
+       and the result is a stretch rather than a move. */
+    b.classList.add('is-recentring');
+    void b.offsetHeight;
+    /* THE BOARD'S MOVE. f5Place() measures the stack — every panel is
+       already in it — restores the padding the column actually has, and
+       only then sets the measured value, so the transition runs from
+       where the board is to where it belongs and there is no frame in
+       which it is somewhere else. It cannot jump: the value is never
+       assigned with the transition live and un-restored. */
+    f5Place(b, board, true);
+    fitBeat();
     /* PART 4 · the pulse has done its job. It ran while the board was the
        only thing on screen and while the flight landed on it; once there
        is somewhere else to go it settles to a static, quieter glow. */
-    board.classList.add('is-glow-calm');
-    fitBeat();
+    if (board) board.classList.add('is-glow-calm');
 
-    /* THE LAST MOTION ON THE BEAT, and it waits a frame for the beat to
-       stop moving first. The buttons are the final block — nothing is
-       appended after them — so this is the only moment the whole thing
-       can be centred without a second move following it. It is deferred
-       one frame because the block that triggers it is still arriving
-       when this handler runs and fitBeat() has yet to decide on a scale;
-       measuring inside the same frame read a layout that then changed
-       under it, which is what left 29px more space below the stack than
-       above however many correction passes ran.
-       .is-recentring also drops .f5acts's auto margin, or the buttons
-       stay pinned to the floor and only the top of the stack moves —
-       a stretch rather than a re-centre. */
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      b.classList.add('is-recentring');
-      void b.offsetHeight;
-      f5Place(b, board, true);
-      fitBeat();
-      /* AND AGAIN WHEN THE MOVE HAS LANDED. fitBeat() measures
+    /* the panels follow, one --t-f5-panel step apart, starting on the
+       frame after the move has begun. The stagger is the delay and
+       nothing else — one shared transition, so they cannot drift out of
+       step with each other.
+       REDUCED MOTION TAKES THE STAGGER OFF TOO, not just the travel: the
+       global rule cuts every duration to 1ms but leaves DELAYS alone, so
+       without this the panels would still appear 80ms apart with the
+       motion stripped out — a flicker rather than an arrival. */
+    const stagger = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    late.forEach((n, i) => {
+      if (stagger) n.style.transitionDelay = (i * T.f5Panel) + 'ms';
+    });
+    requestAnimationFrame(() => {
+      late.forEach(n => n.classList.add('is-in'));
+      /* AND fitBeat() AGAIN WHEN EVERYTHING HAS LANDED. It measures
          scrollHeight, which includes padding-top — and padding-top is
-         mid-transition at this point, still holding the pre-centre value.
-         It therefore measured an overflow that only existed for the first
+         mid-transition here, still holding the pre-move value. It
+         therefore measured an overflow that only existed for the first
          frame of the move, applied scale(0.90) at 360, and nothing ever
          re-evaluated it: the beat settled 10% small for the rest of its
-         life. One more call after the transition, and the scale reflects
-         the layout that actually ended up on screen. */
-      setTimeout(fitBeat, T.f5Recentre + 40);
-    }));
-  });
+         life. One call after the last panel has arrived, and the scale
+         reflects the layout that actually ended up on screen. */
+      setTimeout(fitBeat,
+        T.f5Board + (late.length - 1) * T.f5Panel + T.f5In + 40);
+    });
+  }));
 }
 
 /* PART 3 · WHERE THE BOARD SITS, and it is one number recomputed rather
@@ -3496,7 +3835,14 @@ async function beat5() {
    this replaced (442 -> 320 -> 211) stays dead: every call before the
    last still returns the same held value it always did. */
 function f5Place(b, board, final) {
-  const par = b.parentElement; if (!par || !board) return null;
+  /* `board` MAY BE NULL, and the beat still has to be placed. A round with
+     no tally and no vote_result builds no board at all (see beat5), and
+     this function early-returned on that — so padding-top was never set,
+     .is-recentring dropped .f5acts's auto margin, and the whole stack
+     collapsed to the top of the stage with 380-460px of bare ground under
+     the buttons. Only the HELD placement ever needed the board; the final
+     re-centre measures the stack's own ink and never reads it. */
+  const par = b.parentElement; if (!par) return null;
   const pcs = getComputedStyle(par);
   const avail = par.clientHeight
     - (parseFloat(pcs.paddingTop) || 0) - (parseFloat(pcs.paddingBottom) || 0);
@@ -3526,7 +3872,15 @@ function f5Place(b, board, final) {
     b.style.transition = '';
   }
 
-  const boardH  = board.offsetHeight;
+  /* THE ANCHOR IS THE BOARD WHERE THERE IS ONE AND THE FIRST BLOCK WHERE
+     THERE IS NOT — the same rhythm, not a second one. The held placement
+     centres whatever object is alone on screen when it runs, then caps it
+     by the room the content leaves; on a tally beat that object IS the
+     board, so `anchor` resolves to `board` and every figure below is
+     unchanged to the pixel. On a no-board beat it is the plate, which is
+     the block the flight lands on and the one the beat opens with. */
+  const anchor  = board || b.children[0] || null;
+  const boardH  = anchor ? anchor.offsetHeight : 0;
   const centred = Math.max(0, Math.round((avail - boardH) / 2));
   const room    = Math.max(0, avail - content);
   /* holding: centre the BOARD, but never past what the content leaves.
@@ -3558,10 +3912,20 @@ function f5Place(b, board, final) {
     const par2 = b.parentElement.getBoundingClientRect();
     const boxTop = par2.top + (parseFloat(pcs.paddingTop) || 0);
     const boxBot = par2.bottom - (parseFloat(pcs.paddingBottom) || 0);
+    /* ITEM 8 · MEASURED IN LAYOUT COORDINATES, NOT RENDERED ONES. Every
+       panel is now in the stack BEFORE the move, held at its pre-entrance
+       offset — which is a transform — so getBoundingClientRect() put the
+       last block 22px below the box it actually occupies and the stack
+       would have been centred against a position nothing was ever going
+       to be in. offsetTop/offsetHeight are the untransformed boxes, and
+       .b5fit is position:relative so every child's offsetParent is b:
+       one read of b's own top puts them back into viewport space.
+       IDENTICAL TO THE OLD FIGURES wherever no child carries a transform,
+       which is every call this function had before this item. */
     const ink = () => {
-      const k = [...b.children];
-      return { t: Math.min(...k.map(n => n.getBoundingClientRect().top)),
-               b: Math.max(...k.map(n => n.getBoundingClientRect().bottom)) };
+      const k = [...b.children], o = b.getBoundingClientRect().top;
+      return { t: o + Math.min(...k.map(n => n.offsetTop)),
+               b: o + Math.max(...k.map(n => n.offsetTop + n.offsetHeight)) };
     };
     let guess = Math.max(0, Math.round((avail - (ink().b - boxTop)) / 2));
     /* ITERATED, because one correction was not enough at 360: the blocks
@@ -3584,8 +3948,8 @@ function f5Place(b, board, final) {
        purpose. The offset gives way first: the stack sits as high as it
        must and stays at full size. */
     const kk = [...b.children];
-    const stackH = Math.round(Math.max(...kk.map(n => n.getBoundingClientRect().bottom))
-                            - Math.min(...kk.map(n => n.getBoundingClientRect().top)));
+    const stackH = Math.round(Math.max(...kk.map(n => n.offsetTop + n.offsetHeight))
+                            - Math.min(...kk.map(n => n.offsetTop)));
     pad = Math.max(0, Math.min(guess, avail - stackH));
   } else {
     pad = Math.min(centred, room);
@@ -3659,6 +4023,124 @@ function runCount(board, tally) {
       if (k < 1) requestAnimationFrame(tick);
       else { paint(tally.for, tally.against); maj.classList.remove('is-flare'); res(); }
     })(t0);
+  });
+}
+
+/* ---- ITEM 11 · THE 121ST VOTE IS COUNTED ---------------------------
+   The board has said what the Knesset did. This is the only moment in the
+   game where the player's own vote is added to it, and all three things
+   that say so move together on one 220ms curve: the numeral ticks, the
+   numeral goes gold, and the bar segment grows by one unit of its own
+   scale.
+
+   IT DERIVES FROM THE SAME PLACE THE COUNT DOES. `tally` is the object
+   beat5() reads out of issue._tally and hands to runCount() — one source,
+   passed in, never re-read from the DOM and never a second field name. If
+   the CMS reconciliation moves the board onto tally_for/tally_against,
+   beat5()'s single read moves with it and this follows for free. Reading
+   the numeral's own text back off the screen would have been the other
+   option and it is worse: it makes the animation depend on a rendering
+   rather than on the record.
+
+   THE 61 MARKER DOES NOT MOVE, and there is no branch here that could
+   move it. A +1 that crosses 61 gets exactly what a +1 that does not
+   gets. No issue in the data reaches it — the closest is s1, which is
+   already ON 61 — but the rule is structural, not a fact about the data.
+
+   נמנע, AND NO VOTE AT ALL, RETURN WITHOUT TOUCHING THE BOARD. There is
+   no side to add to; the token has already landed on the majority line,
+   which is the whole of what an abstention has to say here. */
+function tickVote(board, tally) {
+  const side = S.position === 'for' ? 'for'
+             : S.position === 'against' ? 'against' : null;
+  if (!side || !board) return Promise.resolve();
+  const nEl = $(side === 'for' ? '#f5for' : '#f5ag', board);
+  const nBox = $(side === 'for' ? '.f5n--for' : '.f5n--ag', board);
+  if (!nEl || !nBox) return Promise.resolve();
+
+  const from = tally[side], to = from + 1;
+  /* the bar is painted the way runCount() paints it — the two sides and
+     the unfilled remainder of the plenum — so the segment that grows and
+     the segment that gives way stay one arithmetic. */
+  const mine = { for: tally.for, against: tally.against };
+  mine[side]++;
+  const bar = $('.f5bar', board);
+  const seg = $(side === 'for' ? '.f5bar__f' : '.f5bar__a', board);
+  const rem = $('.f5bar__r', board);
+  const paintBar = () => {
+    if (!seg || !rem) return;
+    seg.style.flexGrow = mine[side];
+    rem.style.flexGrow = Math.max(0, PLENUM - mine.for - mine.against);
+  };
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    /* the colour still applies — the item asks for it explicitly. The
+       global reduce rule turns the transition that carries it into a 1ms
+       one rather than removing the value. */
+    nBox.classList.add('is-mine');
+    nEl.textContent = String(to);
+    paintBar();
+    return Promise.resolve();
+  }
+
+  /* EVERY DIGIT GETS A WINDOW, and only the ones that change are stepped.
+     Uniform boxes are what keeps the digits on one line: a mix of bare
+     text nodes and inline-blocks in the same <b> aligns the text on the
+     baseline and the blocks on the line box, which at 74px is a visible
+     step between neighbouring digits. Unchanged digits carry the same
+     glyph in both rows and never move.
+     RIGHT-ALIGNED, so 99 -> 100 is a leading digit ARRIVING rather than
+     three digits all changing meaning. Its outgoing row is empty; the
+     column is already the width of the incoming glyph, so the numeral
+     reaches its final width on the first frame instead of growing
+     through the move. m1 is the one issue in the data where this
+     happens. */
+  const A = String(from), C = String(to), w = Math.max(A.length, C.length);
+  const at = (str, i) => str[i - (w - str.length)] || '';
+  nEl.innerHTML = '';
+  const cols = [], all = [];
+  for (let i = 0; i < w; i++) {
+    const a = at(A, i), c = at(C, i);
+    const d = el('span', 'f5dig',
+      '<span class="f5dig__c"><i>' + esc(a) + '</i><i>' + esc(c) + '</i></span>');
+    nEl.appendChild(d);
+    all.push([d, c]);
+    if (a !== c) cols.push(d);
+  }
+  /* EACH WINDOW IS THE WIDTH OF THE DIGIT IT SETTLES ON, MEASURED IN
+     PLACE. Left to size themselves the windows changed the numeral's
+     width twice inside one move — see the note by .f5dig. The gauge is a
+     child of the numeral, so it inherits the exact face, size and
+     features rather than approximating them, and the sum of the widths it
+     yields is exactly the width of the text node that replaces the
+     windows at the end: measured, digits 0-9 sum to the string's own
+     width to three decimal places, so there is no kerning to account for. */
+  const gauge = el('span');
+  gauge.style.cssText = 'position:absolute; visibility:hidden; white-space:pre;';
+  nEl.appendChild(gauge);
+  all.forEach(([d, c]) => { gauge.textContent = c; d.style.width = gauge.getBoundingClientRect().width + 'px'; });
+  gauge.remove();
+
+  return new Promise(done => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      /* ALL THREE ON ONE FRAME. The colour class used to go on when the
+         windows were built, two frames before the slide and the bar —
+         32ms of the numeral changing colour while it was still reading
+         the old value. Nothing about the +1 may lead any other part of
+         it, so every one of them is written here. */
+      nBox.classList.add('is-mine');
+      cols.forEach(d => d.classList.add('is-up'));
+      if (bar) bar.classList.add('is-plus1');
+      paintBar();
+      buzz(18);
+      setTimeout(() => {
+        /* THE WINDOWS DO NOT SURVIVE THE BEAT. The settled numeral is the
+           single text node it was before the tick, so nothing downstream
+           — a re-measure, a scale, a screenshot — is looking at scaffolding. */
+        nEl.textContent = String(to);
+        done();
+      }, T.f5Tick);
+    }));
   });
 }
 
@@ -4147,14 +4629,11 @@ const EXIT_COPY = {
 function exitRound() {
   const midRound = S && S.beat > 1 && S.beat < 5;
   /* quiet: leaving a round is never the moment for the invitation */
-  /* KNOWN, NOT FIXED (Part C, 6 Sep 2026): leaving from BEAT 2 or 3
-     strands the beat-2 surface. .ov--stage is a child of #stage, not of
-     #scRound, so showScreen('map') hides the round and the chair, the
-     prompt and the vote chips stay painted over the map until the next
-     round's beat 2 builds a new one. Its only removal is its own dismiss
-     tap (beat 3). The fix is one line at the top of goMap() — remove any
-     .ov--stage — and it belongs to whoever next touches the round's
-     exit, not to the profile work this note was written during. */
+  /* FIXED, and not here: the stranded beat-2 surface this function used
+     to carry a KNOWN-NOT-FIXED note about is gone with endRound(), which
+     goMap() runs on the way out. Nothing about leaving a round is
+     special-cased in this function any more — it decides whether to ask,
+     and the teardown belongs to the door, not to the confirm. */
   if (!midRound) return goMap({ quiet: true });
 
   const sh = el('div', 'exitsheet');
@@ -4322,7 +4801,25 @@ function renderIntro() {
      flowmap still shows Intro -> Character -> Map; it is superseded, and a
      stub in between would be a screen we know is wrong. */
   pressable($('.i-cta', r)).addEventListener('click', () => loadingBeat(goMap));
+  startBreath($('.i-cta', r));
   showScreen('intro');
+}
+/* ITEM 10 · THE BREATHING CTA, armed here and disarmed on contact.
+   prefers-reduced-motion GETS NO ANIMATION AT ALL, which is why this is a
+   branch and not only a media query: the global reduce rule shortens
+   animations to 1ms, and a 1ms scale firing every 3500ms is a flicker
+   with no meaning. The button simply sits at its rest state.
+   IT STOPS ON pointerdown, NOT ON click. The invitation has been accepted
+   the moment the finger lands; carrying on through the press would have
+   the button breathing under the tap that answered it. `once` makes the
+   stop permanent — nothing re-arms it, because the screen is rebuilt from
+   scratch on every entry. */
+function startBreath(cta) {
+  if (!cta) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  cta.classList.add('is-breathing');
+  cta.addEventListener('pointerdown',
+    () => cta.classList.remove('is-breathing'), { once:true });
 }
 
 /* ===================== §1 · THE LOADING BEAT ========================
@@ -4785,7 +5282,62 @@ function paintHud() {
   const cn = $('#coinNum'); if (cn) cn.textContent = wallet;
 }
 
+/* ===== A4b · THE ROUND IS UNMOUNTED, NOT HIDDEN ======================
+   showScreen() toggles `hidden` on the four .screen sections and on the
+   chyron, and that is all it knows about. The beat-2/3 surface is not one
+   of them: .ov--stage is a child of #stage — it has to be, or the blur
+   stops at .round's padding and the dot grid shows through at every
+   border — so hiding the round left the chair, the prompt and the three
+   vote chips painted over the map at z-index 9, above everything the map
+   draws, with their handlers still attached. Its only removal was its own
+   beat-3 dismiss tap, which is a tap the player who just left the round
+   is by definition not going to make.
+
+   REMOVING THAT ONE NODE WOULD HAVE BEEN THE SYMPTOM'S FIX. What was
+   actually wrong is that a round had no teardown at all: S kept the
+   abandoned round's beat, position and guesses until the next newRound()
+   happened to overwrite it, #round kept the whole beat's DOM behind the
+   hidden screen, the chyron kept whatever the last beat pinned in it, and
+   the inverted round's step timers kept firing against a round that no
+   longer exists. This is that teardown, and it is the ONE place that
+   knows what a round parents outside itself.
+
+   S IS SET TO NULL, NOT EMPTIED. Every reader of it either runs inside a
+   round or already guards (exitRound), and a null is what makes a stale
+   timer's `S.phase` test fail outright instead of quietly passing against
+   the dead round's state.
+
+   .stmodal[data-profile] IS NOT A ROUND'S. It is the map's character
+   sheet, opened from the HUD sticker; the invitation opens after goMap()
+   has returned, on the map's own settle. Neither is touched here. */
+function endRound() {
+  if (S && S.invTimers) S.invTimers.forEach(clearTimeout);
+  S = null;
+
+  /* every node a beat parents to the stage rather than to #round */
+  $$('.ov, .tcal, .b1intro, .exitsheet, .stmodal:not([data-profile])')
+    .forEach(n => n.remove());
+
+  const chy = $('#chyron');
+  if (chy) {
+    chy.innerHTML = '';
+    chy.classList.remove('is-mark', 'is-exiting');
+    chy.classList.add('is-empty');
+    chy.setAttribute('aria-hidden', 'true');
+  }
+  helper('');
+
+  const sr = $('#scRound'); if (sr) sr.classList.remove('is-finale');
+  const rd = $('#round');   if (rd) rd.innerHTML = '';
+}
+
 function goMap(o) {
+  /* the round is torn down BEFORE the map is built, so renderMap() and
+     showScreen('map') run against a stage with nothing of the round left
+     on it. Every way out of a round funnels through here — the exit
+     confirm's two paths and beat 5's חזרה למפה — and on the paths where
+     there is no round (the intro launch, ?screen=map) it is a no-op. */
+  endRound();
   renderMap();
   const m = $('#scMap');
   m.classList.remove('is-arriving'); void m.offsetWidth; m.classList.add('is-arriving');
@@ -4856,7 +5408,7 @@ function maybeInvite() {
    dismiss it. */
 function inviteModal() {
   setProfile({ invited: true });
-  const m = stickerModal({ extra: '<div class="prof prof--invite" data-prof></div>' });
+  const m = stickerModal({ hero: false, extra: '<div class="prof prof--invite" data-prof></div>' });
   m.dataset.profile = '';
   const box = $('[data-prof]', m);
   box.innerHTML =
@@ -5400,6 +5952,11 @@ async function egBeat4() {
    and the map is the thing you come back to with it. */
 function startRound(issueId) {
   applyDev();
+  /* the other door. Coming here from beat 5's לסוגיה הבאה, or back into a
+     topic from the map, has to start on the same empty stage the map's
+     door leaves behind — re-entering a topic must not inherit anything
+     from the round before it. */
+  endRound();
   const sr = $('#scRound'); if (sr) sr.classList.remove('is-finale');
   const chy0 = $('#chyron');
   if (chy0) { chy0.hidden = false; chy0.classList.remove('is-exiting'); }
@@ -5418,8 +5975,14 @@ function startRound(issueId) {
      inside the round is which of its issues they are in. data.js carries
      both a short `title` (חוק הגיוס) and a long `bill_title` (החלת דין
      רציפות על חוק הגיוס) — the short one is the header, per A5. */
+  /* ITEM 28 · variant C's markup. The slot is first so RTL renders it on
+     the right, leading the title, and it carries the issue id as its hook
+     so per-issue art can be attached in CSS alone. esc() on the title
+     because it is data.js content going through innerHTML. */
   const t = $('#hudTopic');
-  if (t) t.textContent = issue.title || issue.bill_title || '';
+  if (t) t.innerHTML =
+    '<i class="hud-topic__slot" data-issue-icon="' + esc(issue.id) + '" aria-hidden="true"></i>' +
+    '<span class="hud-topic__t">' + esc(issue.title || issue.bill_title || '') + '</span>';
   showScreen('round');
   beat1();
   sizeStage();
