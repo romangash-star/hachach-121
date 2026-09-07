@@ -3277,22 +3277,37 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 @keyframes peel-lab{ to{ opacity:0 } }
 
 /* =====================================================================
-   ITEM 6 · THE AFFORDANCE NUDGE
-   Two wiggles, 400ms after the card settles, then it rests. It is a hint
-   that the sheet is liftable, so it has to be small enough to read as
-   paper shifting and not as something wrong: 2 degrees and 2px, which at
-   this chip's size is about a millimetre of travel.
-   TWO ITERATIONS OF ONE 180ms CYCLE, not one 360ms keyframe — so the
-   ease-in-out applies to EACH wiggle, and each one accelerates out of
+   ITEM 6 · THE AFFORDANCE NUDGE   ·   ITEM 51C · SAID TWICE
+   A wiggle 400ms after the card settles, and — for a player who did not
+   take the hint — one repeat 2000ms after that one ends. TWO RUNS, THEN
+   REST. It is a hint that the sheet is liftable, so it has to be small
+   enough to read as paper shifting and not as something wrong: 2 degrees
+   and 2px, which at this chip's size is about a millimetre of travel.
+   TWO ITERATIONS OF ONE 180ms CYCLE PER RUN, not one 360ms keyframe — so
+   the ease-in-out applies to EACH wiggle, and each one accelerates out of
    rest and decelerates back into it. One long curve over both would give
    a fast middle and two slow ends, which reads as a wobble rather than
    as two taps.
-   NEVER LOOPS. Two iterations, `both` fill, and the class is added once
-   per card by nudgeCover() — there is no interval and nothing to stop.
+   THE REPEAT IS A SECOND ANIMATION, NOT A LOOP. A CSS animation cannot
+   hold a gap between iterations, so the pause is a second delay on the
+   same keyframes: run 1 is 400 -> 760, run 2 is 2760 -> 3120, and 2000ms
+   of rest sits between them. There is no interval, no iteration count
+   above 2 on either, and nothing to stop — it cannot become a loop by
+   retuning a number.
+   THE SECOND RUN'S FILL IS `forwards`, NOT `both`, AND THAT IS LOAD-BEARING.
+   Both entries animate `transform` and the later one wins wherever both
+   apply — so `backwards` fill on run 2 would hold transform:none through
+   its own 2760ms delay and flatten run 1 completely. `forwards` makes it
+   contribute nothing until it starts.
+   STILL STOPS ON TAP: wirePeel() removes the class, which takes both runs
+   with it whether the tap lands during a wiggle or in the rest between.
    STANDING BEHAVIOUR, EVERY ROUND. Nothing here is conditioned on the
    round being inverted; the tape covers the party on every card that
    has one. */
-.pcov.is-nudging{ animation:pcov-nudge 180ms ease-in-out 400ms 2 both; }
+.pcov.is-nudging{
+  animation:pcov-nudge 180ms ease-in-out  400ms 2 both,
+            pcov-nudge 180ms ease-in-out 2760ms 2 forwards;
+}
 @keyframes pcov-nudge{
   0%  { transform:none }
   25% { transform:rotate(2deg) translateX(2px) }
@@ -3814,6 +3829,17 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    against 16, #E6E2D8 against #EFECE4); the weight was the one part of
    that intent that never landed. The real tally owns this board; the
    player's own vote arrives quieter. */
+/* ITEM 51A · THIS ONE PLACEHOLDER IS NOT HIDDEN BY no-ph, and it is the
+   second exception in the file for the same reason .pr-ph is the first:
+   hiding the marker here does not leave a cosmetic gap, it removes the
+   only statement of what the Knesset did. The two rejected issues would
+   render a bare 'עם הקול שלכם: 27—43' with nothing above it — a wrong
+   sentence traded for a missing one.
+   It is ph()'s own treatment rather than a third copy of the hazard fill,
+   scoped to this line so no other placeholder is affected. When Tamar's
+   string lands, the ph() call goes and this rule goes with it. */
+body.no-ph .f5res .ph{ display:inline-block !important; }
+.f5res .ph{ font-family:var(--font-ui); }
 .f5res__you{ display:block; font-size:14px; font-weight:400; color:#E6E2D8; }
 /* 23 · the numeral stays IN the demoted line. <b> takes the UA's bold,
    which in a 400/900 family resolves to the Black — so the figure was

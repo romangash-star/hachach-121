@@ -3616,8 +3616,36 @@ async function beat5() {
        and its own footnote is a division that means nothing. */
     outcome = el('div', 'f5outcome f5surf b5stage');
     const res = el('p', 'f5res');
+    /* ITEM 51A · THE VERB IS READ OFF THE TALLY. It was the literal
+       'ההצעה עברה' with no test at all, so e3 (27—42) and g2 (36—47) —
+       both REJECTED — announced that the proposal had passed, directly
+       above the numbers that said it had not. Twelve of the fourteen
+       issues with a tally pass, which is why it survived this long.
+       A TIE TAKES THE REJECTED BRANCH. A motion that does not reach a
+       majority does not carry, so `for > against` is the whole test. No
+       issue in the data ties, so this is written from the rule rather
+       than from a case that can be looked at. */
+    const passed = tally.for > tally.against;
+    /* ITEM 51B · THE NUMBERS COME OFF THIS LINE. They were stated three
+       times in three inches of screen: the board holds the count the
+       player just watched land AND tick up, and this sentence restated
+       the real pair and then the with-you pair underneath it — two of the
+       three identical, and the board's own figure differing from the
+       sentence immediately below it. RTL made it worse: the board reads
+       בעד then נגד and the sentence writes נגד first, so the pairs were
+       mirrored as well as repeated.
+       The board is the count-up. This line is the verb, and 'עם הקול
+       שלכם' keeps its pair — it is the one number the board cannot say in
+       words. */
+    /* ITEM 51A · THE REJECTED STRING IS TAMAR'S AND IS NOT WRITTEN HERE.
+       ph() is used for the marker's treatment, but see the no-ph override
+       in proto.css: unlike every other placeholder in the app this one is
+       NOT hidden in the default build. Hiding it would leave the two
+       rejected issues with a bare 'עם הקול שלכם' and no statement of the
+       outcome at all — trading a wrong sentence for a missing one. */
     res.innerHTML =
-      esc('ההצעה עברה ') + N(tally.for + '—' + tally.against) + '.' +   /* TAMAR */
+      (passed ? esc('ההצעה עברה.')                                     /* TAMAR */
+              : ph('[טקסט — תמר: הפועל להצעה שנדחתה]')) +              /* TAMAR */
       '<span class="f5res__you">' + esc('עם הקול שלכם: ') +             /* TAMAR */
         '<b>' + N(mine.for + '—' + mine.against) + '</b></span>';
     outcome.appendChild(res);
