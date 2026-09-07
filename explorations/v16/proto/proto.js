@@ -88,6 +88,11 @@ const T = {
   f5CoinOut: ms('--t-f5-coin-out'),
   f5In:      ms('--t-f5-in'),
   f5Recentre:ms('--t-f5-recentre'),
+  f5Board:   ms('--t-f5-board'),    /* ITEM 8 · the board's move up      */
+  f5Panel:   ms('--t-f5-panel'),    /* ITEM 8 · one step of the stagger  */
+  f5Hold:    ms('--t-f5-hold'),     /* ITEM 11a · the record, alone      */
+  f5TickAt:  ms('--t-f5-tick-at'),  /* ITEM 11c · after the token lands  */
+  f5Tick:    ms('--t-f5-tick'),     /* ITEM 11d · the +1                 */
   f5BnrOut:  ms('--t-f5-bnr-out'),
   claimHold: ms('--t-claim-hold'),
   claimBeat: ms('--t-claim-beat'),
@@ -318,7 +323,22 @@ function fitBeat() {
      bottom of a short phone while believing it had fitted. */
   const avail = par.clientHeight
     - (parseFloat(pcs.paddingTop) || 0) - (parseFloat(pcs.paddingBottom) || 0);
-  const need = fit.scrollHeight;
+  /* ITEM 8 · MEASURE THE PADDING IT IS GOING TO HAVE, NOT THE ONE IT IS
+     PASSING THROUGH. scrollHeight includes padding-top, and on the finale
+     that padding is the board's move — 315px easing to 128. Called on the
+     frame the move starts, this measured 868px of stack against 786 of
+     room, scaled the WHOLE beat to 0.905, and only the delayed call after
+     the move had landed put it back: a 9.5% shrink and a snap back, on
+     the one beat whose brief says the board must never jump. It was
+     invisible before this item only because the board demoted to a strip
+     first and the sums happened to land inside the room either way.
+     The inline value is the target f5Place() set; the computed one is
+     wherever the transition has got to. Swap one for the other and the
+     measurement is of the layout that is arriving. NOT by suspending the
+     transition — that would commit the end value and cancel the move. */
+  const used   = parseFloat(getComputedStyle(fit).paddingTop) || 0;
+  const target = fit.style.paddingTop ? (parseFloat(fit.style.paddingTop) || 0) : used;
+  const need = fit.scrollHeight - used + target;
   if (need > avail && avail > 0) {
     fit.style.transform = 'scale(' + (avail / need).toFixed(4) + ')';
   }
@@ -3493,6 +3513,20 @@ async function beat5() {
      the beat's own rule still holds — the loudest thing on screen is the
      only account of the outcome there is. The placeholder branch goes with
      it, so this beat cannot paint a hazard stripe even with ?placeholders=on. */
+  /* ITEM 11b · WHERE THE TOKEN LANDS IS THE PLAYER'S VOTE, and until now
+     it was always בעד: #f5slot was written into the FOR cell whatever the
+     player had said, so a נגד vote flew across the board and landed beside
+     a number it had not contributed to. The slot is built into the side
+     that matches instead, and נמנע gets the majority line — see
+     .f5slot--maj. It is still ONE slot, holding its size from the first
+     frame, so the numerals do not shift when the avatar arrives.
+     NO POSITION IS TREATED AS נמנע. S.position is null only if beat 5 is
+     reached without a vote, which the round does not do today; landing on
+     the line and ticking nothing is the honest degradation, and it can
+     never add a vote the player did not cast. */
+  const mySide = S.position === 'for' ? 'for'
+               : S.position === 'against' ? 'ag' : 'maj';
+  const slotIn = k => mySide === k ? '<span class="f5slot" id="f5slot"></span>' : '';
   const hasBoard = !!(tally || issue.vote_result);
   const board = hasBoard
     ? el('div', 'f5board b5stage' + (tally ? ' f5board--num' : ' f5board--prose'))
@@ -3502,12 +3536,13 @@ async function beat5() {
         '<div class="f5cell">' +
           '<p class="f5lab">' + esc(VLABEL.for) + '</p>' +
           '<div class="f5n f5n--for"><b id="f5for">0</b>' +
-            '<span class="f5slot" id="f5slot"></span></div>' +
+            slotIn('for') + '</div>' +
         '</div>' +
         '<div class="f5dash" aria-hidden="true">—</div>' +
         '<div class="f5cell">' +
           '<p class="f5lab">' + esc(VLABEL.against) + '</p>' +
-          '<div class="f5n f5n--ag"><b id="f5ag">0</b></div>' +
+          '<div class="f5n f5n--ag"><b id="f5ag">0</b>' +
+            slotIn('ag') + '</div>' +
         '</div>' +
       '</div>' +
       /* THE THIRD SEGMENT IS THE UNFILLED REMAINDER, and it is what makes
@@ -3518,7 +3553,10 @@ async function beat5() {
       '<div class="f5bar"><i class="f5bar__f"></i><i class="f5bar__a"></i>' +
         '<i class="f5bar__r"></i>' +
         '<span class="f5maj"></span>' +
-        '<span class="f5majlab">' + N(MAJORITY) + '</span></div>'
+        '<span class="f5majlab">' + N(MAJORITY) + '</span>' +
+        (mySide === 'maj'
+          ? '<span class="f5slot f5slot--maj" id="f5slot"></span>' : '') +
+        '</div>'
     : '<p class="f5prose">' + esc(issue.vote_result) + '</p>';
   if (board) {
     b.appendChild(board);
@@ -3550,8 +3588,19 @@ async function beat5() {
     b.appendChild(plate);
     requestAnimationFrame(() => { plate.classList.add('is-in'); f5Place(b, board); fitBeat(); });
   }
-  await step(T.f5Gap);
+  /* ITEM 11a · THE RECORD HOLDS, ALONE, BEFORE ANYTHING IS ADDED TO IT.
+     500ms with the count settled and nothing else on screen. This is the
+     historical result — what the Knesset actually did — and it has to be
+     readable as that before the player's own vote is put on top of it,
+     or the two are one number and the distinction the beat exists to
+     make is gone. The twin keeps the shorter --t-f5-gap: it has no count
+     to hold on, and 500ms of a settled prose board is a pause. */
+  await step(tally ? T.f5Hold : T.f5Gap);
   await flyToken($('#f5slot', b));
+  /* ITEM 11c/d · and then, once the token has settled, the board counts
+     it. Awaited in full, so nothing else on the beat starts while it
+     runs. */
+  if (tally) { await step(T.f5TickAt); await tickVote(board, tally); }
 
   /* the resolution line writes beneath the landing. Only the version
      with numbers can state a with-you total; the twin has already said
@@ -3608,22 +3657,35 @@ async function beat5() {
   await coinMoment(b, topicsWas);
 
   /* =================================================================
-     BEAT 4 · THE READING AND THE BUTTONS. The board shrinks to a strip
-     and everything that is left arrives together. Nothing lands after
-     the buttons.
+     BEAT 4 · THE READING AND THE BUTTONS.
+     ITEM 8 · THE BOARD DOES NOT DEMOTE. It kept its numbers and its bar
+     but at 32px on one line — 153px of board becoming 73 — which is the
+     record being cleared away to make room for the reading, one beat
+     after the whole beat was built to make the record the loudest thing
+     on screen. It now holds its full size and RISES to its final place
+     instead, and the reading and the buttons come up from underneath it.
+     THE ORDER IS INVERTED, and that is the substantive change rather
+     than the class that is no longer added. Every block used to arrive
+     first, each one re-measuring and nudging the column, and the eased
+     re-centre ran last to clean up after them. Now all of them are in
+     the DOM and in layout — held at opacity 0 — BEFORE anything moves,
+     so f5Place() measures the final stack once, the board makes one
+     eased move to a value that is already correct, and the panels fade
+     up behind it on the stagger. Nothing is measured while it moves and
+     nothing moves after the measurement.
      ================================================================= */
-  /* THE STRIP LEAVES THE PADDING ALONE. Recomputing an offset here moved
-     the board 40px (the board halves, 153 to 73), and PINNING its centre
-     across the change cost more than it bought: holding the centre needs
-     40px more padding than the content can afford at 360, and fitBeat()
-     answered that by scaling the whole beat to 85% — a 15% shrink of the
-     type sizes the spec raised on purpose.
-     Untouched, the board's top holds and its centre rises 40px. That
-     happens inside the same ~30ms as the guess line, the reading and the
-     buttons, and the one eased re-centre starts immediately after it, so
-     it is absorbed into the move rather than read as one. */
-  if (board) board.classList.add('is-strip');
-  fitBeat();
+  /* the blocks that arrive behind the board's move, in the order they
+     take their step of the stagger. */
+  const late = [];
+  /* NO fitBeat() WHILE THE BLOCKS GO IN, and that is not tidying. Each
+     call measures the stack against a padding-top that is still the
+     board's PRE-move 315px, so the moment the reading and the buttons
+     were in the DOM it read 868px of stack against 786 of room and
+     scaled the whole beat to 0.905 — for one frame, until the move
+     retargeted the padding and the next call put it back. A 9.5% flash
+     on the frame before the move. The call inside the move's own handler
+     runs after f5Place() has set the target, sees the layout that is
+     arriving, and is the only one that needs to run at all. */
 
   /* §1.8 the SHAPE of the guess. Skipped without a cascade — there is
      nothing to have guessed, which is why the twin has no such line. */
@@ -3639,11 +3701,16 @@ async function beat5() {
     /* no f5Place from here on: the board HOLDS and the single re-centre
        after the buttons owns all the movement. A holding call here put a
        39px instant step in front of the eased move, which is two moves. */
-    if (outcome) { outcome.appendChild(shape); fitBeat(); }
+    /* it joins an outcome panel that is already on screen — the shape is
+       part of the same account, and a panel that has been read for two
+       beats does not re-enter to gain a line. On the twin there is no
+       such panel and it takes a surface of its own, which DOES arrive
+       with the rest. */
+    if (outcome) { outcome.appendChild(shape); }
     else {
-      const w = el('div', 'f5outcome f5surf b5stage');
+      const w = el('div', 'f5outcome f5surf b5stage f5late');
       w.appendChild(shape); b.appendChild(w);
-      requestAnimationFrame(() => { w.classList.add('is-in'); fitBeat(); });
+      late.push(w);
     }
   }
 
@@ -3658,13 +3725,13 @@ async function beat5() {
   const hasMore = !!(ex.rest || terms.length || links.length);
 
   if (ex.first || hasMore) {
-    const read = el('div', 'f5read f5surf b5stage');
+    const read = el('div', 'f5read f5surf b5stage f5late');
     read.innerHTML =
       (ex.first ? '<p class="f5exp">' + markGlossary(ex.first) + '</p>' : '') +
       (hasMore ? '<button type="button" class="f5more">' +
                    esc('עוד על ההצבעה ›') + '</button>' : '');       /* TAMAR */
     b.appendChild(read);
-    requestAnimationFrame(() => { read.classList.add('is-in'); fitBeat(); });
+    late.push(read);
     const more = $('.f5more', read);
     if (more) pressable(more).addEventListener('click',
       () => moreModal(ex.rest, terms, links));
@@ -3673,7 +3740,7 @@ async function beat5() {
   /* ---- the way out. Unchanged: if the topic has another unplayed
      issue the PRIMARY action opens it directly, because going back to
      the map to come straight back buys nothing. */
-  const acts = el('div', 'f5acts b5stage');
+  const acts = el('div', 'f5acts b5stage f5late');
   const restIss = topicIssues(issue.topic).filter(x => !issueDone(x.id));
   const next = restIss[0];
   /* §E · THE LAST ISSUE OF THE LAST TOPIC IS A DIFFERENT DOOR. The test
@@ -3696,42 +3763,58 @@ async function beat5() {
     acts.appendChild(go);
   }
   b.appendChild(acts);
-  requestAnimationFrame(() => {
-    acts.classList.add('is-in');
+  late.push(acts);
+
+  /* ITEM 8 · THE ONE MOVE, AND THE PANELS BEHIND IT.
+     Two frames of settling first, as before: the blocks that were just
+     appended are still being laid out when this handler runs, and
+     fitBeat() has yet to decide on a scale. Measuring inside the same
+     frame read a layout that then changed under it. */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    /* .is-recentring arms the 320ms ease-out and drops .f5acts's auto
+       margin — pinned to the floor, only the top of the stack could move
+       and the result is a stretch rather than a move. */
+    b.classList.add('is-recentring');
+    void b.offsetHeight;
+    /* THE BOARD'S MOVE. f5Place() measures the stack — every panel is
+       already in it — restores the padding the column actually has, and
+       only then sets the measured value, so the transition runs from
+       where the board is to where it belongs and there is no frame in
+       which it is somewhere else. It cannot jump: the value is never
+       assigned with the transition live and un-restored. */
+    f5Place(b, board, true);
+    fitBeat();
     /* PART 4 · the pulse has done its job. It ran while the board was the
        only thing on screen and while the flight landed on it; once there
        is somewhere else to go it settles to a static, quieter glow. */
     if (board) board.classList.add('is-glow-calm');
-    fitBeat();
 
-    /* THE LAST MOTION ON THE BEAT, and it waits a frame for the beat to
-       stop moving first. The buttons are the final block — nothing is
-       appended after them — so this is the only moment the whole thing
-       can be centred without a second move following it. It is deferred
-       one frame because the block that triggers it is still arriving
-       when this handler runs and fitBeat() has yet to decide on a scale;
-       measuring inside the same frame read a layout that then changed
-       under it, which is what left 29px more space below the stack than
-       above however many correction passes ran.
-       .is-recentring also drops .f5acts's auto margin, or the buttons
-       stay pinned to the floor and only the top of the stack moves —
-       a stretch rather than a re-centre. */
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      b.classList.add('is-recentring');
-      void b.offsetHeight;
-      f5Place(b, board, true);
-      fitBeat();
-      /* AND AGAIN WHEN THE MOVE HAS LANDED. fitBeat() measures
+    /* the panels follow, one --t-f5-panel step apart, starting on the
+       frame after the move has begun. The stagger is the delay and
+       nothing else — one shared transition, so they cannot drift out of
+       step with each other.
+       REDUCED MOTION TAKES THE STAGGER OFF TOO, not just the travel: the
+       global rule cuts every duration to 1ms but leaves DELAYS alone, so
+       without this the panels would still appear 80ms apart with the
+       motion stripped out — a flicker rather than an arrival. */
+    const stagger = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    late.forEach((n, i) => {
+      if (stagger) n.style.transitionDelay = (i * T.f5Panel) + 'ms';
+    });
+    requestAnimationFrame(() => {
+      late.forEach(n => n.classList.add('is-in'));
+      /* AND fitBeat() AGAIN WHEN EVERYTHING HAS LANDED. It measures
          scrollHeight, which includes padding-top — and padding-top is
-         mid-transition at this point, still holding the pre-centre value.
-         It therefore measured an overflow that only existed for the first
+         mid-transition here, still holding the pre-move value. It
+         therefore measured an overflow that only existed for the first
          frame of the move, applied scale(0.90) at 360, and nothing ever
          re-evaluated it: the beat settled 10% small for the rest of its
-         life. One more call after the transition, and the scale reflects
-         the layout that actually ended up on screen. */
-      setTimeout(fitBeat, T.f5Recentre + 40);
-    }));
-  });
+         life. One call after the last panel has arrived, and the scale
+         reflects the layout that actually ended up on screen. */
+      setTimeout(fitBeat,
+        T.f5Board + (late.length - 1) * T.f5Panel + T.f5In + 40);
+    });
+  }));
 }
 
 /* PART 3 · WHERE THE BOARD SITS, and it is one number recomputed rather
@@ -3829,10 +3912,20 @@ function f5Place(b, board, final) {
     const par2 = b.parentElement.getBoundingClientRect();
     const boxTop = par2.top + (parseFloat(pcs.paddingTop) || 0);
     const boxBot = par2.bottom - (parseFloat(pcs.paddingBottom) || 0);
+    /* ITEM 8 · MEASURED IN LAYOUT COORDINATES, NOT RENDERED ONES. Every
+       panel is now in the stack BEFORE the move, held at its pre-entrance
+       offset — which is a transform — so getBoundingClientRect() put the
+       last block 22px below the box it actually occupies and the stack
+       would have been centred against a position nothing was ever going
+       to be in. offsetTop/offsetHeight are the untransformed boxes, and
+       .b5fit is position:relative so every child's offsetParent is b:
+       one read of b's own top puts them back into viewport space.
+       IDENTICAL TO THE OLD FIGURES wherever no child carries a transform,
+       which is every call this function had before this item. */
     const ink = () => {
-      const k = [...b.children];
-      return { t: Math.min(...k.map(n => n.getBoundingClientRect().top)),
-               b: Math.max(...k.map(n => n.getBoundingClientRect().bottom)) };
+      const k = [...b.children], o = b.getBoundingClientRect().top;
+      return { t: o + Math.min(...k.map(n => n.offsetTop)),
+               b: o + Math.max(...k.map(n => n.offsetTop + n.offsetHeight)) };
     };
     let guess = Math.max(0, Math.round((avail - (ink().b - boxTop)) / 2));
     /* ITERATED, because one correction was not enough at 360: the blocks
@@ -3855,8 +3948,8 @@ function f5Place(b, board, final) {
        purpose. The offset gives way first: the stack sits as high as it
        must and stays at full size. */
     const kk = [...b.children];
-    const stackH = Math.round(Math.max(...kk.map(n => n.getBoundingClientRect().bottom))
-                            - Math.min(...kk.map(n => n.getBoundingClientRect().top)));
+    const stackH = Math.round(Math.max(...kk.map(n => n.offsetTop + n.offsetHeight))
+                            - Math.min(...kk.map(n => n.offsetTop)));
     pad = Math.max(0, Math.min(guess, avail - stackH));
   } else {
     pad = Math.min(centred, room);
@@ -3930,6 +4023,124 @@ function runCount(board, tally) {
       if (k < 1) requestAnimationFrame(tick);
       else { paint(tally.for, tally.against); maj.classList.remove('is-flare'); res(); }
     })(t0);
+  });
+}
+
+/* ---- ITEM 11 · THE 121ST VOTE IS COUNTED ---------------------------
+   The board has said what the Knesset did. This is the only moment in the
+   game where the player's own vote is added to it, and all three things
+   that say so move together on one 220ms curve: the numeral ticks, the
+   numeral goes gold, and the bar segment grows by one unit of its own
+   scale.
+
+   IT DERIVES FROM THE SAME PLACE THE COUNT DOES. `tally` is the object
+   beat5() reads out of issue._tally and hands to runCount() — one source,
+   passed in, never re-read from the DOM and never a second field name. If
+   the CMS reconciliation moves the board onto tally_for/tally_against,
+   beat5()'s single read moves with it and this follows for free. Reading
+   the numeral's own text back off the screen would have been the other
+   option and it is worse: it makes the animation depend on a rendering
+   rather than on the record.
+
+   THE 61 MARKER DOES NOT MOVE, and there is no branch here that could
+   move it. A +1 that crosses 61 gets exactly what a +1 that does not
+   gets. No issue in the data reaches it — the closest is s1, which is
+   already ON 61 — but the rule is structural, not a fact about the data.
+
+   נמנע, AND NO VOTE AT ALL, RETURN WITHOUT TOUCHING THE BOARD. There is
+   no side to add to; the token has already landed on the majority line,
+   which is the whole of what an abstention has to say here. */
+function tickVote(board, tally) {
+  const side = S.position === 'for' ? 'for'
+             : S.position === 'against' ? 'against' : null;
+  if (!side || !board) return Promise.resolve();
+  const nEl = $(side === 'for' ? '#f5for' : '#f5ag', board);
+  const nBox = $(side === 'for' ? '.f5n--for' : '.f5n--ag', board);
+  if (!nEl || !nBox) return Promise.resolve();
+
+  const from = tally[side], to = from + 1;
+  /* the bar is painted the way runCount() paints it — the two sides and
+     the unfilled remainder of the plenum — so the segment that grows and
+     the segment that gives way stay one arithmetic. */
+  const mine = { for: tally.for, against: tally.against };
+  mine[side]++;
+  const bar = $('.f5bar', board);
+  const seg = $(side === 'for' ? '.f5bar__f' : '.f5bar__a', board);
+  const rem = $('.f5bar__r', board);
+  const paintBar = () => {
+    if (!seg || !rem) return;
+    seg.style.flexGrow = mine[side];
+    rem.style.flexGrow = Math.max(0, PLENUM - mine.for - mine.against);
+  };
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    /* the colour still applies — the item asks for it explicitly. The
+       global reduce rule turns the transition that carries it into a 1ms
+       one rather than removing the value. */
+    nBox.classList.add('is-mine');
+    nEl.textContent = String(to);
+    paintBar();
+    return Promise.resolve();
+  }
+
+  /* EVERY DIGIT GETS A WINDOW, and only the ones that change are stepped.
+     Uniform boxes are what keeps the digits on one line: a mix of bare
+     text nodes and inline-blocks in the same <b> aligns the text on the
+     baseline and the blocks on the line box, which at 74px is a visible
+     step between neighbouring digits. Unchanged digits carry the same
+     glyph in both rows and never move.
+     RIGHT-ALIGNED, so 99 -> 100 is a leading digit ARRIVING rather than
+     three digits all changing meaning. Its outgoing row is empty; the
+     column is already the width of the incoming glyph, so the numeral
+     reaches its final width on the first frame instead of growing
+     through the move. m1 is the one issue in the data where this
+     happens. */
+  const A = String(from), C = String(to), w = Math.max(A.length, C.length);
+  const at = (str, i) => str[i - (w - str.length)] || '';
+  nEl.innerHTML = '';
+  const cols = [], all = [];
+  for (let i = 0; i < w; i++) {
+    const a = at(A, i), c = at(C, i);
+    const d = el('span', 'f5dig',
+      '<span class="f5dig__c"><i>' + esc(a) + '</i><i>' + esc(c) + '</i></span>');
+    nEl.appendChild(d);
+    all.push([d, c]);
+    if (a !== c) cols.push(d);
+  }
+  /* EACH WINDOW IS THE WIDTH OF THE DIGIT IT SETTLES ON, MEASURED IN
+     PLACE. Left to size themselves the windows changed the numeral's
+     width twice inside one move — see the note by .f5dig. The gauge is a
+     child of the numeral, so it inherits the exact face, size and
+     features rather than approximating them, and the sum of the widths it
+     yields is exactly the width of the text node that replaces the
+     windows at the end: measured, digits 0-9 sum to the string's own
+     width to three decimal places, so there is no kerning to account for. */
+  const gauge = el('span');
+  gauge.style.cssText = 'position:absolute; visibility:hidden; white-space:pre;';
+  nEl.appendChild(gauge);
+  all.forEach(([d, c]) => { gauge.textContent = c; d.style.width = gauge.getBoundingClientRect().width + 'px'; });
+  gauge.remove();
+
+  return new Promise(done => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      /* ALL THREE ON ONE FRAME. The colour class used to go on when the
+         windows were built, two frames before the slide and the bar —
+         32ms of the numeral changing colour while it was still reading
+         the old value. Nothing about the +1 may lead any other part of
+         it, so every one of them is written here. */
+      nBox.classList.add('is-mine');
+      cols.forEach(d => d.classList.add('is-up'));
+      if (bar) bar.classList.add('is-plus1');
+      paintBar();
+      buzz(18);
+      setTimeout(() => {
+        /* THE WINDOWS DO NOT SURVIVE THE BEAT. The settled numeral is the
+           single text node it was before the tick, so nothing downstream
+           — a re-measure, a scale, a screenshot — is looking at scaffolding. */
+        nEl.textContent = String(to);
+        done();
+      }, T.f5Tick);
+    }));
   });
 }
 

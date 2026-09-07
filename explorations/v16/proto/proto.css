@@ -171,6 +171,17 @@
   --t-f5-in:        300ms;   /* a block arriving                       */
   --t-f5-bnr-out:   250ms;   /* the emptied banner leaving              */
   --t-f5-recentre:  400ms;   /* the settled stack's one move            */
+  /* ITEM 8 · THE BOARD'S MOVE IS ITS OWN NUMBER NOW. It used to be the
+     stack's re-centre at 400ms, fired after the panels had already
+     landed; the board is the object that moves and the panels follow it,
+     so the duration is named for the board and --t-f5-recentre is left
+     describing nothing else that runs. */
+  --t-f5-board:     320ms;   /* the board rises to its final position   */
+  --t-f5-panel:      80ms;   /* one step of the panels' stagger         */
+  /* ITEM 11 · the 121st vote, in the order it happens. */
+  --t-f5-hold:      500ms;   /* a · the record, alone and readable      */
+  --t-f5-tick-at:   120ms;   /* c · after the token has settled         */
+  --t-f5-tick:      220ms;   /* d · the +1, the colour and the bar      */
 
   /* §T · THE TACHLES -> CASCADE TRANSITION. One continuous move made of
      six overlapping steps; the offsets are when each STARTS, measured
@@ -3578,6 +3589,18 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 }
 .f5n--for{ color:var(--f5-for); }
 .f5n--ag { color:var(--f5-ag); }
+/* ITEM 11d · THE PLAYER'S SIDE GOES GOLD, and the transition is declared
+   on .f5n rather than on the state class so it eases in BOTH directions —
+   there is nothing that takes it off today, and a one-way transition is
+   how a colour ends up snapping back in some future beat.
+   WHAT THIS BUYS, and it is the reason the item is worth doing: the board
+   colours בעד lime and נגד salmon, which is vote direction carrying
+   colour. The gold tick pulls the one numeral the player is responsible
+   for OUT of that pair — for the rest of the beat their own total is
+   neither of the two direction colours. See the §S-1 note above: the
+   direction coding predates this and is NOT extended here. */
+.f5n{ transition:color var(--t-f5-tick) var(--e-out); }
+.f5n.is-mine{ color:var(--f5-gold); }
 /* the slot the token lands in. It holds its size from the start so the
    numerals do not shift sideways when the avatar arrives — a landing
    that moves the thing it lands next to reads as a collision. */
@@ -3585,6 +3608,65 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .f5av{ display:block; width:100%; height:100%; border-radius:50%; overflow:hidden;
   background:#C9BFA6; box-shadow:var(--f5-token); }
 .f5av svg{ display:block; width:100%; height:100%; }
+
+/* ---- ITEM 11d · THE ODOMETER ---------------------------------------
+   Per DIGIT, not per number: 63 -> 64 slides the 4 up past the 3 and
+   leaves the 6 standing, which is what an odometer does and what a whole
+   numeral sliding as a block does not. Digits that do not change are
+   plain text and never enter a window.
+   THE WINDOW IS EXACTLY THE LINE BOX, AND THE BLEED IS ZERO. The first
+   version bled .22em at each end on the assumption that the figures' ink
+   is taller than the line box. It is not, and the assumption cost a real
+   defect: a bled window is a window that PAINTS OUTSIDE THE NUMERAL, and
+   the label sits 1.88px above it, so the outgoing digit slid up over
+   נגד / בעד and wiped it for the length of the move.
+   MEASURED, at 74px: the digits' ink is 56.24px tall (max ascent 54.91,
+   max descent 1.33 across 0-9) inside a 68.08px line box, and the glyph
+   lands 0.13px below the box top and 11.71px above its bottom. So the
+   line box already contains every figure and nothing needs to be bled.
+   THE ROW IS THE LINE BOX FOR THE SAME REASON THE WINDOW IS: the digit
+   has to sit at exactly the height the plain text node will, or swapping
+   the windows back for text at the end of the move is a jump.
+   THE STEP IS THE WINDOW, so the outgoing digit is clear of the frame at
+   the same moment the incoming one is centred in it.
+   THE MARKUP IS TEMPORARY: tickVote() puts the settled value back as
+   plain text when the move ends, so the resting numeral is the same
+   single text node it has always been and no window survives the beat. */
+/* THE WINDOW IS ONE FIGURE WIDE, AND THE ROW CANNOT WRAP OR SHRINK.
+   Measured, not assumed: left to shrink-to-fit, m1's 99 -> 100 read 91.8px
+   as text, 100px through the whole 220ms slide and 136.8px when the text
+   node came back — the numeral changed width twice inside one move. Two
+   causes, both here. The <b> is a FLEX ITEM: as a run of inline-blocks its
+   min-content is the widest single one, so flex-shrink squeezed it to the
+   cell; as a text node it is the whole number and cannot shrink, so it
+   overflows the cell instead. And an empty leading row makes its window
+   as narrow as the '1' it is going to hold.
+   THE WIDTH IS SET FROM JS, PER WINDOW, and 1ch is NOT it — measured at
+   this size, 1ch is 46.914px against a figure advance of 45.883, so a
+   two-digit numeral bulged 2.06px for the length of the slide. tickVote()
+   measures the advance of the digit each window SETTLES on and writes it
+   here, which makes the sum of the windows exactly the width of the text
+   node that replaces them.
+   AND THE FIGURES ARE NOT QUITE TABULAR. font-variant-numeric:tabular-nums
+   is set and 1-9 all advance 45.883px at 74px — but ZERO is 45.438, 0.445
+   narrower, so SimplerPro is not equalising it. Measuring per digit
+   absorbs that; assuming one figure width would not. */
+.f5n > b{ white-space:nowrap; }
+.f5dig{
+  --f5-dig-line: .92em;                /* .f5n's own line-height        */
+  --f5-dig-bleed: 0px;                 /* see above — measured, not guessed */
+  display:inline-block; vertical-align:top; overflow:hidden;
+  text-align:center;                   /* width: set per window, in JS   */
+  height:calc(var(--f5-dig-line) + 2 * var(--f5-dig-bleed));
+  margin-block:calc(-1 * var(--f5-dig-bleed));
+}
+.f5dig__c{ display:block; transition:translate var(--t-f5-tick) var(--e-out); }
+.f5dig__c > i{
+  display:block; font-style:normal; text-align:center;
+  height:calc(var(--f5-dig-line) + 2 * var(--f5-dig-bleed));
+  line-height:calc(var(--f5-dig-line) + 2 * var(--f5-dig-bleed));
+}
+.f5dig.is-up .f5dig__c{ translate:0 calc(-1 * (var(--f5-dig-line) + 2 * var(--f5-dig-bleed))); }
 
 .f5bar{
   position:relative; height:14px; border-radius:99px; overflow:visible;
@@ -3594,6 +3676,15 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .f5bar > i{ display:block; height:100%; min-width:0; }
 .f5bar > i:first-child{ border-radius:99px 0 0 99px; }
 .f5bar > i:last-child { border-radius:0 99px 99px 0; }
+/* ITEM 11d · THE BAR GROWS BY ONE UNIT OF ITS OWN SCALE. flex-grow is a
+   <number> and interpolates, so the +1 is the same value the count-up
+   paints — one more of the 120 the bar is already divided into — eased
+   rather than assigned.
+   THE TRANSITION IS ARMED, NOT STANDING. runCount() writes flexGrow on
+   every frame of a 2.4s count; a standing transition would put a 220ms
+   ease on each of those frames and smear the whole count. .is-plus1 is
+   added on the frame the +1 is written and never before it. */
+.f5bar.is-plus1 > i{ transition:flex-grow var(--t-f5-tick) var(--e-out); }
 .f5bar__f{ background:var(--f5-for); }
 .f5bar__a{ background:var(--f5-ag); }
 .f5bar__r{ background:var(--f5-rem); }
@@ -3610,6 +3701,23 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   position:absolute; top:-20px; inset-inline-start:50.4%; transform:translateX(50%);
   font-family:var(--font-display); font-weight:900; font-size:11px; color:#FBF7EE;
 }
+/* ITEM 11 · נמנע LANDS ON THE LINE. There is no side to land beside, so
+   the token goes to the 61 marker itself — the thing the abstention is
+   measured against — and nothing on the board changes: no tick, no bar
+   move, no colour. It is built from .f5maj's own two numbers, 50.4% and
+   the same translateX(50%) the label uses, so it is centred on the line
+   rather than near it under RTL.
+   THE MARKER DOES NOT MOVE FOR IT, in this case or any other. */
+.f5slot--maj{
+  position:absolute; z-index:2; top:50%; inset-inline-start:50.4%;
+  /* 50.4% is where the marker's LEADING EDGE sits, not its centre — it is
+     3px wide and drawn from that line. translateX(50%) alone put the token
+     on the line and therefore 1.5px off the thing it is supposed to be
+     centred on; half the marker's width puts the two centres together.
+     Measured: 1.5px before, 0.0px after. */
+  margin-inline-start:1.5px;
+  transform:translateX(50%) translateY(-50%);
+}
 
 /* the degraded twin's peak: with no count, the outcome prose IS the
    loudest object, at 19px. It is the only account of the outcome that
@@ -3620,6 +3728,13 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   font-size:19px; line-height:1.35; color:#EFECE4; text-align:start;
 }
 
+/* ITEM 8 · NOTHING ADDS .is-strip ANY MORE. The board keeps its full
+   size for the whole beat and rises instead; beat5() no longer sets the
+   class. The rules below are kept, unreferenced, because they are the
+   only record of what the demoted board looked like and because
+   .f5plate.is-small above still reads one of them — deleting them would
+   take that with it. If the strip is not coming back, this block and the
+   is-small variant go together. */
 /* ---- the strip. THE BOARD DOES NOT LEAVE, IT DEMOTES — same element,
    same numbers, same bar, re-laid onto one line so the outcome stays
    readable above the sheet while the reading takes the room.
@@ -3643,10 +3758,22 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    yellow keyline and a cyan glow. That pairing is what keeps it from
    ever being read as a verdict mark: lime and magenta are correctness,
    and this is neither. */
-:root{ --f5-token:
-  0 0 0 3px #FFD60A, 0 0 0 4.6px rgba(0,0,0,.5), 0 0 18px 5px rgba(55,196,255,.72); }
+/* ITEM 11d · THE RING'S GOLD IS A NAMED TOKEN, because the numeral now
+   has to take the SAME one. It was the literal #FFD60A twice here and
+   nowhere else, so "the gold used by the avatar ring" was not addressable.
+   ON THE RECORD: this value IS --primary, the coin and CTA yellow. The
+   item asks for the ring's gold and says "not the coin/CTA yellow"; on
+   this branch those are one colour, #FFD60A, and the ring is the thing
+   named twice, so the ring wins and the numeral matches it exactly.
+   Aliased rather than pointed at --primary: if a distinct finale gold is
+   ever introduced, it is introduced HERE and both the ring and the
+   numeral move together, which is the property the item is buying. */
+:root{
+  --f5-gold: #FFD60A;
+  --f5-token:
+  0 0 0 3px var(--f5-gold), 0 0 0 4.6px rgba(0,0,0,.5), 0 0 18px 5px rgba(55,196,255,.72); }
 .f5board.is-strip .f5av, .f5plate.is-small .f5av{ box-shadow:
-  0 0 0 2.5px #FFD60A, 0 0 0 4px rgba(0,0,0,.5), 0 0 14px 4px rgba(55,196,255,.72); }
+  0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5), 0 0 14px 4px rgba(55,196,255,.72); }
 /* the clone that actually travels. Fixed, above everything, so nothing
    it passes over can clip it. */
 .f5fly{
@@ -4035,8 +4162,26 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    top of the stack could move and the result would be a stretch rather
    than a re-centre. It is the last motion on the beat — nothing is
    appended after the buttons, so nothing follows it. */
+/* ITEM 8 · 400 -> 320ms, and on --e-out rather than a curve written out
+   here. The move itself is unchanged in kind: padding-top on the column,
+   measured by f5Place() and eased to, which is what makes it impossible
+   for the board to jump — the value is restored to where the board
+   actually is before the transition is re-armed and the measured figure
+   set. What DID change is when it runs: every panel is in the DOM and in
+   layout before this fires, so there is one measurement and one move
+   instead of a move that had to dodge blocks still arriving. */
 .f5 .b5fit.is-recentring{
-  transition:padding-top var(--t-f5-recentre) cubic-bezier(0,0,.35,1);
+  transition:padding-top var(--t-f5-board) var(--e-out);
+}
+/* ITEM 8 · THE PANELS COME FROM BELOW, BEHIND THE BOARD'S MOVE. .b5stage
+   lifts 6px, which is an arrival rather than a slide; these travel far
+   enough to read as coming from under the board. The delay is set inline
+   per block — the stagger is a position in a list, not a class per slot.
+   They are appended BEFORE the move and held at opacity 0, so the
+   measurement the move is based on already includes them. */
+.f5late{
+  transform:translateY(22px);
+  transition-timing-function:var(--e-out);
 }
 .f5 .b5fit.is-recentring .f5acts{ margin-top:0; }
 @media (prefers-reduced-motion: reduce){
