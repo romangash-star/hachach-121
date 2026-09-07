@@ -218,7 +218,11 @@
   /* §0 · the two gaps that separate the reveal's three movements. Unequal
      on purpose: an even rhythm reads as a loading sequence, an uneven one
      reads as staging. */
-  --t-mark-gap:  120ms;
+  /* ITEM 47B · 120 -> 140ms. The stamp lands ALONE and is held before the
+     verdict arrives: the stamp is the Knesset's answer, the pill is
+     whether the player called it, and the gap is what makes it cause then
+     consequence rather than one compound arrival. */
+  --t-mark-gap:  140ms;
   --t-panel-gap: 160ms;
   /* A-1 · THE PEEL. Three phases, all CSS.
      --t-peel      the sheet lifting and curling off the party line. 620ms
@@ -253,6 +257,11 @@
      this instead. The code's own rule is that the buzz and the hit are
      one event or neither, so they cannot be allowed to drift apart. */
   --t-stamp-drop-mk: 200ms;
+
+  /* ITEM 47 · THE LANDING IS ONE MOTION AND ONE DURATION. Both stamps —
+     the claim's at 156px and the MK card's at 190px — run the same
+     keyframes for the same 360ms. Only the box differs. */
+  --t-stamp-land:    360ms;
 
   /* §F the strip, played rather than stated: lock -> hold -> the MK's
      token appears in the PLAYER'S slot -> the fill travels to the truth,
@@ -2494,21 +2503,36 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    IT STILL CLEARS THE CLAIM. The disc is pinned by top/left, so the extra
    20px grows down and right from a corner that overhangs the card — see
    the report's measured gap to .b1claim. */
+/* ITEM 47A · THE CLAIM STAMP RUNS d2-land-mk, THE MK STAMP'S OWN
+   KEYFRAMES — not a copy of them. d2-claim-land is retired: it was the
+   older 340ms / 1.8 / 1.06 landing, and keeping a second block that said
+   almost the same thing is how the two drift apart. One landing, two
+   boxes.
+   THE BOX IS UNCHANGED AT 156px. Item 4 set that deliberately and this
+   item shares the MOTION only; width, height, top and left are as they
+   were. The disc still starts its fall larger — 2.2 x 156 = 343px against
+   the old 1.8 x 156 = 281 — but it comes to rest in exactly the same
+   place at exactly the same size. */
 .d2--claim{
   top:20px; left:-26px; z-index:12;
   width:156px; height:156px;
-  animation:d2-claim-land var(--t-stamp) linear both;
+  animation:d2-land-mk var(--t-stamp-land) linear both;
 }
-@keyframes d2-claim-land{
-  0%   { transform:scale(1.8); opacity:0;
-         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
-  6%   { opacity:1;
-         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
-  56%  { transform:scale(1);
-         animation-timing-function:cubic-bezier(.25,.9,.35,1) }
-  74%  { transform:scale(1.06);
-         animation-timing-function:cubic-bezier(.35,0,.45,1) }
-  100% { transform:scale(1) }
+/* ITEM 47A · THE CARD TAKES THE HIT AT 5px, like the MK card. hachach.css
+   gives every .mf-b.is-stamped a 3px d2-jolt at --t-stamp-drop; the claim
+   card is an .mf-b too, so it was getting the old 3px at 190ms. This is
+   the same 5px at the same 200ms contact the cascade uses.
+   NO rotateY HERE. The cascade's version carries the card's 180deg face
+   rotation through the jolt because that card is a 3D flipper; the claim
+   card is not, and it has no transform at rest — the reveal's FLIP moves
+   elements INSIDE it, never the card itself — so a plain translate is
+   correct and cannot clobber anything. */
+.mf-b.b1card.is-stamped{
+  animation:d2-jolt-claim 120ms var(--e-land) var(--t-stamp-drop-mk) both;
+}
+@keyframes d2-jolt-claim{
+  0%,100%{ transform:translateY(0) }
+  40%    { transform:translateY(5px) }
 }
 .d2--claim .d2__word{ font-size:39px; }
 /* =====================================================================
@@ -2522,10 +2546,12 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    the landing on, because a transform list that drops rotate() midway
    would interpolate from "no rotation" and re-introduce the wobble the
    snap just resolved.
-   :not(.d2--claim) IS LOAD-BEARING. The beat-1 claim stamp is the same
-   .d2 element with its own box, position and d2-claim-land; it is not
-   part of this item and must keep its 1.8/1.06/340ms landing. Excluding
-   it here is what stops this rule reaching it.
+   :not(.d2--claim) STILL SEPARATES THE TWO, BUT ONLY BY BOX. Item 47
+   moved the claim stamp onto these same keyframes and this same duration
+   — one landing, shared — so what this selector now keeps apart is the
+   190px MK disc from the claim's 156px, not two different motions. Both
+   read --t-stamp-land; change it here and both move together, which is
+   the point.
    THE LOCKED RULE IS UNTOUCHED: the disc's landing position is set by
    top/left, which this does not go near. Scale 2.2 makes the disc larger
    WHILE FALLING, about the same centre; where it comes to rest is
@@ -2533,7 +2559,7 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    ===================================================================== */
 .d2:not(.d2--claim){
   animation-name:d2-land-mk;
-  animation-duration:360ms;
+  animation-duration:var(--t-stamp-land);   /* ITEM 47 · was the 360ms literal */
   animation-timing-function:linear;
 }
 @keyframes d2-land-mk{
@@ -2629,13 +2655,41 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .cmark__av svg{ width:100%; height:100%; display:block; }
 /* the correctness chip is now .bnr + this: the fill, the type and the
    entrance. Everything about its edge comes from .bnr. */
+/* ITEM 47B · THE PILL IS THE SECOND BEAT, AND IT ARRIVES ON ITS OWN.
+   It was a 380ms transition that started 120ms after a 340ms stamp; it is
+   now a 200ms animation 140ms after a 360ms one, so the two motions never
+   overlap and the pill reads as the consequence of the stamp rather than
+   as part of the same arrival.
+   SCALE ONLY, WITH A SMALL OVERSHOOT — .9 -> 1.04 -> 1 on the stamp's own
+   rebound curve. The old entrance also dropped 6px, which at this size
+   read as the pill falling in from somewhere; there is nowhere above it
+   for it to fall from.
+   rotate(-1.6deg) IS RESTATED AT EVERY FRAME because it is the pill's
+   resting angle from .cmark.bnr — drop it from one keyframe and the
+   animation interpolates the pill straight. */
 .cmark{
   font-family:var(--font-display); font-weight:900; font-size:15px;
   opacity:0;
-  transition:opacity var(--t-flip) linear, transform var(--t-flip) var(--e-land);
 }
-.cmark:not(.is-in){ transform:rotate(-1.6deg) translateY(-6px) scale(.94); }
-.cmark.is-in{ opacity:1; }
+.cmark:not(.is-in){ transform:rotate(-1.6deg) scale(.9); }
+.cmark.is-in{
+  opacity:1;
+  animation:cmark-in 200ms cubic-bezier(.25,.9,.35,1) both;
+}
+@keyframes cmark-in{
+  0%   { transform:rotate(-1.6deg) scale(.90); opacity:0 }
+  55%  { transform:rotate(-1.6deg) scale(1.04); opacity:1 }
+  100% { transform:rotate(-1.6deg) scale(1); opacity:1 }
+}
+/* ITEM 47 · BOTH IN THEIR FINAL STATE, NO MOTION AND NO STAGGER. The
+   waits are skipped in claimReveal() too, so the two arrive together
+   rather than 500ms apart with the motion stripped out. `animation:none`
+   kills the NAME, which the global reduce rule's animation-duration
+   cannot override. */
+@media (prefers-reduced-motion: reduce){
+  .d2--claim, .mf-b.b1card.is-stamped, .cmark.is-in{ animation:none; }
+  .cmark:not(.is-in){ transform:rotate(-1.6deg); }
+}
 .cmark--ok { --cm:var(--verdict-correct); }
 .cmark--sur{ --cm:var(--verdict-surprise); }
 /* the neutral dot is gone — the avatar is the thing on the leading edge

@@ -51,6 +51,7 @@ const T = {
   stamp:     ms('--t-stamp'),
   stampDrop: ms('--t-stamp-drop'),
   stampDropMk: ms('--t-stamp-drop-mk'),  /* ITEM 7 · contact on an MK card */
+  stampLand:   ms('--t-stamp-land'),     /* ITEM 47 · the shared landing, end to end */
   stampBleed:ms('--t-stamp-bleed'),
   flip:      ms('--t-flip'),
   swipe:     ms('--t-swipe'),
@@ -1933,8 +1934,17 @@ async function claimReveal(ans, card) {
      shape. The mark is held back until the stamp has settled because a
      coloured chip moving during the fall competes with it — that is what
      made this beat read as five things happening at once. */
-  await wait(T.stamp);
-  await wait(T.markGap);
+  /* ITEM 47B · TWO BEATS. The stamp lands alone over --t-stamp-land, is
+     HELD for --t-mark-gap with nothing else moving, and only then does the
+     verdict arrive. The wait was T.stamp (340ms) against a landing that is
+     now 360, which would have started the pill 20ms before the stamp had
+     finished settling — the one thing this sequence must not do.
+     REDUCED MOTION SKIPS THE STAGGER, not just the motion: both are in
+     their final state on the same tick, because a 500ms wait with the
+     animation stripped out is a blank pause, not an accessible version. */
+  const reducedSeq = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  await wait(reducedSeq ? 0 : T.stampLand);
+  await wait(reducedSeq ? 0 : T.markGap);
   requestAnimationFrame(() => chip.classList.add('is-in'));
   await wait(T.flip + T.panelGap);
 
