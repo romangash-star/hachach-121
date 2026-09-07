@@ -218,6 +218,12 @@ const DEV = {
      either direction WITHOUT writing the flag, which is the only way to
      look twice at something that by definition happens once. */
   intro:  qPick('intro',  { on:true, off:false }, null),
+  /* ITEM 43 · the same switch for the map's first-arrival sticker, and
+     for the same reason spelled out above it. ?reset also clears the flag
+     — it lives in the save — but resetting to look at one modal spends
+     the whole run, which is not a thing to ask of anyone in a meeting.
+     Like ?intro, an override never writes the flag. */
+  mapIntro: qPick('mapintro', { on:true, off:false }, null),
   /* §3 · the title's sticker edge. `solid` is the shipped white and the
      default; `keyline-multi` adds a coloured outer stroke per glyph from
      the topic palette; `keyline-one` adds the same in a single accent.
@@ -2136,12 +2142,22 @@ function stickerModal(o) {
       (o.extra || '') +
     '</div>';
   let gone = false;
+  /* ITEM 43 · ONE HOOK, FIRED ON EVERY WAY OUT. The ✕, the ground and
+     Escape all funnel through close(), so a caller that needs to know the
+     sticker has gone gets told once whichever route the player took —
+     rather than wiring three listeners and hoping they stay in step with
+     this function. Optional; every existing caller passes nothing. */
   const close = () => {
     if (gone) return; gone = true;
     removeEventListener('keydown', onKey);
     m.classList.remove('is-in'); m.classList.add('is-out');
     setTimeout(() => m.remove(), T.ovCollapse);
+    if (typeof o.onClose === 'function') o.onClose();
   };
+  /* and the same function by hand, for a caller whose own button dismisses
+     the sticker. `_close` rather than `close` to match the `_swipe` the
+     claim card already hangs on its node. */
+  m._close = close;
   const onKey = e => { if (e.key === 'Escape') close(); };
   addEventListener('keydown', onKey);
   pressable($('.stmodal__x', m)).addEventListener('click', close);
@@ -4464,6 +4480,15 @@ const SAVE_VER = 1;
    run to protect one animation, which is the wrong trade. */
 let EG_CONFETTI_SPENT = false;
 
+/* ITEM 43 · THE MAP'S FIRST ARRIVAL, ONCE EVER. It goes in the save
+   rather than in a key of its own — SEEN_KEY predates the save and is
+   stranded there; anything added now belongs with progress and profile so
+   that ?reset clears the lot in one place, which is exactly what the item
+   asks for. Additive and optional like `cf`, so no SAVE_VER bump: a save
+   written before this simply has no `mi`, restores cleanly, and shows the
+   sticker once. */
+let MAP_INTRO_SEEN = false;
+
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
    playable, so every access is wrapped and every failure is "no save". */
@@ -4476,6 +4501,7 @@ function saveState() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD,
       cf: EG_CONFETTI_SPENT,
+      mi: MAP_INTRO_SEEN,
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -4518,6 +4544,9 @@ function restoreSave() {
   /* coerced rather than validated: a malformed `cf` is a cosmetic field
      and must not be grounds for discarding eleven rounds of progress */
   EG_CONFETTI_SPENT = s.cf === true;
+  /* ITEM 43 · coerced, never validated, for the reason above: a malformed
+     `mi` shows one sticker again and must not cost a run. */
+  MAP_INTRO_SEEN = s.mi === true;
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
@@ -5384,7 +5413,15 @@ function goMap(o) {
   /* §C the identity moment is the ARRIVAL, after it has landed — never
      during map-in, never under the chair. `quiet` is the exit confirm's:
      an arrival by abandoning a round is not a moment to ask anything. */
-  onMapSettled(m, () => { if (!(o && o.quiet)) maybeInvite(); });
+  /* ITEM 43 · THE FIRST ARRIVAL COMES FIRST, and the two can never
+     collide anyway: maybeInvite() needs a finished topic, which by
+     definition has not happened on a first arrival, and it also refuses
+     to open on top of an existing .stmodal. Ordered explicitly so that
+     stays true if either condition is ever relaxed. */
+  onMapSettled(m, () => {
+    if (maybeMapIntro()) return;
+    if (!(o && o.quiet)) maybeInvite();
+  });
 }
 
 /* ===== §C · THE ARRIVAL GATE ========================================
@@ -5431,6 +5468,102 @@ function onMapSettled(m, fn) {
    is tapped, so a dismiss, an ✕, an Escape and a reload all count as
    asked. It is never re-armed; the door in the HUD is always there.
    NEVER if a voice is already set in 2b — there is nothing to ask. */
+/* =====================================================================
+   ITEM 43 · THE MAP'S FIRST ARRIVAL
+   One sticker, the first time the player reaches the map, once ever. It
+   says what the next minute is FOR; it does not teach anyone to tap.
+
+   IT DOES NOT BLOCK, and that is structural rather than a promise: it is
+   stickerModal(), so the ✕, the ground and Escape all dismiss it exactly
+   as they dismiss the law, the glossary and the invitation. There is no
+   branch in here that could make it modal in the blocking sense.
+
+   THE FLAG IS WRITTEN WHEN IT IS SHOWN, not when it is dismissed. A
+   player who closes the tab mid-sticker has still had their first
+   arrival; re-showing it on the next launch would make "once ever" a lie
+   in the one case where it is most annoying.
+   ===================================================================== */
+/* COPY IS TAMAR'S AND NONE OF IT IS WRITTEN HERE. These are the briefs
+   for the three strings, rendered as visible placeholders — see
+   .stmodal[data-mapintro] in proto.css, which gives them the hazard
+   treatment and, unlike every other ph() marker, does NOT hide them in
+   the default build: a first-run sticker with three blank slots is worse
+   than one that says out loud what it is waiting for. */
+const MAP_INTRO_COPY = {                                              /* TAMAR */
+  title: '[תמר: מה זה המסך הזה]',
+  body:  '[תמר: אתם הח״כ ה-121 · בחרו כל נושא · אין סדר ואין תשובה נכונה לגבי מה לבחור]',
+  go:    '[תמר: כפתור פתיחה]',
+};
+function seenMapIntro() {
+  if (DEV.mapIntro !== null) return !DEV.mapIntro;
+  return MAP_INTRO_SEEN;
+}
+function markMapIntroSeen() {
+  /* an override never spends the player's one first arrival */
+  if (DEV.mapIntro !== null) return;
+  MAP_INTRO_SEEN = true;
+  saveState();
+}
+function maybeMapIntro() {
+  if (seenMapIntro()) return false;
+  if ($('#stage').dataset.screen !== 'map') return false;
+  /* never on top of another sheet — the same guard the invitation uses */
+  if ($('.stmodal') || $('.exitsheet')) return false;
+  markMapIntroSeen();
+  mapIntroModal();
+  return true;
+}
+function mapIntroModal() {
+  const m = stickerModal({
+    title: MAP_INTRO_COPY.title,
+    body:  MAP_INTRO_COPY.body,
+    /* ITEM 9's hero, with nothing in it yet: the "?" fallback is what the
+       slot draws until this screen has art of its own. heroKey marks the
+       hook so the graphic can be dropped in without touching this call. */
+    heroKey: 'mapintro',
+    extra: '<button type="button" class="p-c mi-go">' +
+             esc(MAP_INTRO_COPY.go) + '</button>',                    /* TAMAR */
+    /* EVERY WAY OUT LEADS TO THE SAME PLACE. The suggestion follows the
+       sticker however it was dismissed — button, ✕, ground or Escape —
+       because it is the answer to "so where do I start", and a player who
+       closed the sticker with the ✕ asked that question just as much as
+       one who pressed the button. */
+    onClose: () => breatheFirstNode(),
+  });
+  m.dataset.mapintro = '';
+  const go = $('.mi-go', m);
+  if (go) pressable(go).addEventListener('click', () => m._close());
+  return m;
+}
+/* ---- the suggestion, and it is only ever that ----------------------
+   ONE node breathes: the FIRST TOPIC IN THE MAP'S EXISTING ORDER. No
+   recommendation is computed and nothing is reordered — TOPICS() is
+   data.js's own array order and this reads index 0 of it.
+   IT IS AN INVITATION AND NEVER A GATE. Nothing here disables, dims,
+   covers or reorders any other node; every one of them keeps the click
+   handler wireMap() gave it. The only thing that changes on the map is
+   that one disc is moving.
+   IT STOPS ON THE FIRST NODE TAP, ANY NODE — including a tap on a
+   different topic, which is the case that matters: choosing something
+   else has to end the suggestion, not leave it pulsing next to the topic
+   the player has just decided against. Capture phase, so it fires whether
+   or not anything downstream stops the event.
+   prefers-reduced-motion: the sticker still shows and nothing breathes.
+   The class is never added, exactly as startBreath() does it. */
+function breatheFirstNode() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const map = $('#scMap'); if (!map) return;
+  const face = $('.node .node-face', map);
+  if (!face) return;
+  face.classList.add('is-breathing');
+  const stop = e => {
+    if (!e.target.closest || !e.target.closest('.node-face')) return;
+    face.classList.remove('is-breathing');
+    map.removeEventListener('pointerdown', stop, true);
+  };
+  map.addEventListener('pointerdown', stop, true);
+}
+
 function maybeInvite() {
   if (PROFILE.invited || PROFILE.gender !== null) return;
   if (topicsDone() < 1) return;
