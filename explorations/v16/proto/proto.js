@@ -3646,8 +3646,20 @@ async function beat5() {
     res.innerHTML =
       (passed ? esc('ההצעה עברה.')                                     /* TAMAR */
               : ph('[טקסט — תמר: הפועל להצעה שנדחתה]')) +              /* TAMAR */
+      /* ITEM 52 · THE PAIR IS WRITTEN IN THE BOARD'S ORDER, נגד FIRST.
+         It was for—against, which renders 64—57 left-to-right because .num
+         is direction:ltr — while the board above it renders נגד then בעד,
+         57 then 64. Two pairs of the same numbers ordered opposite each
+         other, six inches apart, with nothing on either to say which side
+         is which. Item 51B took the duplicate pair off this line; the one
+         that survived still disagreed with the board about the order.
+         THE BOARD IS THE FIXED POINT, not this line. Its order is a
+         consequence of the RTL row — .f5cell for בעד is the first child
+         and therefore the rightmost — so it cannot be changed without
+         moving the cells, and there is no reason to: the board is the
+         object the player watched count. The sentence follows it. */
       '<span class="f5res__you">' + esc('עם הקול שלכם: ') +             /* TAMAR */
-        '<b>' + N(mine.for + '—' + mine.against) + '</b></span>';
+        '<b>' + N(mine.against + '—' + mine.for) + '</b></span>';
     outcome.appendChild(res);
     b.appendChild(outcome);
     requestAnimationFrame(() => { outcome.classList.add('is-in'); f5Place(b, board); fitBeat(); });
