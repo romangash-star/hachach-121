@@ -235,6 +235,14 @@
      consequence rather than one compound arrival. */
   --t-mark-gap:  140ms;
   --t-panel-gap: 160ms;
+  /* ITEM 50 · THE VERDICT PILL'S OWN LANDING, and it is deliberately NOT
+     --t-stamp-land. The stamp falls for 360ms and the pill for 160: the
+     second beat has to read as smaller than the first, or the two become
+     one arrival again and item 47B's hold is spent for nothing.
+     --cm-rest IS READ BY proto.js TOO (CM_REST) — the throw on הלאה adds
+     the exit rotation to it. Retune it here and both follow. */
+  --t-cmark-land: 160ms;
+  --cm-rest:      -6deg;
   /* A-1 · THE PEEL. Three phases, all CSS.
      --t-peel      the sheet lifting and curling off the party line. 620ms
                    is slow enough to read as a physical action and short
@@ -1884,7 +1892,7 @@ body.no-ph .ph{ display:none !important; }
 /* the two states differ in FILL, in how they are set down, and in whether
    they carry the accent — see below. Same object, same edge. */
 .bnr--vote{ background:var(--paper); transform:rotate(1.2deg); }
-.cmark.bnr{ background:var(--cm); transform:rotate(-1.6deg); border-radius:999px; }
+.cmark.bnr{ background:var(--cm); transform:rotate(var(--cm-rest)); border-radius:999px; }
 
 /* THE GLOW IS THE PINNED VOTE'S, NOT THE CHIP'S, and that is a meaning
    distinction rather than a colour fix. The pinned vote persists for four
@@ -2929,54 +2937,91 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    beats later. It carries correctness by COLOUR and by the word, never
    by a tick — the map already uses ✓ for a completed topic and a tick
    here would be the same glyph meaning something else. */
-/* §4c · THE BAND COMES OFF FOR THE MARK. .chyron keeps its reserved 44px
-   box — that is what stops the card resizing across the answer — but
-   under .is-mark it drops the fill, the neon stroke and the padding, so
-   there is no empty container around the chip. */
-.chyron.is-mark{
-  background:none !important; box-shadow:none !important;
-  padding-inline:0 !important; justify-content:center;
-  backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
-}
+/* §4c's .chyron.is-mark IS GONE WITH ITEM 50. It existed to strip the
+   band from around the chip while the chip was IN the chyron; the chip is
+   on the card now and the class has no remaining setter. The reserved
+   box is .chyron-slot and was never this rule's business. */
 /* §4d · the avatar, so the mark is visibly the PLAYER's */
 .cmark__av{ width:26px; height:26px; flex:none; line-height:0; }
 .cmark__av svg{ width:100%; height:100%; display:block; }
 /* the correctness chip is now .bnr + this: the fill, the type and the
    entrance. Everything about its edge comes from .bnr. */
-/* ITEM 47B · THE PILL IS THE SECOND BEAT, AND IT ARRIVES ON ITS OWN.
-   It was a 380ms transition that started 120ms after a 340ms stamp; it is
-   now a 200ms animation 140ms after a 360ms one, so the two motions never
-   overlap and the pill reads as the consequence of the stamp rather than
-   as part of the same arrival.
-   SCALE ONLY, WITH A SMALL OVERSHOOT — .9 -> 1.04 -> 1 on the stamp's own
-   rebound curve. The old entrance also dropped 6px, which at this size
-   read as the pill falling in from somewhere; there is nowhere above it
-   for it to fall from.
-   rotate(-1.6deg) IS RESTATED AT EVERY FRAME because it is the pill's
-   resting angle from .cmark.bnr — drop it from one keyframe and the
-   animation interpolates the pill straight. */
+/* =====================================================================
+   ITEM 50 · THE PILL MOVES ONTO THE STAMP'S LOWER EDGE · v25 P5
+   Banner-style across the disc, 4px higher than the board's P5.
+
+   THE TWO NUMBERS ARE DERIVED, NOT COPIED, and are written as arithmetic
+   so the derivation survives. .d2--claim is top:20px left:-26px at 156px,
+   so its centre x is -26 + 78 = 52 and its lower edge is 20 + 156 = 176.
+   The pill is centred on that point and then lifted 4. If the stamp is
+   ever moved, these two lines are what has to move with it — which is
+   exactly why they name 20, -26 and 156 rather than 52 and 172.
+
+   translate, NOT transform, FOR THE CENTRING. They are separate
+   properties and compose in a fixed order (translate, then rotate, then
+   scale), so the tilt and the landing can own `transform` outright while
+   the centring is never at risk of being clobbered by a keyframe or by
+   the throw on הלאה. Doing this with transform:translate(-50%,-50%)
+   would mean restating it in six places.
+
+   z-index 13: ABOVE the disc's 12, BELOW the explanation panel's 14. The
+   panel rises over the card's LOWER portion 400ms later and never reaches
+   y=172, so the order only matters if the panel is ever grown. */
 .cmark{
   font-family:var(--font-display); font-weight:900; font-size:15px;
+  position:absolute; z-index:13;
+  left:calc(-26px + 156px / 2);        /* the disc's centre x  = 52  */
+  top:calc(20px + 156px - 4px);        /* its lower edge, -4px = 172 */
+  translate:-50% -50%;
   opacity:0;
 }
-.cmark:not(.is-in){ transform:rotate(-1.6deg) scale(.9); }
+/* ITEM 50 · A STAMP-LIKE DROP OF ITS OWN, 160ms, ON d2-land-mk's SHAPE.
+   Not a copy of the stamp's numbers — a smaller version of its gesture:
+   accelerate down from 1.6, hit 1.0 and snap the rotation on the SAME
+   frame the disc does (55%), rebound to 1.08, settle. Item 47B's 200ms
+   scale-only entrance is retired with it; the pill has somewhere to fall
+   from now, so it falls.
+   THE ROTATION STARTS 8deg OFF ITS REST and resolves to it — the same
+   relationship d2-land-mk has, where -6 resolves to 0. Here rest is
+   itself -6, so the pill enters at -14.
+   THE REST ANGLE IS RESTATED AT EVERY FRAME. Drop it from one and the
+   animation interpolates the pill straight, which is how the tilt was
+   lost the first time this block was written. */
+.cmark:not(.is-in){ transform:rotate(calc(var(--cm-rest) - 8deg)) scale(1.6); }
 .cmark.is-in{
   opacity:1;
-  animation:cmark-in 200ms cubic-bezier(.25,.9,.35,1) both;
+  animation:cmark-land var(--t-cmark-land) linear both;
 }
-@keyframes cmark-in{
-  0%   { transform:rotate(-1.6deg) scale(.90); opacity:0 }
-  55%  { transform:rotate(-1.6deg) scale(1.04); opacity:1 }
-  100% { transform:rotate(-1.6deg) scale(1); opacity:1 }
+@keyframes cmark-land{
+  0%   { transform:rotate(calc(var(--cm-rest) - 8deg)) scale(1.6); opacity:0;
+         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
+  6%   { opacity:1;
+         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
+  55%  { transform:rotate(var(--cm-rest)) scale(1); opacity:1;
+         animation-timing-function:cubic-bezier(.25,.9,.35,1) }
+  75%  { transform:rotate(var(--cm-rest)) scale(1.08);
+         animation-timing-function:cubic-bezier(.35,0,.45,1) }
+  100% { transform:rotate(var(--cm-rest)) scale(1) }
+}
+/* ITEM 50 · IT LEAVES WITH THE CARD. claimReveal() writes the throw
+   inline, including the rest angle; this only supplies the clock. The
+   same curve and duration the card and the stamp exit on. */
+.cmark.is-leaving{
+  transition:transform var(--t-card-exit) var(--e-in), opacity 100ms linear 220ms;
 }
 /* ITEM 47 · BOTH IN THEIR FINAL STATE, NO MOTION AND NO STAGGER. The
    waits are skipped in claimReveal() too, so the two arrive together
    rather than 500ms apart with the motion stripped out. `animation:none`
    kills the NAME, which the global reduce rule's animation-duration
-   cannot override. */
+   cannot override.
+   ITEM 50 · AND THE PILL'S PRE-ROLL GOES WITH IT. .cmark:not(.is-in) now
+   carries scale(1.6) and an 8deg offset, which under `animation:none`
+   would otherwise be what a reduced-motion player SEES for the one frame
+   before .is-in is added — a pill 60% too big at the wrong angle. It is
+   pinned to the resting transform instead. */
 @media (prefers-reduced-motion: reduce){
   .d2--claim, .mf-b.b1card.is-stamped, .cmark.is-in{ animation:none; }
-  .cmark:not(.is-in){ transform:rotate(-1.6deg); }
+  .cmark:not(.is-in){ transform:rotate(var(--cm-rest)); }
 }
 .cmark--ok { --cm:var(--verdict-correct); }
 .cmark--sur{ --cm:var(--verdict-surprise); }
