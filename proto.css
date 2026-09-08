@@ -2028,8 +2028,9 @@ body.no-ph .ph{ display:none !important; }
    — the derivative was trimmed to the master's true alpha bounds
    (5272x1312 of 5525x2125), so height:auto gives the ink aspect directly
    and none of the board's negative-offset correction is needed.
-   .sc-intro is the stage minus its 16px gutters, so 28% of the stage is
-   28% of this box plus 0.28 x 32 = 8.96px. Exact at every width in
+   T17 · S2 MINUS 20%: 28% -> 22.4% of the stage, Lion's call.
+   .sc-intro is the stage minus its 16px gutters, so 22.4% of the stage is
+   22.4% of this box plus 0.224 x 32 = 7.168px. Exact at every width in
    portrait, where the horizontal safe-area insets are 0; a landscape
    phone with side insets would need the 8.96 to grow with them, and this
    app is portrait-only.
@@ -2047,9 +2048,18 @@ body.no-ph .ph{ display:none !important; }
    pointer-events:none: it sits over the intro's lower third, where the
    CTA is, and it is decoration, not a control.
    ===================================================================== */
+/* T17b · THE INSETS ARE EQUAL NOW. left:0 is already the stage's 16px
+   gutter, because .sc-intro carries no horizontal padding of its own;
+   bottom:0 was the stage's 12px one, so the mark sat 16 from the side and
+   12 from the floor. At 28% that 4px was 15% of the mark's height and
+   invisible. At 22.4% the mark is 20.02px tall at 360 and the same 4px is
+   a fifth of it — the bottom read tighter than the side and the thing
+   looked like it had slipped rather than been placed.
+   4px HERE, NOT 16, because this is measured from .sc-intro's padding
+   box: 12 + 4 = 16 from the stage's edge, the same number as the side. */
 .i-logo{
-  position:absolute; z-index:7; left:0; bottom:0;
-  width:calc(28% + 8.96px); height:auto;
+  position:absolute; z-index:7; left:0; bottom:4px;
+  width:calc(22.4% + 7.168px); height:auto;
   display:block; pointer-events:none;
 }
 
@@ -2239,7 +2249,14 @@ body.no-ph .ph{ display:none !important; }
    Adding 12 above and removing 12 below leaves the group exactly as tall
    as it was, so nothing above the CTA moves and the CTA moves the full
    12. Verified: title top unchanged, CTA top +12 at every width. */
-.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 clamp(0px,calc(2.4vh - 12px),8px);
+/* T17 · THE GROUP RISES 12px, AND IT IS PAID FOR BELOW THE CTA.
+   .sc-intro is justify-content:center, so the stack's position is a
+   function of its height: adding X below the last item pushes the
+   centred group UP by X/2 — measured at 0.5, which is why 24px buys 12.
+   IT IS ADDED, NOT TAKEN. Every margin above the CTA is untouched, so
+   nothing in the composed group gets tighter; the 24 goes on the one
+   margin that has nothing under it but the gutter the logo sits in. */
+.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 calc(24px + clamp(0px,calc(2.4vh - 12px),8px));
   width:280px; font-size:clamp(21px,3.1vh,26px);
   position:relative; z-index:6; flex:none; }
 
@@ -3345,7 +3362,11 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .stmodal[data-mapintro] .stmodal__title:empty{ display:none; }
 /* the button keeps P-C's own geometry; only the 4px that separated it
    from the body survives from the placeholder build. */
-.stmodal[data-mapintro] .mi-go{ margin-top:4px; }
+/* T17 · +8px between the sentence and the button. Measured from the
+   body's last-line INK to the button's painted top edge, which is the
+   edge the eye reads on a filled object: 15.51 -> 23.51px. The 4px was
+   the only thing left from the placeholder build. */
+.stmodal[data-mapintro] .mi-go{ margin-top:12px; }
 
 /* =====================================================================
    B2-4 · THE ASK STICKER
@@ -3469,35 +3490,47 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   margin:0; font-family:var(--font-display); font-weight:900;
   font-size:34px; line-height:1.05; color:#EFECE4; text-wrap:balance;
 }
+/* T17 · THE MEASURE IS NARROWED TO THE BREAK, NOT FIGHTING IT.
+   renderIntro's <br> puts the break after the comma; left at the box's
+   320px the paragraph then had 120px of unused measure on the first line
+   and read as a sentence that had been cut rather than one that was set.
+   200px is the longer of the two lines (199.66) plus a third of a pixel:
+   the measure now describes the shape the copy actually takes.
+   IT IS A CEILING, NOT A FLOOR. If Tamar's rewrite loses its comma the
+   <br> is not inserted and the paragraph wraps normally inside 200px —
+   more lines, never one long one. */
 .b1intro__b{
   margin:0; font-size:var(--fs-body); font-weight:700; line-height:1.5;
-  color:#D8D2C4;
+  color:#D8D2C4; max-width:200px;
 }
-/* ITEM 27 · THE BUTTON COMES IN TO THE PARAGRAPH'S OWN MEASURE. The two
-   already shared a 320px BOX — .p-c is width:100% and the box is at its
-   max-width — but the paragraph's widest inked line was wider than the
-   button, which paints a solid bar plus its 4.6px keyline on each side,
-   so it read 36.5px narrower than the copy above it.
-   T15 MOVED THE LINE AND THIS FOLLOWS IT. Tamar's body replaced the old
-   sentence and its widest inked line went 292.7 -> 297.3px, which left
-   the 284 matching to 13.3px instead of to half a pixel. 289px + the
-   9.2px of ring is 298.2px of visible width against the paragraph's
-   297.3: the same column again, now to within 0.9px.
-   ON THE RECORD, 288 WOULD BE THE CLOSER NUMBER — 288 + 9.2 = 297.2, a
-   0.1px match — but 289 is the figure the item specified and the
-   difference between them is under a pixel either way.
+/* ITEM 27 · THE BUTTON COMES IN TO THE PARAGRAPH'S OWN MEASURE. It is
+   matched to the paragraph's widest INKED line, not to the box: .p-c
+   paints a solid bar plus a 4.6px keyline on each side, so the button's
+   visible width is its max-width plus 9.2px, and that is the number that
+   has to equal the line.
+   T17 · THE BREAK MOVED THE LINE AGAIN, AND THIS FOLLOWS IT. renderIntro
+   now breaks the sentence after its comma, so the paragraph is two lines
+   of 199.66 and 190.30 rather than one of 297.3 and a short remainder.
+   The widest inked line is 199.66px. 190px + the 9.2px of ring is 199.2:
+   a match to within 0.46px, and the closest an integer gets — 191 lands
+   at 200.2, or +0.54.
+   The history, so the number is not re-derived from scratch next time:
+   284 matched 292.7 (T15's predecessor), 289 matched 297.3 (T15), 190
+   matches 199.66 (T17).
    Fixed rather than fluid because it is matching an inked line, and that
-   line is 297.3px at all three test widths — the paragraph wraps
-   identically at 390, 375 and 360.
-   ITEM 27 · AND THE GAP ABOVE IT OPENS. .b1intro__box's gap is 16px
-   between every child; margin-top adds 8 to this one pair only, so the
-   title-to-paragraph gap stays 16 and the paragraph-to-button gap becomes
-   24 — the 1.5x the brief asked for, applied where the eye needs the
-   break between reading and acting. */
+   line is the same at 390, 375 and 360 — the break is explicit now, so
+   the paragraph cannot wrap differently between them.
+   T17 · AND THE GAP OPENS FURTHER. .b1intro__box's gap is 16px between
+   every child; margin-top adds to this one pair only. ITEM 27 set it to
+   8, for 24 — 1.5x the title gap. At 8 the button read as attached to
+   the sentence once both had narrowed to the same 200px column. 20 gives
+   36px box to box, 2.25x the title gap, and 39.8px from the paragraph's
+   last ink to the button's painted edge: title and body group, and the
+   button is plainly the separate act. */
 .b1intro__go{
   min-width:170px;
-  max-width:289px;
-  margin-top:8px;
+  max-width:190px;
+  margin-top:20px;
 }
 
 /* A7 · the avatar inside the pinned own-vote band, at the leading edge */
@@ -5090,6 +5123,36 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    fallback. */
 .prof-gender{ display:flex; gap:9px; margin-top:7px; width:100%; }
 .prof-gender > .gchip{ flex:1; justify-content:center; padding-inline:6px; white-space:nowrap; }
+/* T17 · THE TWO CHIPS GET A KEYLINE, AND ONLY THESE TWO.
+   White on cream is 1.07:1 — measured — so the unselected chips had no
+   edge at all and read as raised paper rather than as controls. Every
+   other control on this card has one: the name field at
+   inset 0 0 0 2px rgba(19,19,16,.28) and the tweak button at
+   inset 0 0 0 2.5px rgba(19,19,16,.38). THOSE TWO ARE NOT THE SAME, and
+   the field's is the one taken here — same size of object, same white
+   fill on the same paper.
+   IT DOES NOT ERASE THE SELECTED STATE. Selection is not "has an edge":
+   .gchip.on paints a cream gap and then a SOLID BLACK 2.5px ring
+   OUTSIDE the chip. A 28% grey line inside it is a different colour, a
+   different weight and on the other side of the border box. The two
+   remain unmistakable — see the report's before/after.
+   SCOPED TO .prof-gender. .gchip is also the invitation sheet's row
+   (.inv-row > .gchip) and the sticker sheet's "any" option
+   (.gchip.bopt-any); neither is touched. */
+.prof-gender > .gchip{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 3px 0 rgba(0,0,0,.3);
+}
+.prof-gender > .gchip.on{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28),
+             0 0 0 3px #FBF7EE, 0 0 0 5.5px #131310, 0 4px 0 rgba(0,0,0,.32);
+}
+.prof-gender > .gchip:active{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 1px 0 rgba(0,0,0,.3);
+}
+.prof-gender > .gchip.on:active{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28),
+             0 0 0 3px #FBF7EE, 0 0 0 5.5px #131310, 0 2px 0 rgba(0,0,0,.32);
+}
 /* the board's .gchip, as a button, on paper: white so it reads as a
    sticker on the cream, the board's hard 3px shadow, and the board's
    double ring when it is on. Never a colour — a voice is not a verdict. */
@@ -5335,6 +5398,16 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
   box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 3px 0 rgba(0,0,0,.2);
   text-align:start;
 }
+/* T17 · THE PLACEHOLDER WAS LEFT-ALIGNED AND THE VALUE WAS NOT.
+   The input carries dir="auto", which resolves from the field's own
+   content — and an empty field has none, so it fell back to ltr and
+   text-align:start resolved to LEFT. The moment a Hebrew character was
+   typed dir flipped to rtl and the text jumped to the right edge.
+   Measured: empty -> direction ltr, after "דנה" -> direction rtl.
+   text-align:right pins both to the RTL flow of every other label on the
+   card. dir="auto" is kept, so a Latin name still reads left-to-right
+   within the field; it is only the alignment that stops moving. */
+.prof-field{ text-align:right; }
 .prof-field::placeholder{ color:#6B6759; font-weight:700; }
 .prof-field:focus{ outline:0; box-shadow:inset 0 0 0 2.5px var(--ink), 0 3px 0 rgba(0,0,0,.2); }
 /* THE CEILING IS IN PX WHILE THE KEYBOARD IS OPEN. The box's normal
