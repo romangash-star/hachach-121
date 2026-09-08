@@ -1498,9 +1498,16 @@ function markIntroSeen() {
    Israeli society and politics, and the Knesset is where the response to
    them gets voted on. The replacement drops the false object entirely
    rather than swapping one noun for another. */
+/* T15 · THE TITLE DROPS ITS FIRST LINE AND THE EM DASH. "טענה —" is gone
+   and the heading is the question alone, which is also the string the
+   claim sticker carries — so the two agree again, as the note below
+   .b1intro__t always said they should. The body is Tamar's rewrite: it
+   asks about "המשפט הבא" rather than "הטענה", and it puts the reveal on
+   the player ("תגלו") rather than on the game ("נגלה").
+   THE CTA IS UNTOUCHED. She did not change it. */
 const INTRO_B1 = {
-  title: 'טענה — אמת או שקר?',                                   /* TAMAR */
-  body:  'נחשו אם הטענה נכונה. אחר כך נגלה מה באמת קרה.',        /* TAMAR */
+  title: 'אמת או שקר?',                                          /* TAMAR · T15 */
+  body:  'נחשו אם המשפט הבא נכון, אחר כך תגלו את התשובה',        /* TAMAR · T15 */
   cta:   'הבנתי',                                                 /* TAMAR */
 };
 
@@ -2037,7 +2044,7 @@ async function claimReveal(ans, card) {
     '<div class="creveal__scroll"><p class="creveal__text">' +
       markGlossary(issue.tf_explain || '') + '</p></div>' +
     '<button type="button" class="p-c creveal__go">' +
-      esc('הלאה') + ' <i aria-hidden="true">›</i></button>';
+      esc('לשלב הבא') + ' <i aria-hidden="true">›</i></button>';   /* TAMAR · T14 */
   wrap.appendChild(panel);
   const go = $('.creveal__go', panel);
 
@@ -5827,10 +5834,21 @@ function onMapSettled(m, fn) {
    treatment and, unlike every other ph() marker, does NOT hide them in
    the default build: a first-run sticker with three blank slots is worse
    than one that says out loud what it is waiting for. */
+/* T2 · TAMAR'S LINE, AND IT IS ONE SENTENCE. The three placeholders were
+   a title/body/button split standing in for copy nobody had written; what
+   came back is a single instruction, so the title slot has no string to
+   hold and is not rendered rather than being filled with half the
+   sentence. The button still has no copy and keeps its marked
+   placeholder — it is the one thing here still waiting.
+   IT RUNS THREE LINES, NOT TWO, and the box does not grow: dropping the
+   title takes 44.5px out and the third line puts 18.2 back, so the
+   sticker is 26.3px SHORTER than the placeholder build. Measured, see
+   the report — including that the "77-character two-line budget" the item
+   quotes is the placeholder's own length and was never a budget: 77
+   characters run four lines in this 244px column and two lines hold 68. */
 const MAP_INTRO_COPY = {                                              /* TAMAR */
-  title: '[תמר: מה זה המסך הזה]',
-  body:  '[תמר: אתם הח״כ ה-121 · בחרו כל נושא · אין סדר ואין תשובה נכונה לגבי מה לבחור]',
-  go:    '[תמר: כפתור פתיחה]',
+  line: 'היכנסו לנושא במפת הנושאים, ענו על השאלות, המשיכו להתקדם במשחק לאורך מפת הנושאים ולצבור מטבעות',
+  go:   'מתחילים',
 };
 function seenMapIntro() {
   if (DEV.mapIntro !== null) return !DEV.mapIntro;
@@ -5882,8 +5900,11 @@ function maybeMapIntro() {
 }
 function mapIntroModal() {
   const m = stickerModal({
-    title: MAP_INTRO_COPY.title,
-    body:  MAP_INTRO_COPY.body,
+    /* no title: the copy is one sentence and it is the body. The empty
+       <h2> the component always emits is hidden by :empty, scoped to
+       this modal — see proto.css — so the hazard treatment does not
+       paint a blank yellow box above the sentence. */
+    body:  MAP_INTRO_COPY.line,
     /* ITEM 9's hero, with nothing in it yet: the "?" fallback is what the
        slot draws until this screen has art of its own. heroKey marks the
        hook so the graphic can be dropped in without touching this call. */

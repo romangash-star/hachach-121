@@ -2112,8 +2112,14 @@ body.no-ph .ph{ display:none !important; }
    THE MEASURE AND THE LEADING COME WITH IT. At the question's size this is
    now a paragraph, not a label: 20ch keeps the line count honest at 360
    and 1.3 gives SimplerPro's tall em box somewhere to sit. */
+/* T1b · 400 -> 900. At 400 it was the only line on the screen and read
+   as a caption under the title rather than as the sentence the screen is
+   for. The family ships 400 and 900 and nothing between, so this is the
+   only step available. Size, the 20ch measure and the 1.3 line-height are
+   untouched — the measure is what holds it at three lines, and at 900 the
+   glyphs are wider, so dropping it would have re-broken the lines. */
 .i-sub{ margin:clamp(10px,2.4vh,20px) 0 0; font-size:clamp(21px,3.1vh,26px);
-  font-family:var(--font-body); font-weight:400; line-height:1.3;
+  font-family:var(--font-body); font-weight:900; line-height:1.3;
   max-width:20ch; text-wrap:balance;
   color:#EFECE4; position:relative; z-index:4; flex:none;
   text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
@@ -3246,38 +3252,33 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .stmodal__box:has(.sthero__q) .stmodal__title{ font-size:20px; }
 
 /* =====================================================================
-   ITEM 43 · THE FIRST-ARRIVAL STICKER, AND ITS THREE UNWRITTEN STRINGS
-   All three are Tamar's and none of them is written. They carry the
-   hazard treatment ph() uses so they read as placeholders at a glance and
-   cannot be mistaken for copy — but they are NOT hidden by body.no-ph,
-   which is the second time this file makes that exception (the first is
-   .pr-ph, the third beat 5's rejected verb). The reason is the same every
-   time: hiding a marker whose host is the only thing in the slot does not
-   leave a cosmetic gap, it leaves an empty screen. A first-run sticker
-   with a blank title, a blank body and a blank button is worse than one
-   that says out loud what it is waiting for.
-   THE BODY IS THE SLOT, NOT THE STRING. The item asks for two lines of
-   body maximum; that is a constraint on Tamar's sentence, and the brief
-   standing in for it is longer than the sentence will be. It is not
-   clamped here — clamping would hide the very text that says what is
-   missing. See the report for the measured line count at each width. */
-.stmodal[data-mapintro] .stmodal__title,
-.stmodal[data-mapintro] .stmodal__body{
-  background-color:var(--primary);
-  background-image:repeating-linear-gradient(45deg,#FFE03D 0 8px,var(--primary) 8px 16px);
-  color:var(--ink); border:2px dashed var(--ink); border-radius:6px;
-  padding:6px 10px 7px;
-}
-/* the button keeps P-C's own fill — it is already the one yellow in the
-   system — so the dash is what marks it, not a second yellow on top. */
-.stmodal[data-mapintro] .mi-go{
-  border:2px dashed var(--ink);
-  margin-top:4px;
-}
+   ITEM 43 · THE FIRST-ARRIVAL STICKER
+   ALL THREE STRINGS ARE WRITTEN NOW, so the hazard treatment is gone.
+   It was the dashed-yellow marker ph() uses, carried on the title, the
+   body and the button because none of them had copy and a first-run
+   sticker with three blank slots is worse than one that says out loud
+   what it is waiting for. T2 brought the sentence and T14 the button, so
+   the marker has nothing left to mark: real copy dressed as a
+   placeholder reads as an unfinished screen.
+   THE RULE ITSELF IS NOT TOUCHED. ph() and .pr-ph are untouched and go on
+   marking genuine placeholders everywhere else; what is removed is this
+   modal's own opt-in to them, which is where it always lived — these
+   selectors were scoped [data-mapintro] from the day they were written.
+   The body and the button now render in the shipped card language: the
+   sticker's own body type, and P-C's yellow with its die-cut and keyline.
+   ===================================================================== */
 /* the body is a scroller in the base component, for the law's long
-   summary. Here it holds two lines and must not grow its own scrollbar
-   around a placeholder. */
+   summary. Here it holds one sentence and must not grow its own scrollbar
+   around it. */
 .stmodal[data-mapintro] .stmodal__body{ overflow:visible; text-align:center; }
+/* T2 · the title slot has no string — the copy is one sentence and it
+   lives in the body. stickerModal() always emits the <h2>, so :empty is
+   what keeps an empty heading from taking the box's gap. Scoped here and
+   keyed on :empty, so the day a title string exists it simply appears. */
+.stmodal[data-mapintro] .stmodal__title:empty{ display:none; }
+/* the button keeps P-C's own geometry; only the 4px that separated it
+   from the body survives from the placeholder build. */
+.stmodal[data-mapintro] .mi-go{ margin-top:4px; }
 
 /* =====================================================================
    B2-4 · THE ASK STICKER
@@ -3407,12 +3408,19 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 }
 /* ITEM 27 · THE BUTTON COMES IN TO THE PARAGRAPH'S OWN MEASURE. The two
    already shared a 320px BOX — .p-c is width:100% and the box is at its
-   max-width — but the paragraph's widest inked line is 292.7px while the
-   button paints a solid bar plus its 4.6px keyline on each side, so it
-   read 36.5px wider than the copy above it. 284px + the 9.2px of ring is
-   293.2px of visible width: the same column, to within half a pixel.
+   max-width — but the paragraph's widest inked line was wider than the
+   button, which paints a solid bar plus its 4.6px keyline on each side,
+   so it read 36.5px narrower than the copy above it.
+   T15 MOVED THE LINE AND THIS FOLLOWS IT. Tamar's body replaced the old
+   sentence and its widest inked line went 292.7 -> 297.3px, which left
+   the 284 matching to 13.3px instead of to half a pixel. 289px + the
+   9.2px of ring is 298.2px of visible width against the paragraph's
+   297.3: the same column again, now to within 0.9px.
+   ON THE RECORD, 288 WOULD BE THE CLOSER NUMBER — 288 + 9.2 = 297.2, a
+   0.1px match — but 289 is the figure the item specified and the
+   difference between them is under a pixel either way.
    Fixed rather than fluid because it is matching an inked line, and that
-   line is 292.7px at all three test widths — the paragraph wraps
+   line is 297.3px at all three test widths — the paragraph wraps
    identically at 390, 375 and 360.
    ITEM 27 · AND THE GAP ABOVE IT OPENS. .b1intro__box's gap is 16px
    between every child; margin-top adds 8 to this one pair only, so the
@@ -3421,7 +3429,7 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    break between reading and acting. */
 .b1intro__go{
   min-width:170px;
-  max-width:284px;
+  max-width:289px;
   margin-top:8px;
 }
 
