@@ -438,6 +438,8 @@ function buildIssueForm(iss){
     fg('תאריך','bill_date','<input class="form-input" name="bill_date" value="'+esc(iss.bill_date||'')+'">')+
     '</div>'+
     '<div class="form-grid full">'+fg('תיאור','bill_summary','<textarea class="form-textarea" name="bill_summary">'+esc(iss.bill_summary||'')+'</textarea>')+'</div>'+
+    '<div class="form-grid full">'+fg('תכלס — שאלה להצבעה','tachles_prompt','<textarea class="form-textarea" name="tachles_prompt" placeholder="איך הייתם מצביעים?">'+esc(iss.tachles_prompt||'')+'</textarea>')+'</div>'+
+    '<div class="form-grid full">'+fg('תוצאות ההצבעה','vote_result','<textarea class="form-textarea" name="vote_result" placeholder="62 חברי כנסת הצביעו בעד, מול 55...">'+esc(iss.vote_result||'')+'</textarea>')+'</div>'+
     '<hr class="form-divider"><div class="form-section-label">הצבעה ואימות</div>'+
     '<div class="form-grid thirds">'+
     fg('voteId','voteId','<input class="form-input ltr" name="voteId" value="'+esc(iss.voteId||'')+'" placeholder="מספר הצבעה">')+
@@ -474,6 +476,7 @@ function saveIssueLocal(id){
     emoji:fd.get('emoji'),title:fd.get('title'),tf:fd.get('tf'),
     tf_answer:fd.get('tf_answer'),tf_explain:fd.get('tf_explain'),
     bill_title:fd.get('bill_title'),bill_date:fd.get('bill_date'),bill_summary:fd.get('bill_summary'),
+    tachles_prompt:fd.get('tachles_prompt'),vote_result:fd.get('vote_result'),
     mode:fd.get('mode'),verification:fd.get('verification'),voteId:fd.get('voteId'),
     tally_for:parseInt(fd.get('tally_for'))||0,tally_against:parseInt(fd.get('tally_against'))||0,
     knesset_url:fd.get('knesset_url'),source_name:fd.get('source_name'),source_url:fd.get('source_url'),
