@@ -1959,6 +1959,14 @@ const CLAIM_MARK = {                      /* TAMAR */
   bad: 'הופתעתם!',
 };
 
+/* ITEM 50 · THE PILL'S RESTING ANGLE, READ FROM THE SHEET SO THERE IS ONE
+   SOURCE FOR IT. The sheet needs it at five keyframes and at rest; the
+   throw on הלאה needs to ADD the exit rotation to it rather than replace
+   it. Two literals would drift the first time the tilt is retuned, and
+   the failure would be silent — the pill would simply snap level as it
+   left. ms() parses the leading float, which is all a deg needs. */
+const CM_REST = ms('--cm-rest');          /* -6deg · v25 P5 used -1.6 */
+
 async function claimReveal(ans, card) {
   const truth = issue.tf_answer === 'true' ? 'אמת'
               : issue.tf_answer === 'false' ? 'שקר' : 'חלקית';
@@ -1994,19 +2002,30 @@ async function claimReveal(ans, card) {
      in the HUD and pinned in this very slot two beats later — so the
      colour attaches to a face and the sentence reads "you were right",
      not "this is right".
-     §4c · AND IT LEAVES THE BAND BEHIND. .is-mark strips the chyron's
-     band — the fill, the neon and the full width — so what is on screen
-     is the chip alone rather than a chip in 250px of empty grey. The 44px
-     box is still RESERVED, because that is what keeps the card the same
-     size before and after the answer. */
+     §4c · AND IT LEAVES THE BAND BEHIND. .is-mark stripped the chyron's
+     band so the chip was not sitting in 250px of empty grey.
+
+     ITEM 50 · THE PILL COMES OFF THE CHYRON AND ONTO THE STAMP. v25's P5:
+     banner-style across the disc's LOWER EDGE, 4px higher than the board.
+     Two consequences worth writing down, because both are easy to undo by
+     accident:
+       · IT IS PARENTED TO .cardwrap, NOT TO THE CARD, for the same two
+         reasons the stamp is — .mf-b clips, and the card is a 3D flipper
+         that would mirror anything inside it. The pill overhangs the
+         card's start edge and must be allowed to.
+       · IT THEREFORE HAS TO LEAVE WITH THE CARD. Under the chyron it was
+         removed on הלאה; on .cardwrap it would be left hanging in mid-air
+         while the card and the stamp fly out. See the exit below.
+     THE CHYRON SLOT IS UNAFFECTED. The reserved 44px box is .chyron-slot,
+     a separate element that stays in .sc-round's FLOW on every beat;
+     .chyron is the absolutely-positioned banner that was placed over it.
+     So the pill vacating the banner collapses nothing and shifts nothing
+     below it — .chyron simply stays .is-empty through the reveal, exactly
+     as it is on beat 1 before the answer, until beat 2 pins the vote. */
   const chip = el('div', 'bnr cmark ' + (ok ? 'cmark--ok' : 'cmark--sur'),
     '<span class="cmark__av as-d" aria-hidden="true">' + avatarSvg() + '</span>' +
     '<span>' + esc(ok ? CLAIM_MARK.ok : CLAIM_MARK.bad) + '</span>');
-  const chy = $('#chyron');
-  placeChyron();
-  chy.classList.remove('is-empty'); chy.classList.add('is-mark');
-  chy.removeAttribute('aria-hidden');
-  chy.innerHTML = ''; chy.appendChild(chip);
+  wrap.appendChild(chip);
 
   const table = COIN_TABLES[DEV.coins];
   if (table.claimNeedsCorrect && ok) setTimeout(() => award(table.claim, mark), T.stamp);
@@ -2133,13 +2152,21 @@ async function claimReveal(ans, card) {
       mark.classList.add('is-leaving');
       mark.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25) + 'deg)';
       mark.style.opacity = .2;
+      /* ITEM 50 · THE PILL RIDES OUT WITH THEM. It is on .cardwrap now, so
+         nothing else takes it off screen.
+         THE RESTING ANGLE IS CARRIED INTO THE EXIT ROTATION rather than
+         replaced by it: the stamp rests at 0deg and can simply be given
+         dir*25, but the pill rests at CM_REST and setting a bare rotate()
+         would snap it level on the first frame of the throw.
+         translate:-50% -50% IS A SEPARATE PROPERTY from transform — that
+         is why the pill is centred with `translate` in the sheet — so the
+         throw can own transform outright without losing the centring. */
+      chip.style.animation = 'none';
+      chip.classList.add('is-leaving');
+      chip.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25 + CM_REST) + 'deg)';
+      chip.style.opacity = .2;
       await wait(T.cardExit);
-      card.remove(); mark.remove(); panel.remove();
-      /* the chip hands the chyron back — beat 2 pins the player's own
-         vote into the same slot and the two must never share it */
-      chip.remove();
-      chy.classList.remove('is-mark');
-      chy.classList.add('is-empty'); chy.setAttribute('aria-hidden', 'true');
+      card.remove(); mark.remove(); panel.remove(); chip.remove();
       res();
     }, { once:true });
   });
@@ -3627,15 +3654,38 @@ async function runAxis(g, guess, vote) {
    PLACEHOLDER COPY, AWAITING THE CLIENT'S SIGN-OFF. These strings and no
    others; do not author alternatives.
 
-   HARD RULE, from the locked guardrails: THE PLAYER NEVER FAILS. Never
-   "טעית", never "לא נכון", never any string that puts the player in the
-   subject position of an error. "הופתעת" is something that happened TO
-   the player, which is the whole point.
+   THE RULE, AND THE ONE HOLE PUNCHED IN IT. The locked guardrail is that
+   THE PLAYER NEVER FAILS: no "לא נכון", no string that puts the player in
+   the subject position of an error, because being wrong here is the
+   Knesset surprising you. "הופתעת" said exactly that — it is something
+   that happened TO the player.
+   T6 · TAMAR OVERRODE IT ON 08 SEP, FOR THIS DISC AND NOTHING ELSE. The
+   surprise stamp now reads "טעית!". The exception is deliberately narrow
+   and the narrowness is load-bearing, so here is the exact blast radius,
+   because the next person to edit this constant will need it:
+     · stamp(ok) with no override is called from TWO places, and both are
+       the SAME OBJECT — the disc on an MK card. cascade verdict() and the
+       inverted round's invResolve(). That is the sanctioned surface.
+     · the claim reveal calls stamp(ok, truth) and passes אמת / שקר /
+       חלקית, so this constant never reaches the claim card.
+     · the verdict PILL is CLAIM_MARK, a different constant on a different
+       object, and it keeps "הופתעתם!". So do the finale, the record and
+       the share card. The surprise framing is intact everywhere else.
+   DO NOT GENERALISE THIS. If a second surface is ever asked for it, that
+   is a new decision by Tamar, not an extension of this one.
+   THE PAIR MATCHES. The first pass of T6 left "צדקת" bare against a
+   "טעית!" that had just gained a mark, which read as one of the two
+   having been edited and the other forgotten — an exclamation is a
+   loudness, and only one side was loud. Tamar closed it on 09 Sep.
+   BOTH SIDES OR NEITHER, if this is ever retuned: these two strings are
+   the same object in two states and the mark is part of the register,
+   not part of the verdict. CLAIM_MARK — the pill — has carried both
+   marks since ITEM 3, so the disc now agrees with it.
 
    `ring` is retired with the ring text and is not read anywhere. */
 const D2_COPY_PLACEHOLDER = {
-  correct:  'צדקת',
-  surprise: 'הופתעת'
+  correct:  'צדקת!',                             /* TAMAR · 09 Sep */
+  surprise: 'טעית!'                              /* TAMAR · T6, 08 Sep */
 };
 
 /* `override` is the A6 claim reveal passing the TRUE answer — אמת / שקר /
