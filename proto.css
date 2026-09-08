@@ -1961,9 +1961,32 @@ body.no-ph .ph{ display:none !important; }
    patch behind the line, both pure black at partial alpha. There is no
    0-blur term, so it can never read as an outline, and no colour, so it
    can never read as a glow. */
+/* T1 · ONE LINE, AT THE QUESTION'S SIZE, IN SimplerPro REGULAR.
+   THE FAMILY IS NEW HERE AND THAT IS THE POINT. This rule named no family,
+   so it inherited --font-ui from body — system-ui, where `700` is a real
+   semibold. The line is specified as SimplerPro, which ships 400 and 900
+   and nothing between, so naming the family forces the weight to be
+   chosen rather than inherited: left at 700 it would resolve UPWARD and
+   silently print the Black across every line of it.
+   400, AND NOT 900, for three reasons. It is a fourteen-word sentence
+   running four to five lines, and the Black at 21-26px over five lines is
+   a wall rather than a voice. The title directly above it is already
+   SimplerPro Black at 52-84px, and a second Black block under it competes
+   with the one thing on the screen that should dominate. And the
+   standfirst this absorbs was already --font-body at 400, so the copy it
+   replaces keeps its weight rather than gaining one.
+   THE MEASURE AND THE LEADING COME WITH IT. At the question's size this is
+   now a paragraph, not a label: 20ch keeps the line count honest at 360
+   and 1.3 gives SimplerPro's tall em box somewhere to sit. */
 .i-sub{ margin:clamp(10px,2.4vh,20px) 0 0; font-size:clamp(21px,3.1vh,26px);
-  font-weight:700; color:#EFECE4; position:relative; z-index:4; flex:none;
+  font-family:var(--font-body); font-weight:400; line-height:1.3;
+  max-width:20ch; text-wrap:balance;
+  color:#EFECE4; position:relative; z-index:4; flex:none;
   text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
+/* T1 · .i-para IS NO LONGER RENDERED. The rule stays because the string
+   stays — INTRO_COPY.para survives unrendered and putting it back is one
+   line in renderIntro(), which is the arrangement the note there already
+   describes for `note` and `lede`. */
 /* 21 · THE STANDFIRST INHERITED --font-ui FROM body AND NAMED NO FAMILY,
    so switching it means stating one. 700 -> 400 for the same reason as
    .eg-eyebrow: 700 would resolve to the Black. The colour is NOT touched
@@ -3068,6 +3091,14 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   font-size:var(--fs-body); line-height:1.22; text-align:center;
 }
 .stmodal__meta{ margin:0; font-size:var(--fs-meta); font-weight:700; color:var(--ink-soft); }
+/* T7 · the date's label. SimplerPro Regular and the date's own grey, one
+   step down in size — it names the field rather than competing with it.
+   400 IS WRITTEN OUT because the family ships 400 and 900: inheriting the
+   700 above would resolve upward and print the Black on a caption. */
+.stmodal__metalab{
+  display:block; font-family:var(--font-body); font-weight:400;
+  font-size:var(--fs-micro); line-height:1.3; color:var(--ink-soft);
+}
 .stmodal__body{
   margin:2px 0 0; font-size:var(--fs-meta); font-weight:700;
   line-height:1.55; text-align:start; align-self:stretch;

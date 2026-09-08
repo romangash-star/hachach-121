@@ -2158,7 +2158,12 @@ function stickerModal(o) {
       '<button type="button" class="stmodal__x" aria-label="סגירה">✕</button>' +
       hero +
       '<h2 class="stmodal__title">' + esc(o.title || '') + '</h2>' +
-      (o.meta ? '<p class="stmodal__meta">' + esc(o.meta) + '</p>' : '') +
+      /* T7 · the label is a child of the meta line, not a line of its own:
+         a separate <p> would take the box's gap and read as a third block
+         between the title and the body. */
+      (o.meta ? '<p class="stmodal__meta">' +
+        (o.metaLabel ? '<span class="stmodal__metalab">' + esc(o.metaLabel) + '</span>' : '') +
+        esc(o.meta) + '</p>' : '') +
       (o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
       /* the ONE field this component grew, so beat 5's disclosure could
          reuse it instead of getting a second modal shape of its own. It
@@ -2202,6 +2207,7 @@ function stickerModal(o) {
    Fixed to the same lookup every other topic-icon site in this file
    already uses, `M.topics[issue.topic]`, so the modal draws the icon the
    map and the HUD are drawing for the same issue. */
+const LAW_DATE_LABEL = 'תאריך ההצבעה:';                                /* TAMAR · T7 */
 function lawModal() {
   /* ITEM 46 · THE 576, CHOSEN ON CACHING RATHER THAN ON SIZE. The 256 was
      picked against a 65px target, where 65 x DPR 3 = 195; item 45's band
@@ -2226,6 +2232,7 @@ function lawModal() {
   return stickerModal({
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
+    metaLabel: LAW_DATE_LABEL,                                         /* TAMAR · T7 */
     body:  issue.bill_summary || '',
     art:   h ? ROOT + h : '',
     /* ITEM 9 · the hook a per-issue graphic drops into later. It is on the
@@ -2274,7 +2281,7 @@ const PROF_COPY = {
   m:     'לשון זכר',                    /* shipped · board 2b */
   swap:  'בחרו את הדמות שלכם',          /* shipped · board 2a title, 2b door */
   sub:   'בחרו דמות שתלווה אתכם במפה',  /* shipped · board 2a */
-  build: 'בנו דמות משלכם',              /* TAMAR · 2b's second door and the builder's title while no build exists. NOT התאימו את הדמות — the presets cannot be adjusted; this builds from nothing */
+  build: 'עצבו דמות משלכם',              /* TAMAR · T3. 2b's second door and the builder's title while no build exists. NOT התאימו את הדמות — the presets cannot be adjusted; this builds from nothing */
   edit:  'ערכו את הדמות שלכם',          /* TAMAR · the same door and title once a build exists: now there IS something to edit */
   of:    'מתוך',                        /* shipped · the board's progress, "2 מתוך 5" */
   prev:  'הקודם',                       /* TAMAR · the builder's back chevron */
@@ -4778,8 +4785,16 @@ const INTRO_COPY = {
   tag:   'מבית המגדלור · פרוטוטייפ',                    /* index.html:  .intro-tag  */
   t1:    'הח״כ',                                        /* index.html:  h1.display  */
   t2:    'ה-121',
-  sub:   'מה באמת קורה בכנסת?',                         /* index.html:  .sub        */
-  para:  'לא בוחן ידע. לא אומר למי להצביע. משחק שמראה מה קרה — ומה אתם חושבים על זה.',
+  /* T1 · ONE LINE REPLACES BOTH. `sub` was the question and `para` the
+     standfirst; the screen now carries neither and this instead, at the
+     question's size. Both survive here unrendered, as `note` and `lede`
+     already do — putting either back is one line in renderIntro().
+     THE HYPHEN IS DELIBERATE. Tamar wrote "ה 121" with a space; the title
+     four lines above it on the same screen is "ה-121" with a hyphen, and
+     one screen may not show the number two ways. */
+  line:  'אתם הח״כ ה-121, בואו לבדוק מה באמת קורה בכנסת, להצביע ולשתף עם כולם!', /* TAMAR */
+  sub:   'מה באמת קורה בכנסת?',                         /* retired from the screen, T1 */
+  para:  'לא בוחן ידע. לא אומר למי להצביע. משחק שמראה מה קרה — ומה אתם חושבים על זה.', /* retired from the screen, T1 */
   cta:   'בואו נשחק 🎮',                                 /* index.html:  button.cta  */
   note:  'סוגיה אחת = דקה · אפשר לשחק כמה שרוצים',      /* index.html:  .intro-note */
   /* the board's INT-D carries a striped slot above the title. It is
@@ -4883,8 +4898,7 @@ function renderIntro() {
          the intro overflowed the stage by 86px. */
       '<img class="i-chair" src="' + ROOT + (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
     '</div>' +
-    '<p class="i-sub">' + esc(INTRO_COPY.sub) + '</p>' +
-    '<p class="i-para">' + esc(INTRO_COPY.para) + '</p>' +
+    '<p class="i-sub">' + esc(INTRO_COPY.line) + '</p>' +                /* TAMAR */
     '<div class="i-stage" aria-hidden="true">' +
       '<img class="i-build" src="' + ROOT + (M.props.building['1170'] || M.props.building['390']) + '" alt=""></div>' +
     '<button type="button" class="p-c i-cta">' + esc(INTRO_COPY.cta) + '</button>';
