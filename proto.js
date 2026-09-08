@@ -17,7 +17,7 @@
    deep link with no map behind it. Every OTHER entry into the round comes
    from a map node and names its own issue. */
 const ISSUE_ID = 's1';
-const ROOT     = '../../../';                 /* manifest paths are app-root relative */
+const ROOT     = '';                          /* manifest paths are app-root relative */
 
 /* §2 THE ORDER IS THE SPECTRUM, and this array is its single source.
    RTL renders index 0 rightmost, so this is  בעד · נמנע · נגד  on screen.
@@ -6617,7 +6617,7 @@ function applyDev() {
 }
 
 
-fetch('../prototype/manifest.json')
+fetch('explorations/v16/prototype/manifest.json')
   .then(r => r.json())
   .then(j => { M = j;
     /* THE CARD BACK'S ARTWORK, from the manifest like every other asset —
