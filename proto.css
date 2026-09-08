@@ -379,6 +379,18 @@
    and they opt in with .scrolls, which is also the only place
    touch-action is handed back.
    ===================================================================== */
+/* T9c · THE GROUND IS PAINTED ON BOTH, and on html as well as body
+   because they are two surfaces: an in-app browser that gives the page a
+   layout viewport taller than the visible one paints the html canvas in
+   the strip below, and body's colour never reaches it. #403E3A is the
+   stage's own background rather than --ground's #2B2926 — the point is
+   that a residual strip is INVISIBLE against the stage above it, which
+   means matching the stage, not the token.
+   IT COSTS THE DESKTOP PREVIEW FRAME its grey. #6E6C68 was what made the
+   390px column read as a phone in a browser window; the stage's
+   box-shadow still separates it, but on a wide screen the surround is now
+   the same charcoal. That is the trade the item asks for and it only
+   shows above 480px, where the max-width frame applies at all. */
 html, body{
   margin:0; padding:0;
   position:fixed; inset:0;
@@ -387,9 +399,10 @@ html, body{
   overscroll-behavior:none;
   touch-action:none;                 /* the body never pans. .scrolls opts back in. */
   -webkit-text-size-adjust:100%;
+  background:#403E3A;
 }
 body{
-  background:#6E6C68; color:var(--ink);
+  color:var(--ink);
   font-family:var(--font-ui); font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;
   display:flex; justify-content:center;
@@ -402,9 +415,28 @@ body{
 
 .stage{
   position:relative; width:100%; max-width:390px;
-  /* --vh is set from window.innerHeight for Safari versions without dvh;
-     dvh wins wherever it exists. Either way the stage IS the viewport. */
+  /* T9a · FOUR DECLARATIONS, LAST VALID ONE WINS. An engine drops the
+     declarations whose unit it does not know, so this is dvh where dvh
+     exists, svh where only svh does, the JS measurement where neither
+     does, and 100vh if the script never ran at all. It replaces the
+     @supports block that used to sit below .stage: @supports could only
+     ask about dvh, so svh was never in the ladder and a browser without
+     dvh fell straight past it.
+     WHY dvh IS ON TOP AND svh IS UNDER IT. svh is the SMALL viewport —
+     the height with the toolbars showing — and it does not grow when they
+     collapse, which is the reported symptom itself. dvh tracks. svh is
+     only ever reached where dvh is missing, and the two shipped together
+     in every engine, so in practice that rung is unreachable; it is here
+     because the item asks for the ladder and because "unreachable today"
+     is not the same as "cannot be reached".
+     --vh IS STILL BETTER THAN RAW 100vh where the script runs: 100vh on
+     iOS is the LARGE viewport and overshoots by the toolbar's height,
+     while innerHeight is what the page actually has. It sits between vh
+     and svh for that reason. */
+  height:100vh;
   height:calc(var(--vh, 1vh) * 100);
+  height:100svh;
+  height:100dvh;
   overflow:hidden; isolation:isolate;
   display:flex; flex-direction:column;
   padding:calc(10px + env(safe-area-inset-top))
@@ -427,7 +459,6 @@ body{
     radial-gradient(120% 80% at 50% 108%, #F2B33C 0%, #E4732B 38%, #C4402E 70%, #8E2A2E 100%),
     #C4402E;
 }
-@supports (height: 100dvh){ .stage{ height:100dvh; } }
 /* §5.3, SECOND CAUSE. max-width:390px is a DESKTOP PREVIEW FRAME — it
    keeps the prototype phone-shaped in a browser window — but it applies on
    real phones too, so a 430px device ran the app at 390 with 20px of body
