@@ -355,6 +355,14 @@
   --t-screen:      300ms;   /* map -> round. Under the brief's 350ms cap. */
   --t-coin-fly:    450ms;   /* one token, spawn to chip                   */
   --t-coin-stagger: 40ms;   /* between tokens                            */
+  /* ITEM 14 · the ALLOCATION's flight, which is a different trip from the
+     award's above: a short hop from the balance line to a topic row
+     rather than a long haul to the HUD chip, so it gets its own four
+     numbers rather than being folded into those two. */
+  --t-eg-fly:      420ms;   /* one token, balance line to topic row       */
+  --t-eg-fly-step:  25ms;   /* between tokens                             */
+  --t-eg-fly-fade: 100ms;   /*   ... of which this is the fade, at the end */
+  --t-eg-pulse:    200ms;   /* the balance's own acknowledgement           */
   --t-map-in:      260ms;   /* the map settling under the round leaving   */
 }
 :root[data-hold="short"]{ --t-hold: var(--t-hold-short); }
@@ -2292,6 +2300,58 @@ body.no-ph .ph{ display:none !important; }
   box-shadow:0 0 0 0 var(--node-base), 0 0 0 1.5px rgba(0,0,0,.42); }
 .node-face:focus-visible{ outline:3px solid var(--edge); outline-offset:3px; }
 
+/* =====================================================================
+   ITEM 43 · THE SUGGESTED FIRST NODE
+   Item 10's breathing sticker, on a map disc: the same 3500ms cycle, the
+   same 1.035 / -0.8deg, the same shadow travelling 2px out and back with
+   it. Only the shadow's construction differs, because .node-face's
+   extrusion is --node-depth on --node-base rather than the CTA's
+   --z-press on --primary-base — and the shadow has to be restated at
+   every frame, or the frames that omit it interpolate from "no shadow"
+   and the disc's extrusion blinks.
+   ON .node-face, NOT ON THE WRAPPER, and that is the shadow's doing: the
+   extrusion lives on this element, so travelling it means animating this
+   element's box-shadow. Scaling .ringnode instead would have scaled the
+   shadow rather than moved it, which is the failure item 42 names — the
+   sticker being nudged instead of the object lifting.
+   THE PRESS STILL READS. A running animation outranks the :active
+   transition, so a breathing disc could not show its own press — except
+   that breatheFirstNode() removes the class on pointerdown, which is the
+   same event :active begins on. The animation is gone by the frame the
+   finger lands and --t-node-press takes it from there.
+   The 1200ms first-fire delay is item 10's, unchanged: the sticker has
+   just closed and the map should be still for a moment before anything
+   on it moves. */
+.node-face.is-breathing{
+  animation:node-breathe 3500ms linear 1200ms infinite both;
+}
+@keyframes node-breathe{
+  /* 0 -> 420ms · out */
+  0%      { transform:scale(1) rotate(0deg);
+            box-shadow:0 var(--node-depth) 0 0 var(--node-base),
+                       0 0 0 1.5px rgba(0,0,0,.42);
+            animation-timing-function:cubic-bezier(.2,.8,.2,1) }
+  /* 420 -> 720ms · back */
+  12%     { transform:scale(1.035) rotate(-0.8deg);
+            box-shadow:0 calc(var(--node-depth) + 2px) 0 0 var(--node-base),
+                       0 0 0 1.5px rgba(0,0,0,.42);
+            animation-timing-function:ease-in-out }
+  /* 720 -> 3500ms · at rest, waiting */
+  20.571% { transform:scale(1) rotate(0deg);
+            box-shadow:0 var(--node-depth) 0 0 var(--node-base),
+                       0 0 0 1.5px rgba(0,0,0,.42) }
+  100%    { transform:scale(1) rotate(0deg);
+            box-shadow:0 var(--node-depth) 0 0 var(--node-base),
+                       0 0 0 1.5px rgba(0,0,0,.42) }
+}
+/* NO ANIMATION AT ALL, not a 1ms one — item 10's argument verbatim, and
+   the item asks for it explicitly: the sticker still shows, the node does
+   not breathe. breatheFirstNode() also refuses to add the class; this is
+   the backstop. */
+@media (prefers-reduced-motion: reduce){
+  .node-face.is-breathing{ animation:none; }
+}
+
 /* ---- THE ICON SITS DIRECTLY ON THE DISC ---------------------------
    §1.4 resolves the standing A3 conflict in favour of the newer
    instruction. The cream stadium tile and the 14px overhang are both
@@ -3021,6 +3081,40 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .stmodal__box:has(.sthero__q) .stmodal__title{ font-size:20px; }
 
 /* =====================================================================
+   ITEM 43 · THE FIRST-ARRIVAL STICKER, AND ITS THREE UNWRITTEN STRINGS
+   All three are Tamar's and none of them is written. They carry the
+   hazard treatment ph() uses so they read as placeholders at a glance and
+   cannot be mistaken for copy — but they are NOT hidden by body.no-ph,
+   which is the second time this file makes that exception (the first is
+   .pr-ph, the third beat 5's rejected verb). The reason is the same every
+   time: hiding a marker whose host is the only thing in the slot does not
+   leave a cosmetic gap, it leaves an empty screen. A first-run sticker
+   with a blank title, a blank body and a blank button is worse than one
+   that says out loud what it is waiting for.
+   THE BODY IS THE SLOT, NOT THE STRING. The item asks for two lines of
+   body maximum; that is a constraint on Tamar's sentence, and the brief
+   standing in for it is longer than the sentence will be. It is not
+   clamped here — clamping would hide the very text that says what is
+   missing. See the report for the measured line count at each width. */
+.stmodal[data-mapintro] .stmodal__title,
+.stmodal[data-mapintro] .stmodal__body{
+  background-color:var(--primary);
+  background-image:repeating-linear-gradient(45deg,#FFE03D 0 8px,var(--primary) 8px 16px);
+  color:var(--ink); border:2px dashed var(--ink); border-radius:6px;
+  padding:6px 10px 7px;
+}
+/* the button keeps P-C's own fill — it is already the one yellow in the
+   system — so the dash is what marks it, not a second yellow on top. */
+.stmodal[data-mapintro] .mi-go{
+  border:2px dashed var(--ink);
+  margin-top:4px;
+}
+/* the body is a scroller in the base component, for the law's long
+   summary. Here it holds two lines and must not grow its own scrollbar
+   around a placeholder. */
+.stmodal[data-mapintro] .stmodal__body{ overflow:visible; text-align:center; }
+
+/* =====================================================================
    B2-4 · THE ASK STICKER
    One component, two copy strings: the claim card asks אמת או שקר? and
    the first cascade card asks מה הוא/היא הצביע/ה?. Nothing else about it
@@ -3277,22 +3371,37 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 @keyframes peel-lab{ to{ opacity:0 } }
 
 /* =====================================================================
-   ITEM 6 · THE AFFORDANCE NUDGE
-   Two wiggles, 400ms after the card settles, then it rests. It is a hint
-   that the sheet is liftable, so it has to be small enough to read as
-   paper shifting and not as something wrong: 2 degrees and 2px, which at
-   this chip's size is about a millimetre of travel.
-   TWO ITERATIONS OF ONE 180ms CYCLE, not one 360ms keyframe — so the
-   ease-in-out applies to EACH wiggle, and each one accelerates out of
+   ITEM 6 · THE AFFORDANCE NUDGE   ·   ITEM 51C · SAID TWICE
+   A wiggle 400ms after the card settles, and — for a player who did not
+   take the hint — one repeat 2000ms after that one ends. TWO RUNS, THEN
+   REST. It is a hint that the sheet is liftable, so it has to be small
+   enough to read as paper shifting and not as something wrong: 2 degrees
+   and 2px, which at this chip's size is about a millimetre of travel.
+   TWO ITERATIONS OF ONE 180ms CYCLE PER RUN, not one 360ms keyframe — so
+   the ease-in-out applies to EACH wiggle, and each one accelerates out of
    rest and decelerates back into it. One long curve over both would give
    a fast middle and two slow ends, which reads as a wobble rather than
    as two taps.
-   NEVER LOOPS. Two iterations, `both` fill, and the class is added once
-   per card by nudgeCover() — there is no interval and nothing to stop.
+   THE REPEAT IS A SECOND ANIMATION, NOT A LOOP. A CSS animation cannot
+   hold a gap between iterations, so the pause is a second delay on the
+   same keyframes: run 1 is 400 -> 760, run 2 is 2760 -> 3120, and 2000ms
+   of rest sits between them. There is no interval, no iteration count
+   above 2 on either, and nothing to stop — it cannot become a loop by
+   retuning a number.
+   THE SECOND RUN'S FILL IS `forwards`, NOT `both`, AND THAT IS LOAD-BEARING.
+   Both entries animate `transform` and the later one wins wherever both
+   apply — so `backwards` fill on run 2 would hold transform:none through
+   its own 2760ms delay and flatten run 1 completely. `forwards` makes it
+   contribute nothing until it starts.
+   STILL STOPS ON TAP: wirePeel() removes the class, which takes both runs
+   with it whether the tap lands during a wiggle or in the rest between.
    STANDING BEHAVIOUR, EVERY ROUND. Nothing here is conditioned on the
    round being inverted; the tape covers the party on every card that
    has one. */
-.pcov.is-nudging{ animation:pcov-nudge 180ms ease-in-out 400ms 2 both; }
+.pcov.is-nudging{
+  animation:pcov-nudge 180ms ease-in-out  400ms 2 both,
+            pcov-nudge 180ms ease-in-out 2760ms 2 forwards;
+}
 @keyframes pcov-nudge{
   0%  { transform:none }
   25% { transform:rotate(2deg) translateX(2px) }
@@ -3814,6 +3923,17 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    against 16, #E6E2D8 against #EFECE4); the weight was the one part of
    that intent that never landed. The real tally owns this board; the
    player's own vote arrives quieter. */
+/* ITEM 51A · THIS ONE PLACEHOLDER IS NOT HIDDEN BY no-ph, and it is the
+   second exception in the file for the same reason .pr-ph is the first:
+   hiding the marker here does not leave a cosmetic gap, it removes the
+   only statement of what the Knesset did. The two rejected issues would
+   render a bare 'עם הקול שלכם: 27—43' with nothing above it — a wrong
+   sentence traded for a missing one.
+   It is ph()'s own treatment rather than a third copy of the hazard fill,
+   scoped to this line so no other placeholder is affected. When Tamar's
+   string lands, the ph() call goes and this rule goes with it. */
+body.no-ph .f5res .ph{ display:inline-block !important; }
+.f5res .ph{ font-family:var(--font-ui); }
 .f5res__you{ display:block; font-size:14px; font-weight:400; color:#E6E2D8; }
 /* 23 · the numeral stays IN the demoted line. <b> takes the UA's bold,
    which in a 400/900 family resolves to the Black — so the figure was
@@ -4298,6 +4418,32 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 }
 .eg-fx{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
 
+/* =====================================================================
+   ITEM 14 · THE ALLOCATION'S COINS
+   THE SAME TOKEN, SMALLER. .coin-t is the award's 19px coin and this is
+   that object at 13px — same fill, same inset keyline, same hard offset —
+   because a second coin drawn a second way would be a second currency.
+   It is a handful landing on a 56px row rather than a payment arriving at
+   the HUD, so it reads at the size a handful is.
+   THE LAYER IS #coinfly, SHARED. It is already "out of every layout, over
+   everything", which is exactly what an arc between two elements in a
+   scrolling column needs — .eg-fx is inside the column and behind it
+   (z-index 1 against .eg-col's 2), so a sprite hosted there would fly
+   BEHIND the rows it is landing on. */
+.coin-t--eg{
+  width:13px; height:13px;
+  box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.55), 0 1px 0 rgba(0,0,0,.3);
+}
+/* the balance's own acknowledgement: it is the number that just went
+   down, so it is the thing that reacts. One pulse, no travel — the
+   coins carry the movement and this only has to say "from here". */
+.eg-left.is-pulse{ animation:eg-left-pulse var(--t-eg-pulse) var(--e-out); }
+@keyframes eg-left-pulse{
+  0%  { transform:scale(1) }
+  50% { transform:scale(1.06) }
+  100%{ transform:scale(1) }
+}
+
 /* ---- type ---------------------------------------------------------- */
 .eg-eyebrow{
   /* 21 · 400, not the 700 it carried in system-ui. The family ships two
@@ -4411,6 +4557,67 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 }
 .eg-chip.has-v .eg-chip__v{ color:var(--ink); }
 .eg-chip.is-bump{ animation:egBump 260ms var(--e-land); }
+
+/* =====================================================================
+   ITEM 19 · THE FREE-TEXT ROW
+   The wrapper is a column so the field can sit UNDER the row it names
+   rather than inside it — see the note in egBeat3() for why it cannot be
+   a child of the button. The row itself is a .eg-chip and is styled by
+   every rule above; nothing here restyles it.
+   ===================================================================== */
+.eg-other{ display:flex; flex-direction:column; gap:6px; }
+.eg-other__g{ font-size:19px; line-height:1; opacity:.75; }
+.eg-other__in{
+  appearance:none; width:100%; box-sizing:border-box;
+  border:0; border-radius:12px; padding:11px 14px 12px;
+  font-family:var(--font-body); font-size:17px;   /* 17 so iOS does not zoom */
+  font-weight:400; color:var(--ink); background:var(--paper);
+  box-shadow:0 0 0 2px rgba(19,19,16,.30) inset, 0 2px 0 rgba(0,0,0,.22);
+  direction:rtl;
+}
+.eg-other__in::placeholder{ color:var(--ink-soft); opacity:.75; }
+.eg-other__in:focus{ outline:3px solid var(--edge); outline-offset:2px; }
+
+/* =====================================================================
+   ITEM 20B · THE VARIANT SWITCHER
+   Three chips, one on. It is chrome for choosing what the card says, so
+   it is deliberately quieter than the card and than the actions: no
+   yellow, no die-cut ring, nothing that competes with the artifact it is
+   editing. A disabled tab is a variant with nothing to lead with — see
+   egBeat4() — and reads as unavailable rather than as an error.
+   ===================================================================== */
+.eg-vars{
+  display:flex; gap:7px; align-self:center; flex:none; margin-top:2px;
+  opacity:0; transition:opacity var(--t-f5-in) var(--e-settle);
+}
+.eg-vars.is-in{ opacity:1; }
+.eg-var{
+  appearance:none; border:0; cursor:pointer; border-radius:999px;
+  padding:7px 14px 8px; font-family:var(--font-ui); font-size:13px; font-weight:700;
+  color:#D8D2C4; background:rgba(255,255,255,.10);
+  -webkit-tap-highlight-color:transparent;
+  transition:background var(--t-press) linear, color var(--t-press) linear;
+}
+.eg-var.is-on{ background:var(--paper); color:var(--ink); }
+.eg-var[disabled]{ opacity:.4; cursor:default; }
+
+/* ITEM 20A · the share action, in the exit row above the two doors. R-B
+   rather than a second P-C: the yellow on this screen is the way out, and
+   two primaries would make the player choose between leaving and sharing
+   by weight rather than by intent. */
+.eg-shareb{ min-height:52px; }
+.eg-shareb.is-copied{ color:var(--primary); }
+
+/* ---- ITEM 20B · variant B leads with the topic and states no number --- */
+.eg-share__blead{
+  margin:0; display:flex; align-items:center; gap:11px;
+  font-family:var(--font-display); font-weight:900; font-size:clamp(20px,5.4vw,26px);
+  line-height:1.16; color:var(--ink); text-wrap:balance;
+}
+.eg-share__bico{ flex:none; line-height:0; }
+/* ---- variant C · the record at the lead's size ----------------------- */
+.eg-share__lead--c{ flex-wrap:wrap; }
+.eg-share__of{ font-family:var(--font-display); font-weight:900; font-size:19px; color:var(--ink-soft); }
 @keyframes egBump{ 40%{ transform:translateY(2px) scale(.985); } 100%{ transform:none; } }
 
 /* ---- the share card ------------------------------------------------ */
@@ -4528,6 +4735,12 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   }
   .eg-cf{ display:none; }
   .eg-chip.is-bump{ animation:none; }
+  /* ITEM 14 · no sprites at all and no pulse — egCoinFlight() refuses to
+     emit and egBalancePulse() refuses to add the class, so this is the
+     backstop rather than the mechanism. The numbers tick normally: with
+     no flight there is no hold on the row, so its value lands on the tap
+     exactly as it did before this item. */
+  .eg-left.is-pulse{ animation:none; }
 }
 
 /* =====================================================================
@@ -4557,11 +4770,27 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 /* THE CONTENT SCROLLS, THE STICKER DOES NOT — the same rule as
    .stmodal__body, for the same reason: the ✕ has to stay put. 2a at
    360×640 is taller than the box's 76%, and this is what absorbs it. */
+/* ITEM 16 · THE INLINE PADDING IS THE PRIMARY'S DIE-CUT EDGE, NOT A GAP.
+   .p-c paints its white cut at 3px and its keyline at 4.6px OUTSIDE its
+   border box, and this element is a scroll container: overflow-y:auto
+   forces overflow-x to compute to auto as well, so it clips horizontally
+   whether or not anything ever scrolls sideways. Against 2px of padding
+   that cut 2.6px off both rings at both ends — the yellow ran to a flat
+   vertical edge with a sliced dark line beside it, which is why the fill
+   read as inset inside a border it never reached.
+   5px, so the 4.6px ring clears with 0.4 to spare. The button gives back
+   the 6px: 266 -> 260 wide, and the ring's outer edge then lands on
+   .stmodal__box's own 16px padding edge — the sticker's inset, which is
+   the one this control sits in. See the report for why that rather than
+   the stage's.
+   IT IS NOT A per-button FIX. Everything this scroller holds — 2a's
+   tiles, the invitation's chips — gains the same room, and none of them
+   was near the edge to begin with. */
 .prof{
   align-self:stretch; min-height:0; overflow-y:auto;
   -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   display:flex; flex-direction:column; align-items:center;
-  padding:2px 2px 6px;
+  padding:2px 5px 6px;
 }
 /* 2b · the hero: the SAME round token the HUD carries, at 156px, on a
    dashed well like 2a's, with the board's die-cut. */
@@ -4596,7 +4825,22 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    that the dilate does not fatten */
 .avs-cut > svg{ filter:url(#dcw) drop-shadow(0 3px 0 rgba(0,0,0,.28)); }
 .prof-lbl{ margin:12px 0 0; font-size:var(--fs-meta); font-weight:700; color:var(--ink-soft); }
-.prof-gender{ display:flex; gap:9px; margin-top:7px; }
+/* ITEM 16 · A TWO-UP ROW, and it is .inv-row's idiom rather than a new
+   one — the invitation already lays three of these chips out this way and
+   its three measure 84px each. Left to itself .gchip is inline-flex and
+   sized by its own text, so לשון נקבה came out 93 and לשון זכר 81: a 12px
+   step between two options that are the same kind of answer, which reads
+   as one of them being the larger choice.
+   THE ROW STRETCHES TOO. It was shrink-to-fit and centred, 183px in a
+   260px column, so the pair floated free of the two buttons under it;
+   full width puts all four controls on the same two edges.
+   NEITHER IS SELECTED AND NOTHING HERE SELECTS ONE. `.on` is written by
+   paint() from PROFILE.gender only, and with no answer yet that is null,
+   so both chips render in the same resting state — the third state IS the
+   default. Nothing below styles a first child, a checked state or a
+   fallback. */
+.prof-gender{ display:flex; gap:9px; margin-top:7px; width:100%; }
+.prof-gender > .gchip{ flex:1; justify-content:center; padding-inline:6px; white-space:nowrap; }
 /* the board's .gchip, as a button, on paper: white so it reads as a
    sticker on the cream, the board's hard 3px shadow, and the board's
    double ring when it is on. Never a colour — a voice is not a verdict. */
@@ -4621,7 +4865,12 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 /* the one primary. Everything on this sheet applied the moment it was
    tapped; this closes, and its copy is the player's model, not the code's. */
 .prof-save{ font-size:19px; }
-.prof-tweak{ min-height:46px; }
+/* ITEM 16 · `.prof-tweak{ min-height:46px }` IS GONE. .prof-actions > *
+   sets 52px for exactly the reason its own comment gives — "so P-C and
+   R-B match" — and this rule, later in the file at the same specificity,
+   quietly undid it: 52 against 46, a 6px step between two controls in one
+   stacked pair. The type sizes still differ (19 and 17) and should; the
+   BOX is what has to agree. */
 /* R-B re-inked for paper, exactly as .exitsheet .r-b is */
 .prof-tweak{ font-size:17px; color:var(--ink); box-shadow:inset 0 0 0 2.5px rgba(19,19,16,.38); }
 

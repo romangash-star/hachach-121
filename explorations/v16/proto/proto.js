@@ -117,6 +117,10 @@ const T = {
   coin:      ms('--t-coin'),
   coinFly:     ms('--t-coin-fly'),
   coinStagger: ms('--t-coin-stagger'),
+  egFly:       ms('--t-eg-fly'),        /* ITEM 14 · one allocation token */
+  egFlyStep:   ms('--t-eg-fly-step'),
+  egFlyFade:   ms('--t-eg-fly-fade'),
+  egPulse:     ms('--t-eg-pulse'),
   nodePress:   ms('--t-node-press'),
   screen:      ms('--t-screen'),
   mapIn:       ms('--t-map-in'),
@@ -218,6 +222,12 @@ const DEV = {
      either direction WITHOUT writing the flag, which is the only way to
      look twice at something that by definition happens once. */
   intro:  qPick('intro',  { on:true, off:false }, null),
+  /* ITEM 43 · the same switch for the map's first-arrival sticker, and
+     for the same reason spelled out above it. ?reset also clears the flag
+     — it lives in the save — but resetting to look at one modal spends
+     the whole run, which is not a thing to ask of anyone in a meeting.
+     Like ?intro, an override never writes the flag. */
+  mapIntro: qPick('mapintro', { on:true, off:false }, null),
   /* §3 · the title's sticker edge. `solid` is the shipped white and the
      default; `keyline-multi` adds a coloured outer stroke per glyph from
      the topic palette; `keyline-one` adds the same in a single accent.
@@ -2136,12 +2146,22 @@ function stickerModal(o) {
       (o.extra || '') +
     '</div>';
   let gone = false;
+  /* ITEM 43 · ONE HOOK, FIRED ON EVERY WAY OUT. The ✕, the ground and
+     Escape all funnel through close(), so a caller that needs to know the
+     sticker has gone gets told once whichever route the player took —
+     rather than wiring three listeners and hoping they stay in step with
+     this function. Optional; every existing caller passes nothing. */
   const close = () => {
     if (gone) return; gone = true;
     removeEventListener('keydown', onKey);
     m.classList.remove('is-in'); m.classList.add('is-out');
     setTimeout(() => m.remove(), T.ovCollapse);
+    if (typeof o.onClose === 'function') o.onClose();
   };
+  /* and the same function by hand, for a caller whose own button dismisses
+     the sticker. `_close` rather than `close` to match the `_swipe` the
+     claim card already hangs on its node. */
+  m._close = close;
   const onKey = e => { if (e.key === 'Escape') close(); };
   addEventListener('keydown', onKey);
   pressable($('.stmodal__x', m)).addEventListener('click', close);
@@ -3616,10 +3636,50 @@ async function beat5() {
        and its own footnote is a division that means nothing. */
     outcome = el('div', 'f5outcome f5surf b5stage');
     const res = el('p', 'f5res');
+    /* ITEM 51A · THE VERB IS READ OFF THE TALLY. It was the literal
+       'ההצעה עברה' with no test at all, so e3 (27—42) and g2 (36—47) —
+       both REJECTED — announced that the proposal had passed, directly
+       above the numbers that said it had not. Twelve of the fourteen
+       issues with a tally pass, which is why it survived this long.
+       A TIE TAKES THE REJECTED BRANCH. A motion that does not reach a
+       majority does not carry, so `for > against` is the whole test. No
+       issue in the data ties, so this is written from the rule rather
+       than from a case that can be looked at. */
+    const passed = tally.for > tally.against;
+    /* ITEM 51B · THE NUMBERS COME OFF THIS LINE. They were stated three
+       times in three inches of screen: the board holds the count the
+       player just watched land AND tick up, and this sentence restated
+       the real pair and then the with-you pair underneath it — two of the
+       three identical, and the board's own figure differing from the
+       sentence immediately below it. RTL made it worse: the board reads
+       בעד then נגד and the sentence writes נגד first, so the pairs were
+       mirrored as well as repeated.
+       The board is the count-up. This line is the verb, and 'עם הקול
+       שלכם' keeps its pair — it is the one number the board cannot say in
+       words. */
+    /* ITEM 51A · THE REJECTED STRING IS TAMAR'S AND IS NOT WRITTEN HERE.
+       ph() is used for the marker's treatment, but see the no-ph override
+       in proto.css: unlike every other placeholder in the app this one is
+       NOT hidden in the default build. Hiding it would leave the two
+       rejected issues with a bare 'עם הקול שלכם' and no statement of the
+       outcome at all — trading a wrong sentence for a missing one. */
     res.innerHTML =
-      esc('ההצעה עברה ') + N(tally.for + '—' + tally.against) + '.' +   /* TAMAR */
+      (passed ? esc('ההצעה עברה.')                                     /* TAMAR */
+              : ph('[טקסט — תמר: הפועל להצעה שנדחתה]')) +              /* TAMAR */
+      /* ITEM 52 · THE PAIR IS WRITTEN IN THE BOARD'S ORDER, נגד FIRST.
+         It was for—against, which renders 64—57 left-to-right because .num
+         is direction:ltr — while the board above it renders נגד then בעד,
+         57 then 64. Two pairs of the same numbers ordered opposite each
+         other, six inches apart, with nothing on either to say which side
+         is which. Item 51B took the duplicate pair off this line; the one
+         that survived still disagreed with the board about the order.
+         THE BOARD IS THE FIXED POINT, not this line. Its order is a
+         consequence of the RTL row — .f5cell for בעד is the first child
+         and therefore the rightmost — so it cannot be changed without
+         moving the cells, and there is no reason to: the board is the
+         object the player watched count. The sentence follows it. */
       '<span class="f5res__you">' + esc('עם הקול שלכם: ') +             /* TAMAR */
-        '<b>' + N(mine.for + '—' + mine.against) + '</b></span>';
+        '<b>' + N(mine.against + '—' + mine.for) + '</b></span>';
     outcome.appendChild(res);
     b.appendChild(outcome);
     requestAnimationFrame(() => { outcome.classList.add('is-in'); f5Place(b, board); fitBeat(); });
@@ -4424,6 +4484,15 @@ const SAVE_VER = 1;
    run to protect one animation, which is the wrong trade. */
 let EG_CONFETTI_SPENT = false;
 
+/* ITEM 43 · THE MAP'S FIRST ARRIVAL, ONCE EVER. It goes in the save
+   rather than in a key of its own — SEEN_KEY predates the save and is
+   stranded there; anything added now belongs with progress and profile so
+   that ?reset clears the lot in one place, which is exactly what the item
+   asks for. Additive and optional like `cf`, so no SAVE_VER bump: a save
+   written before this simply has no `mi`, restores cleanly, and shows the
+   sticker once. */
+let MAP_INTRO_SEEN = false;
+
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
    playable, so every access is wrapped and every failure is "no save". */
@@ -4436,6 +4505,7 @@ function saveState() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD,
       cf: EG_CONFETTI_SPENT,
+      mi: MAP_INTRO_SEEN,
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -4478,6 +4548,9 @@ function restoreSave() {
   /* coerced rather than validated: a malformed `cf` is a cosmetic field
      and must not be grounds for discarding eleven rounds of progress */
   EG_CONFETTI_SPENT = s.cf === true;
+  /* ITEM 43 · coerced, never validated, for the reason above: a malformed
+     `mi` shows one sticker again and must not cost a run. */
+  MAP_INTRO_SEEN = s.mi === true;
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
@@ -5344,7 +5417,15 @@ function goMap(o) {
   /* §C the identity moment is the ARRIVAL, after it has landed — never
      during map-in, never under the chair. `quiet` is the exit confirm's:
      an arrival by abandoning a round is not a moment to ask anything. */
-  onMapSettled(m, () => { if (!(o && o.quiet)) maybeInvite(); });
+  /* ITEM 43 · THE FIRST ARRIVAL COMES FIRST, and the two can never
+     collide anyway: maybeInvite() needs a finished topic, which by
+     definition has not happened on a first arrival, and it also refuses
+     to open on top of an existing .stmodal. Ordered explicitly so that
+     stays true if either condition is ever relaxed. */
+  onMapSettled(m, () => {
+    if (maybeMapIntro()) return;
+    if (!(o && o.quiet)) maybeInvite();
+  });
 }
 
 /* ===== §C · THE ARRIVAL GATE ========================================
@@ -5391,6 +5472,102 @@ function onMapSettled(m, fn) {
    is tapped, so a dismiss, an ✕, an Escape and a reload all count as
    asked. It is never re-armed; the door in the HUD is always there.
    NEVER if a voice is already set in 2b — there is nothing to ask. */
+/* =====================================================================
+   ITEM 43 · THE MAP'S FIRST ARRIVAL
+   One sticker, the first time the player reaches the map, once ever. It
+   says what the next minute is FOR; it does not teach anyone to tap.
+
+   IT DOES NOT BLOCK, and that is structural rather than a promise: it is
+   stickerModal(), so the ✕, the ground and Escape all dismiss it exactly
+   as they dismiss the law, the glossary and the invitation. There is no
+   branch in here that could make it modal in the blocking sense.
+
+   THE FLAG IS WRITTEN WHEN IT IS SHOWN, not when it is dismissed. A
+   player who closes the tab mid-sticker has still had their first
+   arrival; re-showing it on the next launch would make "once ever" a lie
+   in the one case where it is most annoying.
+   ===================================================================== */
+/* COPY IS TAMAR'S AND NONE OF IT IS WRITTEN HERE. These are the briefs
+   for the three strings, rendered as visible placeholders — see
+   .stmodal[data-mapintro] in proto.css, which gives them the hazard
+   treatment and, unlike every other ph() marker, does NOT hide them in
+   the default build: a first-run sticker with three blank slots is worse
+   than one that says out loud what it is waiting for. */
+const MAP_INTRO_COPY = {                                              /* TAMAR */
+  title: '[תמר: מה זה המסך הזה]',
+  body:  '[תמר: אתם הח״כ ה-121 · בחרו כל נושא · אין סדר ואין תשובה נכונה לגבי מה לבחור]',
+  go:    '[תמר: כפתור פתיחה]',
+};
+function seenMapIntro() {
+  if (DEV.mapIntro !== null) return !DEV.mapIntro;
+  return MAP_INTRO_SEEN;
+}
+function markMapIntroSeen() {
+  /* an override never spends the player's one first arrival */
+  if (DEV.mapIntro !== null) return;
+  MAP_INTRO_SEEN = true;
+  saveState();
+}
+function maybeMapIntro() {
+  if (seenMapIntro()) return false;
+  if ($('#stage').dataset.screen !== 'map') return false;
+  /* never on top of another sheet — the same guard the invitation uses */
+  if ($('.stmodal') || $('.exitsheet')) return false;
+  markMapIntroSeen();
+  mapIntroModal();
+  return true;
+}
+function mapIntroModal() {
+  const m = stickerModal({
+    title: MAP_INTRO_COPY.title,
+    body:  MAP_INTRO_COPY.body,
+    /* ITEM 9's hero, with nothing in it yet: the "?" fallback is what the
+       slot draws until this screen has art of its own. heroKey marks the
+       hook so the graphic can be dropped in without touching this call. */
+    heroKey: 'mapintro',
+    extra: '<button type="button" class="p-c mi-go">' +
+             esc(MAP_INTRO_COPY.go) + '</button>',                    /* TAMAR */
+    /* EVERY WAY OUT LEADS TO THE SAME PLACE. The suggestion follows the
+       sticker however it was dismissed — button, ✕, ground or Escape —
+       because it is the answer to "so where do I start", and a player who
+       closed the sticker with the ✕ asked that question just as much as
+       one who pressed the button. */
+    onClose: () => breatheFirstNode(),
+  });
+  m.dataset.mapintro = '';
+  const go = $('.mi-go', m);
+  if (go) pressable(go).addEventListener('click', () => m._close());
+  return m;
+}
+/* ---- the suggestion, and it is only ever that ----------------------
+   ONE node breathes: the FIRST TOPIC IN THE MAP'S EXISTING ORDER. No
+   recommendation is computed and nothing is reordered — TOPICS() is
+   data.js's own array order and this reads index 0 of it.
+   IT IS AN INVITATION AND NEVER A GATE. Nothing here disables, dims,
+   covers or reorders any other node; every one of them keeps the click
+   handler wireMap() gave it. The only thing that changes on the map is
+   that one disc is moving.
+   IT STOPS ON THE FIRST NODE TAP, ANY NODE — including a tap on a
+   different topic, which is the case that matters: choosing something
+   else has to end the suggestion, not leave it pulsing next to the topic
+   the player has just decided against. Capture phase, so it fires whether
+   or not anything downstream stops the event.
+   prefers-reduced-motion: the sticker still shows and nothing breathes.
+   The class is never added, exactly as startBreath() does it. */
+function breatheFirstNode() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const map = $('#scMap'); if (!map) return;
+  const face = $('.node .node-face', map);
+  if (!face) return;
+  face.classList.add('is-breathing');
+  const stop = e => {
+    if (!e.target.closest || !e.target.closest('.node-face')) return;
+    face.classList.remove('is-breathing');
+    map.removeEventListener('pointerdown', stop, true);
+  };
+  map.addEventListener('pointerdown', stop, true);
+}
+
 function maybeInvite() {
   if (PROFILE.invited || PROFILE.gender !== null) return;
   if (topicsDone() < 1) return;
@@ -5553,6 +5730,22 @@ function topicFace(t, px) {
 let ALLOC = {};
 
 /* =====================================================================
+   ITEM 19 · THE FREE-TEXT ROW
+   Its COINS live in ALLOC like any other row's, under a key that is not
+   and cannot become a topic id — data.js's ids are slugs and this starts
+   with two underscores — so every sum over ALLOC (egPlaced, egRemaining)
+   counts them without a special case, and every lookup BY TOPIC misses
+   them without a special case either. That second half is the whole
+   safety property; see cardTopics().
+   Its NAME lives here, alone, in a variable no card and no share code
+   references. It is not in ALLOC, not in PROFILE and not in the save, so
+   it cannot be reached by anything that walks those.
+   ===================================================================== */
+const OTHER_KEY = '__other';
+const OTHER_MAX = 24;                 /* the hard cap on what can be typed */
+let ALLOC_OTHER_NAME = '';            /* NEVER leaves this screen */
+
+/* =====================================================================
    THE END-GAME ROUTER. One screen, four stages, each replacing the last
    — the same shape as the round's beats, and for the same reason: the
    stage is a fixed box with overflow:hidden and a scrolling column here
@@ -5560,6 +5753,9 @@ let ALLOC = {};
    ===================================================================== */
 async function endGame() {
   ALLOC = {};
+  /* ITEM 19 · the label goes with the coins. Replaying must not leave a
+     previous run's word sitting on an empty row. */
+  ALLOC_OTHER_NAME = '';
   showScreen('end');
   /* THE HUD HAS TO BE REPAINTED HERE. Its count and coin chip were only
      ever written by renderMap(), because the map was the only screen
@@ -5760,6 +5956,168 @@ const egPortion = () => {
   const tenth = wallet / 10;
   return Math.max(25, Math.round(tenth / 25) * 25);
 };
+/* =====================================================================
+   ITEM 14 · THE COINS GO WHERE THE PLAYER PUT THEM
+   Feedback only. Nothing here reads or writes ALLOC, egPortion() or the
+   totals — the allocation is exactly the line it always was and this is
+   layered over it.
+
+   THE ROW'S NUMBER WAITS FOR THE COINS. That is the whole point of the
+   item and it is the one thing here that touches the render: the tap
+   moves the state immediately (so the balance is honest and a second tap
+   is charged correctly), but the ROW keeps showing what it was showing
+   until the first token lands. Without that the number changes on tap and
+   the flight is decoration arriving after the fact.
+   The hold is a data attribute on the chip rather than a variable,
+   because egPaint() is the one painter and it has to be able to see it.
+
+   THREE FLIGHTS, NEVER A QUEUE. A fourth tap inside the window gets no
+   sprites at all — it decrements, it increments, and it is done. Nothing
+   is buffered: a backlog would land coins seconds after the tap that
+   bought them, which is worse than no coins.
+
+   prefers-reduced-motion: no sprites and no pulse. The row is then never
+   held, so its number ticks on the tap, exactly as before this item.
+   ===================================================================== */
+const EG_FLY_CAP = 3;
+let EG_FLY_LIVE = 0;
+
+/* CSS's ease-in-out, cubic-bezier(.42,0,.58,1), SOLVED rather than
+   approximated. The item names the CSS keyword and the usual JS stand-in
+   (easeInOutCubic) is a visibly different curve — it leaves the origin
+   flatter and arrives harder. Six Newton steps is exact to well under a
+   pixel over 420ms. */
+const EG_EASE = (() => {
+  const cx = 3 * 0.42, bx = 3 * (0.58 - 0.42) - cx, ax = 1 - cx - bx;
+  const cy = 0,        by = 3 * 1 - cy,             ay = 1 - cy - by;
+  const fx = t => ((ax * t + bx) * t + cx) * t;
+  const fy = t => ((ay * t + by) * t + cy) * t;
+  const dx = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => {
+    let t = x;
+    for (let i = 0; i < 6; i++) {
+      const e = fx(t) - x, d = dx(t);
+      if (Math.abs(e) < 1e-5 || d === 0) break;
+      t -= e / d;
+    }
+    return fy(Math.min(1, Math.max(0, t)));
+  };
+})();
+
+/* the balance is the source, so the balance is what reacts to the tap */
+function egBalancePulse() {
+  if (egReduced()) return;
+  const L = $('#egLeft'); if (!L) return;
+  L.classList.remove('is-pulse'); void L.offsetWidth; L.classList.add('is-pulse');
+}
+
+/* returns TRUE only if sprites are actually in the air — the caller uses
+   that to decide whether the row's number waits or lands on the tap */
+function egCoinFlight(chip) {
+  if (egReduced()) return false;
+  if (EG_FLY_LIVE >= EG_FLY_CAP) return false;
+  const layer = $('#coinfly'), src = $('#egLeft');
+  if (!layer || !src || !chip) return false;
+  const box = layer.getBoundingClientRect();
+  /* the NUMBER, where there is one — the coins leave the figure that just
+     went down, not the sentence around it. At zero left the line has no
+     <b> and the line itself is the origin. */
+  const from = $('b', src) || src;
+  const a = from.getBoundingClientRect(), b = chip.getBoundingClientRect();
+  if (!a.width || !b.width) return false;
+
+  /* FROM ITS FOOT, NOT ITS MIDDLE. Spawning on the figure's centre put
+     the whole handful over the number for the first ~100ms — on top of
+     the one digit that had just changed, at the exact moment the pulse is
+     asking the player to look at it. 0.85 of the height leaves from just
+     under it, which is still the balance and does not cover it. */
+  const x0 = a.left + a.width / 2 - box.left, y0 = a.top + a.height * 0.85 - box.top;
+  const n  = 5 + Math.floor(Math.random() * 4);          /* 5-8 */
+  EG_FLY_LIVE++;
+
+  for (let i = 0; i < n; i++) {
+    const t = el('i', 'coin-t coin-t--eg');
+    /* NO TWO TAPS ALIKE, and the spread is on both ends: a slightly
+       different launch point and angle, and a different place to land
+       WITHIN the row. The inset keeps the arrival off the row's own
+       edges so a coin never appears to land outside it. */
+    const jx = (Math.random() - 0.5) * 18, jy = (Math.random() - 0.5) * 10;
+    const inx = 18;
+    const x1 = b.left - box.left + inx + Math.random() * Math.max(1, b.width - 2 * inx);
+    const y1 = b.top  - box.top  + b.height * (0.3 + Math.random() * 0.4);
+    /* THE ARC IS A QUADRATIC WHOSE CONTROL POINT IS PUSHED OFF THE CHORD,
+       perpendicular to it, so the trip bows instead of dropping straight
+       down the column. The push is randomised in size AND sign, which is
+       what varies the launch angle: half the handful leaves to one side. */
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1;
+    const bow = (26 + Math.random() * 34) * (Math.random() < 0.5 ? -1 : 1);
+    const cx = mx + (-dy / len) * bow, cy = my + (dx / len) * bow;
+    layer.appendChild(t);
+    t.style.transform = 'translate(' + (x0 + jx - 6.5) + 'px,' + (y0 + jy - 6.5) + 'px)';
+    egFlyOne(t, x0 + jx, y0 + jy, cx, cy, x1, y1, i * T.egFlyStep,
+      i === 0     ? () => { delete chip.dataset.hold; egPaint(); } : null,
+      i === n - 1 ? () => { EG_FLY_LIVE = Math.max(0, EG_FLY_LIVE - 1); } : null);
+  }
+  return true;
+}
+
+function egFlyOne(node, x0, y0, cx, cy, x1, y1, delay, onFirst, onLast) {
+  setTimeout(() => {
+    const t0 = performance.now();
+    /* the fade is a TIME, not a share of the curve: the last
+       --t-eg-fly-fade of the trip, wherever the easing has got to. */
+    const fadeAt = (T.egFly - T.egFlyFade) / T.egFly;
+    (function tick(now) {
+      const k = Math.min(1, (now - t0) / T.egFly);
+      const e = EG_EASE(k), m = 1 - e;
+      const x = m * m * x0 + 2 * m * e * cx + e * e * x1;
+      const y = m * m * y0 + 2 * m * e * cy + e * e * y1;
+      node.style.transform = 'translate(' + (x - 6.5) + 'px,' + (y - 6.5) + 'px) scale(' +
+        (1 - 0.28 * e).toFixed(3) + ')';
+      node.style.opacity = k > fadeAt ? ((1 - k) / (1 - fadeAt)).toFixed(3) : '1';
+      if (k < 1) requestAnimationFrame(tick);
+      else {
+        node.remove();
+        if (onFirst) onFirst();
+        if (onLast) onLast();
+      }
+    })(t0);
+  }, delay);
+}
+
+/* ITEM 19 · the row's own copy. The glyph is a mark rather than a drawn
+   object: the eight above name real topics and carry real artwork, and
+   giving this one a picture would claim it is a ninth topic. */
+const EG_OTHER_LABEL = 'אחר';                                          /* TAMAR */
+const EG_OTHER_PH    = 'ומה עוד חשוב לכם?';                            /* TAMAR */
+const OTHER_GLYPH    = '<span class="eg-other__g" aria-hidden="true">✎</span>';
+
+/* =====================================================================
+   ITEM 19 + 20B · THE ONE GATE THE FREE TEXT CANNOT PASS
+   Every topic name the card or the share string is allowed to say comes
+   from here and from nowhere else. THE ENFORCEMENT IS THE FIRST LINE:
+   it walks TOPICS() — data.js's own eight — and looks each id up in
+   ALLOC. The free-text row's coins are under OTHER_KEY, which is not any
+   topic's id, so they are not reachable by this walk; the player's text
+   is in ALLOC_OTHER_NAME, which this function does not mention and could
+   not return if it did, because what it returns are `t` objects taken
+   from DATA.topics.
+   THAT IS ALSO THE FALLBACK ITEM 20B ASKS FOR, for free and without a
+   branch: if אחר holds the most coins it is simply not in the list, so
+   the highest FIXED topic is what comes back — and if no fixed topic has
+   any, the list is empty and the caller omits the line. There is no
+   "if top is other" test anywhere, because there is no code path on
+   which `other` could have been top.
+   ===================================================================== */
+function cardTopics(n) {
+  return TOPICS()
+    .map(t => ({ t, v: ALLOC[t.id] || 0 }))
+    .filter(x => x.v > 0)
+    .sort((a, b) => b.v - a.v)
+    .slice(0, n || 1);
+}
+
 const egPlaced    = () => Object.values(ALLOC).reduce((a, b) => a + b, 0);
 const egRemaining = () => wallet - egPlaced();
 
@@ -5787,30 +6145,96 @@ async function egBeat3() {
     '<div class="eg-acts" id="egActs"></div>';
 
   const chips = $('#egChips', c);
-  TOPICS().forEach(t => {
+  /* ITEM 19 · ONE MAKER FOR ALL NINE ROWS. "Behaves like any other topic
+     row for allocation purposes" is not a promise kept by matching two
+     code paths — it is the same code path, called once more with a
+     different key and a different face. The increment, the cap against
+     what is left, the bump, the disabled state and item 14's coin flight
+     all come along because none of them knows which row it is on. */
+  const mkChip = (key, icoHTML, label) => {
     const b = el('button', 'eg-chip');
     b.type = 'button';
-    b.dataset.topic = t.id;
+    b.dataset.topic = key;
     b.innerHTML =
-      '<span class="eg-chip__ico">' + topicFace(t, 30) + '</span>' +
-      '<span class="eg-chip__name">' + esc(t.label) + '</span>' +
+      '<span class="eg-chip__ico">' + icoHTML + '</span>' +
+      '<span class="eg-chip__name">' + esc(label) + '</span>' +
       '<span class="eg-chip__v" aria-hidden="true"></span>';
     pressable(b).addEventListener('click', () => {
       const left = egRemaining();
       if (left <= 0) return;
+      /* ITEM 14 · LAUNCHED BEFORE THE STATE MOVES, so the coins are aimed
+         at the row as it looks on the tap — after egPaint() the row may
+         have grown a number and shifted under them. It returns false when
+         it is capped or under reduced motion, and then the row is not
+         held and its number lands on the tap as it always did. */
+      if (egCoinFlight(b)) b.dataset.hold = '1';
+      egBalancePulse();
       /* the last portion is the remainder, so the wallet can always be
          emptied exactly — see the note above */
-      ALLOC[t.id] = (ALLOC[t.id] || 0) + Math.min(egPortion(), left);
+      ALLOC[key] = (ALLOC[key] || 0) + Math.min(egPortion(), left);
       b.classList.remove('is-bump'); void b.offsetWidth; b.classList.add('is-bump');
       egPaint();
+      if (key === OTHER_KEY) revealOther();
     });
     chips.appendChild(b);
-  });
+    return b;
+  };
+  TOPICS().forEach(t => mkChip(t.id, topicFace(t, 30), t.label));
+
+  /* ITEM 19 · אחר, under the eight, with the field it opens.
+     THE FIELD IS A SIBLING OF THE BUTTON, NOT INSIDE IT — a text input
+     inside a button cannot be focused without the button swallowing the
+     tap, and every tap on the row has to keep allocating. It appears on
+     the first tap and stays; taps after that only add coins, exactly as
+     they do on the eight above.
+     EMPTY IS ALLOWED AND IS NOT AN ERROR STATE. Coins may sit on an
+     unnamed אחר for the whole screen; nothing here requires the field,
+     validates it, or marks it. */
+  const otherWrap = el('div', 'eg-other');
+  chips.appendChild(otherWrap);
+  const otherBtn = mkChip(OTHER_KEY, OTHER_GLYPH, EG_OTHER_LABEL);     /* TAMAR */
+  otherWrap.appendChild(otherBtn);
+  const field = el('input', 'eg-other__in');
+  field.type = 'text';
+  field.maxLength = OTHER_MAX;                 /* the hard cap, 24 */
+  field.placeholder = EG_OTHER_PH;                                     /* TAMAR */
+  field.setAttribute('dir', 'auto');
+  field.setAttribute('autocomplete', 'off');
+  field.setAttribute('autocorrect', 'off');
+  field.setAttribute('autocapitalize', 'off');
+  field.setAttribute('spellcheck', 'false');
+  field.setAttribute('enterkeyhint', 'done');
+  field.setAttribute('aria-label', EG_OTHER_LABEL);                    /* TAMAR */
+  field.value = ALLOC_OTHER_NAME;
+  field.hidden = !(ALLOC_OTHER_NAME || (ALLOC[OTHER_KEY] || 0) > 0);
+  otherWrap.appendChild(field);
+  /* CAPPED IN THREE PLACES because maxlength alone is a UI hint: a paste,
+     an IME commit and a scripted set can all exceed it. This is the value
+     the variable ever holds. */
+  const takeOther = () => { ALLOC_OTHER_NAME = field.value.replace(/\s+/g, ' ').trim().slice(0, OTHER_MAX); };
+  field.addEventListener('input', takeOther);
+  field.addEventListener('blur', () => { takeOther(); field.value = ALLOC_OTHER_NAME; });
+  field.addEventListener('keydown', e => { if (e.key === 'Enter') field.blur(); });
+  const revealOther = () => {
+    if (!field.hidden) return;
+    field.hidden = false;
+    field.focus();
+  };
 
   const acts = $('#egActs', c);
   const clear = el('button', 'eg-clear', 'התחלה מחדש');                /* TAMAR */
   clear.type = 'button';
-  pressable(clear).addEventListener('click', () => { ALLOC = {}; egPaint(); });
+  pressable(clear).addEventListener('click', () => {
+    ALLOC = {};
+    ALLOC_OTHER_NAME = '';                         /* ITEM 19 · reset takes it too */
+    const f = $('.eg-other__in'); if (f) { f.value = ''; f.hidden = true; }
+    /* ITEM 14 · a row still waiting for its coins is holding the number it
+       had; the reset has to release that or the row keeps a value the
+       allocation no longer has until a token that is already in the air
+       happens to land on it. */
+    $$('.eg-chip', $('#egChips')).forEach(x => { delete x.dataset.hold; });
+    egPaint();
+  });
   const go = el('button', 'p-c eg-go', 'לכרטיס שלכם ›');               /* TAMAR */
   pressable(go).addEventListener('click', () => egBeat4());
   acts.append(clear, go);
@@ -5844,8 +6268,16 @@ function egPaint() {
   $('#egChips') && $$('.eg-chip', $('#egChips')).forEach(b => {
     const v = ALLOC[b.dataset.topic] || 0;
     const out = $('.eg-chip__v', b);
-    out.innerHTML = v > 0 ? N(v) : '';
-    b.classList.toggle('has-v', v > 0);
+    /* ITEM 14 · A HELD ROW KEEPS WHAT IT IS SHOWING. The value and the
+       paper fill are the same statement — "there are coins on this" — so
+       both wait for the first token, or the row lights up on the tap and
+       only the figure arrives with the coins. Everything else on this
+       pass still runs: the balance, the disabled state, the clear button.
+       The hold is released by the flight itself, or by the reset. */
+    if (!b.dataset.hold) {
+      out.innerHTML = v > 0 ? N(v) : '';
+      b.classList.toggle('has-v', v > 0);
+    }
     /* the control disables itself when there is nothing left to place —
        it is not an error state, it is the end of the supply */
     b.disabled = left <= 0;
@@ -5887,36 +6319,170 @@ function egPaint() {
    token, not their identity. */
 const SHARE_NAME = false;
 
+/* =====================================================================
+   ITEM 20B · THREE CARDS, ONE DEFAULT, AND THE DEFAULT IS NOT OURS
+   A leads with the surprise count and is UNCHANGED — same strings, same
+   order, same markup as it shipped. B leads with the topic and states no
+   number at all. C is the prediction record alone.
+   'a' IS RE-ASSERTED ON EVERY ARRIVAL, not just declared here. A module
+   variable would keep whatever the player last picked and quietly make
+   that the default for the rest of the session; decision table #8 says
+   the default is A and is Tamar's and the NGO's to move, so the card
+   opens on A every time it is opened.
+   THE FULL SPLIT IS NEVER ON ANY OF THEM. cardTopics() is asked for one
+   topic, never for the list.
+   ===================================================================== */
+const SHARE_VARIANTS = ['a', 'b', 'c'];
+let SHARE_VARIANT = 'a';
+const SHARE_TAB = {                                                    /* TAMAR */
+  a: 'הפתעות',
+  b: 'נושא',
+  c: 'ניחושים',
+};
+const SHARE_ACT  = 'שיתוף';                                            /* TAMAR */
+const SHARE_DONE = 'הועתק';                                            /* TAMAR */
+
+/* the card's own strings, named once so the three variants and the share
+   TEXT read the identical words. Every one of them is a string that was
+   already on the card; nothing here is new copy. */
+const CARD_COPY = {
+  tag:       'הח״כ ה-121',                                             /* TAMAR · shipped */
+  surprises: 'פעמים שהכנסת הפתיעה אותי',                                /* TAMAR · shipped */
+  topic:     'הכי הרבה הקצאתי ל',                                      /* TAMAR · shipped */
+  guessed:   'ניחשתי נכון ',                                           /* TAMAR · shipped */
+  outOf:     ' מתוך ',                                                 /* TAMAR · shipped */
+};
+
+/* ITEM 20B · the three bodies. `tops` is whatever cardTopics() allowed —
+   see the gate. None of these functions can reach ALLOC_OTHER_NAME, and
+   none of them takes a topic from anywhere but this argument. */
+function shareCardBody(v, s, tops) {
+  const topicLine = tops.length
+    ? '<p class="eg-share__topic">' +
+        '<span class="eg-share__ico">' + topicFace(tops[0].t, 22) + '</span>' +
+        esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</p>'
+    : '';
+  const record =
+    '<p class="eg-share__second">' + esc(CARD_COPY.guessed) + N(s.correct) +
+      esc(CARD_COPY.outOf) + N(s.asked) + '</p>';
+  if (v === 'b') {
+    /* THE TOPIC LEADS AND THERE IS NO NUMBER ON THE CARD. Not the record,
+       not the surprise count, not the coins — "no numbers" is the whole
+       variant, so the record line is absent rather than demoted. */
+    return tops.length
+      ? '<p class="eg-share__blead">' +
+          '<span class="eg-share__bico">' + topicFace(tops[0].t, 34) + '</span>' +
+          '<span>' + esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</span></p>'
+      : '';
+  }
+  if (v === 'c') {
+    /* THE RECORD ALONE, at the lead's size. No topic line at all — that
+       is what "no topics" means, and it is also why C is the one variant
+       that is always available. */
+    return '<p class="eg-share__lead eg-share__lead--c">' +
+             '<span>' + esc(CARD_COPY.guessed.trim()) + '</span>' +
+             '<b class="eg-num eg-share__n">' + N(s.correct) + '</b>' +
+             '<span class="eg-share__of">' + esc(CARD_COPY.outOf) + N(s.asked) + '</span></p>';
+  }
+  /* A · unchanged */
+  return '<p class="eg-share__lead">' +
+           '<span>' + esc(CARD_COPY.surprises) + '</span>' +
+           '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
+         topicLine +
+         '<hr class="eg-share__rule">' +
+         record;
+}
+
+/* ITEM 20A · the string that actually gets shared, built from the same
+   two sources the card is: endStats() and cardTopics(). It cannot carry
+   the free text for the same structural reason the card cannot. */
+function shareText(v) {
+  const s = endStats(), tops = cardTopics(1);
+  const L = [CARD_COPY.tag];
+  if (v === 'b') {
+    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
+  } else if (v === 'c') {
+    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+  } else {
+    L.push(CARD_COPY.surprises + ': ' + s.surprises);
+    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
+    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+  }
+  return L.join('\n');
+}
+
+/* ITEM 20A · THE OS SHEET IS THE TARGET AND THERE IS NO CUSTOM ONE.
+   navigator.share first; where it does not exist, or refuses, the text
+   goes to the clipboard instead. TEXT ONLY — see the feasibility report
+   for why no image is built: an SVG-in-<img> rasterisation cannot load
+   the webfont or the topic art, and html2canvas would be a dependency.
+   A CANCEL IS NOT A FAILURE. AbortError is the player closing the sheet
+   and must not fall through to copying something they chose not to send. */
+async function shareCard(btn) {
+  const text = shareText(SHARE_VARIANT);
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share({ text }); return 'shared'; }
+    catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) { btn.classList.add('is-copied'); btn.textContent = SHARE_DONE;   /* TAMAR */
+      setTimeout(() => { btn.classList.remove('is-copied'); btn.textContent = SHARE_ACT; }, 1600); }
+    return 'copied';
+  } catch (e) { return 'failed'; }
+}
+
 async function egBeat4() {
   const c = egStage();
   const s = endStats();
   const top = egTopTopic();
+  SHARE_VARIANT = 'a';                 /* the default, on every arrival */
 
   c.innerHTML = '<h2 class="eg-h2">' + esc('הכרטיס שלכם') + '</h2>';   /* TAMAR */
   requestAnimationFrame(() => $('.eg-h2', c).classList.add('is-in'));
   await egStep(T.f5In);
 
+  const tops = cardTopics(1);
   const card = el('div', 'eg-share');
-  card.innerHTML =
+  const head =
     '<div class="eg-share__head">' +
       '<span class="as-d eg-share__av" aria-hidden="true">' + avatarSvg() + '</span>' +
-      '<p class="eg-share__tag">' + esc('הח״כ ה-121') + '</p>' +        /* TAMAR */
+      '<p class="eg-share__tag">' + esc(CARD_COPY.tag) + '</p>' +
       (SHARE_NAME && PROFILE.name
         ? '<p class="eg-share__name">' + esc(PROFILE.name) + '</p>' : '') +
-    '</div>' +
-    '<p class="eg-share__lead">' +
-      '<span>' + esc('פעמים שהכנסת הפתיעה אותי') + '</span>' +          /* TAMAR */
-      '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
-    (top
-      ? '<p class="eg-share__topic">' +
-          '<span class="eg-share__ico">' + topicFace(top.t, 22) + '</span>' +
-          esc('הכי הרבה הקצאתי ל') + esc(top.t.label) + '</p>'          /* TAMAR */
-      : '') +
-    '<hr class="eg-share__rule">' +
-    '<p class="eg-share__second">' + esc('ניחשתי נכון ') + N(s.correct) +
-      esc(' מתוך ') + N(s.asked) + '</p>';                             /* TAMAR */
+    '</div>';
+  const paintCard = () => {
+    card.dataset.v = SHARE_VARIANT;
+    card.innerHTML = head + shareCardBody(SHARE_VARIANT, s, tops);
+  };
+  paintCard();
   c.appendChild(card);
   requestAnimationFrame(() => card.classList.add('is-in'));
+
+  /* ITEM 20B · the switcher. B is offered only when there is a fixed
+     topic for it to lead with: with none, its body is empty by the rule
+     above, and a variant that renders a blank card is not a choice. A and
+     C are always available. */
+  const sw = el('div', 'eg-vars', '');
+  sw.setAttribute('role', 'group');
+  SHARE_VARIANTS.forEach(v => {
+    const b = el('button', 'eg-var' + (v === SHARE_VARIANT ? ' is-on' : ''), esc(SHARE_TAB[v]));
+    b.type = 'button'; b.dataset.v = v;
+    b.setAttribute('aria-pressed', v === SHARE_VARIANT);
+    if (v === 'b' && !tops.length) b.disabled = true;
+    pressable(b).addEventListener('click', () => {
+      if (b.disabled) return;
+      SHARE_VARIANT = v;
+      paintCard();
+      $$('.eg-var', sw).forEach(x => {
+        x.classList.toggle('is-on', x.dataset.v === v);
+        x.setAttribute('aria-pressed', x.dataset.v === v);
+      });
+    });
+    sw.appendChild(b);
+  });
+  c.appendChild(sw);
+  requestAnimationFrame(() => sw.classList.add('is-in'));
 
   /* BEAT 5 · the buttons arrive last and stay. Nothing is appended after
      them, so this is the end of the screen and of the game. */
@@ -5939,6 +6505,12 @@ async function egBeat4() {
     });
     acts.appendChild(again);
   }
+  /* ITEM 20A · the share action. It sits above the two doors because it
+     is what this screen is for; the doors are the way off it. */
+  const share = el('button', 'r-b eg-shareb', esc(SHARE_ACT));         /* TAMAR */
+  share.type = 'button';
+  pressable(share).addEventListener('click', () => shareCard(share));
+  acts.insertBefore(share, acts.firstChild);
   const back = el('button', 'p-c eg-go', 'חזרה למפה ›');               /* TAMAR */
   pressable(back).addEventListener('click', () => goMap());
   acts.appendChild(back);
