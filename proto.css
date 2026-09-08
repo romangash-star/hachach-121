@@ -1268,7 +1268,82 @@ body.no-ph .ph{ display:none !important; }
 .b2q{ font-family:var(--font-display); font-weight:900;
   font-size:30px; line-height:1.1; text-wrap:balance;
   color:#FBF7EE; text-align:center; margin:0;
-  margin-top:calc(26px - var(--ovgap)); max-width:100%; }
+  /* v26 · 26 -> 38. The 12px is room between the law-title link and the
+     question, and it is on the MARGIN rather than on padding for a
+     reason that is not cosmetic: .b2q is .b2q__tab's containing block,
+     and an absolutely positioned tab at bottom:100% anchors to the
+     PADDING box's top edge. padding-top:12px would leave the tab where
+     it is and push the text 12px out from under it, silently turning the
+     decided +11px descent into -1px. Measured on the board: the margin
+     moves the head-to-question gap 23.5 -> 35.5 and leaves the
+     question-to-buttons gap at 6.5, the line counts at 2/3 and the line
+     widths identical to the pixel. */
+  margin-top:calc(38px - var(--ovgap)); max-width:100%;
+  /* the tab's containing block. Changes no box. */
+  position:relative; }
+
+/* ---- v26 · THE תכלס TAB, ON THE QUESTION.
+   Decided on explorations/v26/tachles-tab.html; it replaces the tab that
+   was briefly built on the kraft tape, which is gone.
+   SHAPE GRAMMAR IS .ask-st__i's, THE MK CARD'S BLACK TAB — same #2E2A26
+   neutral ink, same white die-cut, same keyline outside it, same radius,
+   same display Black — with every dimension multiplied by 0.8 and
+   nothing rounded to a nicer number: 16.5 -> 13.2px type, 8/13/9 ->
+   6.4/10.4/7.2 padding, 3 -> 2.4 border, 2 -> 1.6 keyline, 12 -> 9.6
+   radius, 4 -> 3.2 extrusion. line-height stays 1.06, a ratio that
+   already scales. Rendered box 58.43 x 35.44.
+   +4deg, NOT -4. About the bottom-right corner the far end then rides UP
+   and the tab's lowest ink IS the anchor corner, which is what makes the
+   descent below a single number instead of a corner-dependent one. It
+   also lifts the tab off .b2head: at -4deg it dipped into the title's
+   band and eight of the sixteen titles collided with it.
+   THE +11px DESCENT IS THE WHOLE DECISION. Measured against the
+   question's real ink: SimplerPro Black's ל carries 21.72px of ascent at
+   30px and the tallest body letter beside it 16.95, so the ascender the
+   tab may rest on is 4.77px tall and nothing more. +11 puts the tab
+   1.72px into it with 3.05px still clear of the letter bodies. +8 never
+   reached the ascender; +14 cleared the bodies by 0.05px, which is a
+   rounding artefact and not a tolerance; +20 cut 5.95px into them.
+   translateY is 5.5 less than the descent because the glyph rect's top
+   sits 5.5px above .b2q's own border box.
+   THE HORIZONTAL IS NO LONGER A PROPERTY OF THE STRING. It was: anchored
+   to the column's start edge the tab hit 11-54px of the first word on
+   ten of the sixteen and nothing at all on six. It is now anchored to
+   line 1's own box — see placeQTab() in proto.js for why that needs a
+   runtime read and what it costs. */
+.b2q__tab{
+  /* v26f · left is written by placeQTab(), which puts it at line 1's
+     centre biased 30% of that line's width toward the start edge. The
+     0 here is a floor, not a position: it is overwritten in the same
+     tick the pane is appended, before a frame is painted.
+     translateX(-50%) is what makes `left` mean the tab's CENTRE, so the
+     placement never needs the tab's own width. It is listed BEFORE the
+     rotate, so it applies in the parent's frame after the rotation —
+     the rotate still pivots on transform-origin 100% 100% and the +11px
+     descent is untouched by the horizontal move. */
+  position:absolute; z-index:2; left:0; right:auto; bottom:100%;
+  transform:translateX(-50%) translateY(5.5px) rotate(4deg);
+  transform-origin:100% 100%;
+  display:block; white-space:nowrap; pointer-events:none;
+  background:#2E2A26; color:#F4F1E8;
+  font-family:var(--font-display); font-weight:900;
+  font-size:13.2px; line-height:1.06;
+  padding:6.4px 10.4px 7.2px; border-radius:9.6px;
+  border:2.4px solid var(--edge);
+  box-shadow:0 0 0 1.6px var(--keyline), 0 3.2px 0 rgba(0,0,0,.34);
+}
+/* ---- v26 · THE PROMPT'S TAIL, T-a.
+   display:block is the requirement, not a preference: the tail is its
+   own line at every width and must never run back inline. 21px Black
+   against the claim's 30px Black — the board drew a 22/400 and an 18/400
+   beside it and this is the one that stays in the display voice.
+   The 6px is the declared gap; measured ink to ink it reads as 12.0px
+   with the leading either side, baseline to baseline 31.0. */
+.b2q__tail{
+  display:block; margin-top:6px;
+  font-family:var(--font-display); font-weight:900;
+  font-size:21px; line-height:1.15;
+}
 /* ITEM 34c · .b2bill is retired — the bill name is no longer its own
    line; the tap target is the title inside .b2head. See .b2title-link. */
 /* §3.2 .b2consent IS GONE from the markup — "את התוצאה נגלה בסוף ›" was

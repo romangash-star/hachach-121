@@ -363,6 +363,11 @@ addEventListener('resize', placeChyron);
 /* the map's connector is drawn in device pixels, so it has to be redrawn
    when the window changes size. Cheap, and a no-op on the other screens. */
 addEventListener('resize', () => { if ($('#mapline')) redrawPath(); });
+/* v26f · the same shape as the line above it: line 1 is re-measured only
+   when a .b2q__tab is on screen, so this is a no-op on every screen but
+   beat 2. No ResizeObserver — the resize event is what the stage already
+   listens to. */
+addEventListener('resize', () => { if ($('.b2q__tab')) placeQTab(); });
 addEventListener('orientationchange', () => setTimeout(sizeStage, 250));
 if (window.visualViewport) visualViewport.addEventListener('resize', sizeStage);
 
@@ -2781,11 +2786,10 @@ function beat2() {
            NOTHING IS SUBSTITUTED — bill_summary is the modal's content and
            never this line. */
         (issue.tachles_prompt
-          ? '<p class="b2q">' + esc(issue.tachles_prompt) + '</p>'
+          ? qBlock(issue.tachles_prompt)
           : DEV.ph
-            ? '<p class="b2q pr-ph">' + esc('[טקסט — תמר: תכלס]') + '</p>'
-            : '<p class="b2q">' +
-                esc('כח״כ ה-121 — מה אתה היית מצביע?') + '</p>') +  /* TAMAR */
+            ? qBlock('[טקסט — תמר: תכלס]', 'pr-ph')
+            : qBlock('כח״כ ה-121 — מה אתה היית מצביע?')) +          /* TAMAR */
         '<div class="v-a-row b2votes">' +
           /* the label is its own span so the transition can hide THIS
              copy of the word the instant the flying one leaves — two of
@@ -2820,6 +2824,10 @@ function beat2() {
   $('#stage').appendChild(ov);
 
   /* NO INSTRUCTION LINE. Three vote chips are the instruction. */
+
+  /* v26f · placed in the same tick the pane is appended, before a frame
+     is painted, so the tab never shows at an unplaced position */
+  placeQTab();
 
   const law = $('[data-law]', ov);
   if (law) pressable(law).addEventListener('click', e => { e.stopPropagation(); lawModal(); });
@@ -2976,6 +2984,158 @@ function tapAffordance(ov) {
     '<span class="tctap__c" aria-hidden="true">›</span>');
   ov.appendChild(hint);
   requestAnimationFrame(() => requestAnimationFrame(() => hint.classList.add('is-in')));
+}
+
+/* ===== v26 · THE תכלס TAB AND THE PROMPT'S TAIL =====================
+   Both decided on explorations/v26/tachles-tab.html in ~/dev/hachach-121;
+   the numbers below are that board's, measured, not estimated.
+
+   THE SPLIT MATCHES THE SUFFIX STRING, NOT THE DASH. Every one of the
+   sixteen tachles_prompt values ends with the exact run
+   "מה ההצבעה שלך?" and every one is preceded by the identical separator
+   "- " (U+002D U+0020) — verified across the whole set. The dash is NOT
+   matched on, because dashes occur inside the claims themselves (v2's
+   חד-פעמיים, a1's ה 7/10, r1's nothing at all): matching the tail's own
+   words is the only rule that cannot cut a claim in half.
+
+   THE DASH STAYS. Everything before the suffix is the claim, dash
+   included, so the claim reads "…עבור החרדים-" and the CMS text is
+   reproduced character for character. Only trailing WHITESPACE is
+   trimmed, and only because a space before a display:block sibling is a
+   space at the end of a rendered line. Nothing in data.js changes.
+
+   NO SUFFIX, NO SPLIT. A prompt without the run renders exactly as it
+   does today, one line, no tail element — which is the branch the
+   fallback string takes, since "מה אתה היית מצביע?" is not the same
+   words. That branch is live, not theoretical.
+
+   THE TAIL IS ALWAYS ITS OWN LINE, never inline at any width, which is
+   what display:block on .b2q__tail buys. Board measurement: pulling the
+   tail out drops the claim a whole 33px line on every prompt long enough
+   to have been wrapping, so the block gets SHORTER on three of the four
+   cases measured (s1 at both widths, g1 at 360) and taller only where
+   the claim was already down to two lines. */
+const Q_TAIL = 'מה ההצבעה שלך?';                                       /* TAMAR */
+
+/* v26g · THE TAB IS CENTRED ON THE FIRST WORD OF LINE 1.
+   v26f anchored to a fraction of line 1 — 20% along from the start end.
+   That guaranteed contact on all sixteen and was still wrong: 20% of a
+   340px line is 68px in, past the end of any first word, so fifteen of
+   the sixteen landed MID-WORD. g1 covered the middle three letters of
+   לאפשר with a letter showing either side, which reads as crossing the
+   word out rather than tagging it. Only r1, whose line is the shortest,
+   happened to cover a whole word.
+   The first word's own box is the only anchor that says "this word".
+
+   WIDER THAN THE WORD IS FINE; HALF OF TWO WORDS IS NOT. When the word
+   measures less than the tab the tab overhangs it symmetrically rather
+   than shrinking or falling back — a tag wider than the thing it tags
+   still reads as a tag. The one clamp is the line's own start end: the
+   tab never pushes past it, because a tag hanging off the end of the
+   line reads as belonging to nothing.
+
+   ONE EXTRA RANGE, NOT A SECOND LAYOUT PASS. The line-1 rects are still
+   read exactly as v26f read them — they are what the clamp needs — and
+   the word's box comes from one more Range over the same text node,
+   measured in the same batch. Still no ResizeObserver: this hangs off
+   the resize stack sizeStage/placeChyron/redrawPath already share, and
+   is a no-op on every screen with no .b2q__tab, exactly as redrawPath
+   is a no-op with no #mapline. */
+
+function placeQTab() {
+  const q = $('.b2q'); if (!q) return;
+  const tab = $('.b2q__tab', q); if (!tab) return;
+  /* the CLAIM's own text nodes — not the tail, which is its own line,
+     and not the tab, which is what we are placing */
+  const tn = [].filter.call(q.childNodes, n => n.nodeType === 3 && n.textContent.trim());
+  if (!tn.length) return;
+  const node = tn[0], txt = node.textContent;
+
+  /* ---- line 1, for the clamp. getClientRects returns one rect per BIDI
+     RUN, not per line: a digit or a Latin word splits its line into
+     several. Merge by rounded top or a prompt with a number in it
+     measures a fragment. */
+  const rg = document.createRange();
+  rg.setStart(tn[0], 0);
+  rg.setEnd(tn[tn.length - 1], tn[tn.length - 1].textContent.length);
+  const rects = [].filter.call(rg.getClientRects(), r => r.height > 4);
+  if (!rects.length) return;
+  let key = Infinity;
+  rects.forEach(r => { key = Math.min(key, Math.round(r.top)); });
+  let lineL = Infinity, lineR = -Infinity;
+  rects.forEach(r => { if (Math.round(r.top) === key) {
+    lineL = Math.min(lineL, r.left); lineR = Math.max(lineR, r.right); } });
+
+  /* ---- the first word: first token to the first whitespace. Line 1
+     begins the claim, so the claim's first word IS line 1's. */
+  let end = txt.search(/\s/);
+  if (end <= 0) end = txt.length;
+  const wr = document.createRange();
+  wr.setStart(node, 0); wr.setEnd(node, end);
+  const wrects = [].filter.call(wr.getClientRects(), r => r.height > 4);
+  let wl = Infinity, wR = -Infinity;
+  wrects.forEach(r => { if (Math.round(r.top) === key) {
+    wl = Math.min(wl, r.left); wR = Math.max(wR, r.right); } });
+  /* a first word that somehow did not land on line 1 leaves the tab
+     where it is rather than placing it somewhere invented */
+  if (!(wR > wl)) return;
+
+  const qb = q.getBoundingClientRect();
+  /* if an ancestor is ever scaled, rects are in scaled px and `left` is
+     not — divide it back out rather than silently drifting */
+  const k = (q.offsetWidth ? qb.width / q.offsetWidth : 1) || 1;
+
+  /* THE CLAMP HAS TO USE THE PAINTED EDGE, NOT THE BORDER BOX, and the
+     first build of it did not: a +4deg rotation about the bottom-right
+     corner throws the top-right corner a further offsetHeight*sin(4) to
+     the right — 2.47px here — so clamping on offsetWidth/2 left the tab
+     poking up to 2.4px past the line on every narrow-word issue.
+     `ext` is that painted half-extent, derived rather than hard-coded so
+     it stays right if the angle or the size ever moves: the distance
+     from the tab's untransformed centre to its painted right edge, read
+     once, before anything is written. Both reads are in the same batch
+     as the Ranges above — no second layout pass. */
+  const tb  = tab.getBoundingClientRect();
+  /* translateX(-50%) makes the painted box centre on `left`, so `left` IS
+     the centre and the extent is simply the painted right edge minus it.
+     offsetLeft is the wrong reference here — it reports the box BEFORE
+     the transform, which is half a tab away, and using it under-clamped
+     by exactly that half. */
+  const cur = parseFloat(getComputedStyle(tab).left) || 0;
+  const ext = (tb.right - qb.left) / k - cur;
+
+  /* v26h · START EDGE TO START EDGE. Centring was the wrong operation
+     and לאפשר proved it: the word is 91.8px and the tab 58.4, so a
+     centred tag sat INSIDE the word with a letter showing at each end —
+     a redaction, not a tag. Anchored start-to-start the tag clips onto
+     the front of the word and the rest of the word runs out from under
+     it, which is what a tab on a thing looks like.
+     wR is the word's start edge — its RIGHT edge, in RTL — and `ext` is
+     the painted half-extent, so this puts the tab's painted start edge
+     exactly on the word's. */
+  let c = (wR - qb.left) / k - ext;
+  /* CLAMP AT THE LINE'S START END, which in RTL is its right edge. The
+     first word begins the line, so wR is lineR and this is now a no-op
+     on every issue in data.js — kept because a first word that did not
+     start the line would need it, and because it costs one comparison. */
+  const startEnd = (lineR - qb.left) / k;
+  if (c + ext > startEnd) c = startEnd - ext;
+
+  tab.style.left = c.toFixed(2) + 'px';
+}
+
+function qBlock(text, extra) {
+  const cls = 'b2q' + (extra ? ' ' + extra : '');
+  const t   = String(text || '');
+  const i   = t.indexOf(Q_TAIL);
+  /* the tab is drawn in every branch: it labels the question, not the
+     string, and a placeholder question is still the question */
+  const tab = '<span class="b2q__tab">' + esc('תכלס') + '</span>';     /* TAMAR */
+  if (i < 0 || i + Q_TAIL.length !== t.length)
+    return '<p class="' + cls + '">' + tab + esc(t) + '</p>';
+  const claim = t.slice(0, i).replace(/\s+$/, '');
+  return '<p class="' + cls + '">' + tab + esc(claim) +
+         '<span class="b2q__tail">' + esc(Q_TAIL) + '</span></p>';
 }
 
 /* ===================== BEAT 3 · THE BILL ============================ */
