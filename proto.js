@@ -5857,6 +5857,7 @@ function onMapSettled(m, fn) {
    quotes is the placeholder's own length and was never a budget: 77
    characters run four lines in this 244px column and two lines hold 68. */
 const MAP_INTRO_COPY = {                                              /* TAMAR */
+  title: 'אז איך זה עובד?',                                          /* TAMAR · T16 */
   line: 'היכנסו לנושא במפת הנושאים, ענו על השאלות, המשיכו להתקדם במשחק לאורך מפת הנושאים ולצבור מטבעות',
   go:   'מתחילים',
 };
@@ -5910,10 +5911,10 @@ function maybeMapIntro() {
 }
 function mapIntroModal() {
   const m = stickerModal({
-    /* no title: the copy is one sentence and it is the body. The empty
-       <h2> the component always emits is hidden by :empty, scoped to
-       this modal — see proto.css — so the hazard treatment does not
-       paint a blank yellow box above the sentence. */
+    /* T16 · the title slot has a string again. It was left out in T2
+       because the copy was one sentence; the :empty rule that collapsed
+       the slot is untouched and simply stops matching now. */
+    title: MAP_INTRO_COPY.title,
     body:  MAP_INTRO_COPY.line,
     /* ITEM 9's hero, with nothing in it yet: the "?" fallback is what the
        slot draws until this screen has art of its own. heroKey marks the

@@ -3307,7 +3307,37 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 /* the body is a scroller in the base component, for the law's long
    summary. Here it holds one sentence and must not grow its own scrollbar
    around it. */
-.stmodal[data-mapintro] .stmodal__body{ overflow:visible; text-align:center; }
+/* T16 · THE BODY IS BIGGER, AND ONLY HERE. --fs-meta is 13px and it is
+   the right size for the law's long summary and a glossary definition —
+   reference text somebody has chosen to open. This modal is neither: it
+   is one instruction, shown once, unbidden, to somebody who has just
+   arrived. 15px is the step that makes it read as an instruction without
+   reaching --fs-body's 17, which would put it level with the law modal's
+   own heading.
+   SCOPED, NOT EDITED. .stmodal__body's 13px is shared with lawModal,
+   glossModal and moreModal (profileModal and inviteModal pass no body at
+   all), so the shared declaration is untouched and this overrides it for
+   [data-mapintro] alone. */
+.stmodal[data-mapintro] .stmodal__body{
+  overflow:visible; text-align:center; font-size:15px;
+}
+/* T16 · THE TITLE COMES BACK THROUGH THE :empty RULE, NOT AROUND IT.
+   T2 collapsed this slot because the copy was one sentence and there was
+   no string for a heading; the rule it used keys on :empty, so the slot
+   reappears on its own the moment mapIntroModal() passes a title. The
+   :empty rule below is unchanged and still earns its place — it is what
+   stops an empty <h2> taking the box's gap if the title is ever removed
+   again.
+   18px, BETWEEN THE TWO THINGS IT SITS BETWEEN. The body is now 15 and
+   this modal's heading would otherwise be 20: .stmodal__box:has(.sthero__q)
+   bumps a title on a "?"-hero sticker, and this modal is exactly that.
+   20 reads as the law modal's voice — a document announcing itself; 18
+   is a question being asked. The two selectors tie at (0,3,0), so this
+   one wins on source order, which is why it lives below that rule and
+   not above it. */
+.stmodal[data-mapintro] .stmodal__title{
+  font-size:18px;
+}
 /* T2 · the title slot has no string — the copy is one sentence and it
    lives in the body. stickerModal() always emits the <h2>, so :empty is
    what keeps an empty heading from taking the box's gap. Scoped here and
@@ -3784,12 +3814,21 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    ===================================================================== */
 
 /* everything but the chair goes. The plaza gradient is part of the
-   building scene, so it leaves with it. */
+   building scene, so it leaves with it.
+   T16 · AND THE LOCKUP GOES WITH THEM. v28d added .i-logo to the intro
+   and the loading beat reuses #scIntro — it does not build a screen of
+   its own, it fades this one down to the chair — so the credit was
+   sitting on the loading screen, alone with the chair, which is the one
+   place it was never meant to be. It joins the list rather than getting
+   a display:none of its own: the beat's whole grammar is that everything
+   but the chair fades on the same clock, and a mark that vanished
+   instantly would be the only thing on the screen that cut. */
 .sc-intro.is-loading .i-title,
 .sc-intro.is-loading .i-sub,
 .sc-intro.is-loading .i-para,
 .sc-intro.is-loading .i-stage,
 .sc-intro.is-loading .i-cta,
+.sc-intro.is-loading .i-logo,
 .sc-intro.is-loading::before{
   opacity:0; pointer-events:none;
   transition:opacity var(--t-load-fade) linear;
