@@ -4,7 +4,7 @@
    THE ARC (sheet §1.0, revised 29 Aug — verified against data.js):
      1 CLAIM     אמת/שקר   answered, NOT resolved
      2 POSITION  the player as the 121st MK, unscored
-     3 CONTEXT   bill_title + bill_date ONLY
+     3 CONTEXT   one line, no fields read (T5; was bill_title + bill_date)
      4 CASCADE   one MK at a time, predict then instant verdict
      5 REVEAL    claim resolves · tally counts up · resolution · sources
 
@@ -2158,7 +2158,12 @@ function stickerModal(o) {
       '<button type="button" class="stmodal__x" aria-label="סגירה">✕</button>' +
       hero +
       '<h2 class="stmodal__title">' + esc(o.title || '') + '</h2>' +
-      (o.meta ? '<p class="stmodal__meta">' + esc(o.meta) + '</p>' : '') +
+      /* T7 · the label is a child of the meta line, not a line of its own:
+         a separate <p> would take the box's gap and read as a third block
+         between the title and the body. */
+      (o.meta ? '<p class="stmodal__meta">' +
+        (o.metaLabel ? '<span class="stmodal__metalab">' + esc(o.metaLabel) + '</span>' : '') +
+        esc(o.meta) + '</p>' : '') +
       (o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
       /* the ONE field this component grew, so beat 5's disclosure could
          reuse it instead of getting a second modal shape of its own. It
@@ -2202,6 +2207,70 @@ function stickerModal(o) {
    Fixed to the same lookup every other topic-icon site in this file
    already uses, `M.topics[issue.topic]`, so the modal draws the icon the
    map and the HUD are drawing for the same issue. */
+/* T5b · THE OUTCOME SENTENCE COMES OFF THE BILL SUMMARY BEFORE IT IS SHOWN.
+   bill_summary is a CONTEXT field with an OUTCOME sentence welded onto the
+   end of it on some issues — s1 finishes "עבר 61 מול 55." and its own
+   _tally is {for:61, against:55}, the exact pair the finale board counts up
+   to. The modal opens at beat 2. Left whole, the field hands the player the
+   answer two beats before the cascade asks for it, which is the locked
+   "crowd data never appears between the player's own vote and the reveal".
+   The split is here rather than in data.js because the field is Tamar's to
+   write and Roman's to serve; this is the one place it is read.
+
+   THE BOUNDARY IS A SENTENCE, NOT A SUBSTRING. Cutting at the first digit
+   would have taken e1's "המע\"מ ל-18%", a1's "90 ח\"כים" and v1's climate
+   targets — all context, all load-bearing. The unit removed is the final
+   SENTENCE, and only when that sentence carries a vote count.
+
+   WHAT COUNTS AS A VOTE COUNT. The data writes "מול", not "בעד/נגד" —
+   "עבר 61 מול 55", "עברה בקריאה טרומית 55 מול 10". Both forms are matched
+   anyway, because vote_result (beat 5's own field) writes the other one,
+   "27 חברי כנסת בעד, 42 נגד", and the CMS has no rule keeping the two
+   fields in separate dialects. Verified over every issue in data.js: the
+   pattern fires on 14 of the 16 vote_result strings — the two it skips
+   have no numbers in them at all — and on exactly 2 of the 16
+   bill_summary fields, s1 and s2, in both cases on the last sentence.
+
+   WHEN IT CANNOT CUT CLEANLY IT DOES NOT CUT. If the count sits anywhere
+   but the final sentence, the summary is returned whole rather than
+   guessed at, and the issue is a content report. No issue is in that state
+   today; the branch exists so that a future one is visible instead of
+   silently mangled. */
+const TALLY_SENT =
+  /\d{1,3}\s*(?:קולות\s*)?(?:בעד\s+)?מול\s+\d{1,3}|\d{1,3}[^.!?\d]{0,20}בעד[^.!?]{0,24}?\d{1,3}\s*נגד/;
+
+/* sentence split without a lookbehind — Safari only grew those in 16.4 and
+   this file has no build step to lower them. Runs of terminators (e2's
+   summary ends "..") stay with the sentence they close. */
+function sentencesOf(t) {
+  const out = [];
+  let start = 0;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === '.' || t[i] === '!' || t[i] === '?') {
+      while (i + 1 < t.length && '.!?'.indexOf(t[i + 1]) > -1) i++;
+      out.push(t.slice(start, i + 1));
+      start = i + 1;
+    }
+  }
+  if (start < t.length) out.push(t.slice(start));
+  return out;
+}
+
+function billContext(raw) {
+  const txt = String(raw || '').trim();
+  if (!txt) return '';
+  const s = sentencesOf(txt);
+  const hit = [];
+  for (let i = 0; i < s.length; i++) if (TALLY_SENT.test(s[i])) hit.push(i);
+  if (!hit.length) return txt;                                  /* nothing to take off */
+  if (hit.length > 1 || hit[0] !== s.length - 1) return txt;     /* mid-text: report, do not guess */
+  /* a summary that is ONLY its outcome sentence renders with no body
+     rather than with the tally — the modal still carries title, date and
+     art, and the locked rule outranks a full-looking panel. */
+  return s.slice(0, -1).join('').trim();
+}
+
+const LAW_DATE_LABEL = 'תאריך ההצבעה:';                                /* TAMAR · T7 */
 function lawModal() {
   /* ITEM 46 · THE 576, CHOSEN ON CACHING RATHER THAN ON SIZE. The 256 was
      picked against a 65px target, where 65 x DPR 3 = 195; item 45's band
@@ -2226,7 +2295,8 @@ function lawModal() {
   return stickerModal({
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
-    body:  issue.bill_summary || '',
+    metaLabel: LAW_DATE_LABEL,                                         /* TAMAR · T7 */
+    body:  billContext(issue.bill_summary),                              /* T5b */
     art:   h ? ROOT + h : '',
     /* ITEM 9 · the hook a per-issue graphic drops into later. It is on the
        hero, not on the modal, so whatever fills it does not have to know
@@ -2274,7 +2344,7 @@ const PROF_COPY = {
   m:     'לשון זכר',                    /* shipped · board 2b */
   swap:  'בחרו את הדמות שלכם',          /* shipped · board 2a title, 2b door */
   sub:   'בחרו דמות שתלווה אתכם במפה',  /* shipped · board 2a */
-  build: 'בנו דמות משלכם',              /* TAMAR · 2b's second door and the builder's title while no build exists. NOT התאימו את הדמות — the presets cannot be adjusted; this builds from nothing */
+  build: 'עצבו דמות משלכם',              /* TAMAR · T3. 2b's second door and the builder's title while no build exists. NOT התאימו את הדמות — the presets cannot be adjusted; this builds from nothing */
   edit:  'ערכו את הדמות שלכם',          /* TAMAR · the same door and title once a build exists: now there IS something to edit */
   of:    'מתוך',                        /* shipped · the board's progress, "2 מתוך 5" */
   prev:  'הקודם',                       /* TAMAR · the builder's back chevron */
@@ -2724,24 +2794,22 @@ function beat2() {
            whether or not the line was there. */
       '</div>' +
     '</div>' +
-    /* ITEM 31 · BEAT 3 IS TITLE AND DATE, IN ONE SENTENCE, AND NOTHING
-       ELSE. It was a 30px display title, a date chip and a closing hint;
-       it is now the brief's two lines. The constraint is locked: no
-       summary, no sources, no tally here — bill_summary stays behind the
-       bill button at beat 2, and the tally is beat 5's.
-       The date and the title are marked inside the sentence rather than
-       set as their own blocks, so the screen reads as one statement
-       followed by one question. */
+    /* T5 · BEAT 3 IS ONE LINE. ITEM 31's sentence is retired with it.
+       It read "בתאריך {bill_date} הועלתה להצבעה הצעת החוק: {bill_title}."
+       and both fields are still on screen a beat earlier — bill_title is
+       what lawModal() titles itself with, bill_date is the line T7 just
+       labelled inside it, and issue.title is the underlined handle in
+       beat 2's own sentence. Restating them here spent the beat on facts
+       the player has already been given and pushed the question, which is
+       the only thing this beat is for, to the bottom of a paragraph.
+       NEITHER FIELD IS READ HERE ANY MORE. bill_date and bill_title are
+       beat 2's, through the modal, and nowhere else in this beat.
+       The white pill under it is not new and is not built here: the
+       affordance tachlesTransition() schedules at T.tcTapAt is .tctap,
+       already floating at the bottom of this same overlay. */
     '<div class="ovpane ovpane--bill is-below">' +
       '<div class="ov-inner b3inner">' +
-        '<p class="b3say">' +
-          esc('בתאריך ') +                                        /* TAMAR */
-          '<b class="b3say__d">' + esc(issue.bill_date || '') + '</b>' +
-          esc(' הועלתה להצבעה הצעת החוק: ') +                      /* TAMAR */
-          '<b class="b3say__t">' + esc(issue.bill_title || '') + '</b>' +
-          esc('.') +
-        '</p>' +
-        '<p class="b3ask">' + esc('מה לדעתך הצביעו הח״כים?') + '</p>' +  /* TAMAR */
+        '<p class="b3ask">' + esc('נחשו מה הצביעו שאר הח״כים') + '</p>' +  /* TAMAR · T5 */
       '</div>' +
     '</div>';
   $('#stage').appendChild(ov);
@@ -4778,8 +4846,16 @@ const INTRO_COPY = {
   tag:   'מבית המגדלור · פרוטוטייפ',                    /* index.html:  .intro-tag  */
   t1:    'הח״כ',                                        /* index.html:  h1.display  */
   t2:    'ה-121',
-  sub:   'מה באמת קורה בכנסת?',                         /* index.html:  .sub        */
-  para:  'לא בוחן ידע. לא אומר למי להצביע. משחק שמראה מה קרה — ומה אתם חושבים על זה.',
+  /* T1 · ONE LINE REPLACES BOTH. `sub` was the question and `para` the
+     standfirst; the screen now carries neither and this instead, at the
+     question's size. Both survive here unrendered, as `note` and `lede`
+     already do — putting either back is one line in renderIntro().
+     THE HYPHEN IS DELIBERATE. Tamar wrote "ה 121" with a space; the title
+     four lines above it on the same screen is "ה-121" with a hyphen, and
+     one screen may not show the number two ways. */
+  line:  'אתם הח״כ ה-121, בואו לבדוק מה באמת קורה בכנסת, להצביע ולשתף עם כולם!', /* TAMAR */
+  sub:   'מה באמת קורה בכנסת?',                         /* retired from the screen, T1 */
+  para:  'לא בוחן ידע. לא אומר למי להצביע. משחק שמראה מה קרה — ומה אתם חושבים על זה.', /* retired from the screen, T1 */
   cta:   'בואו נשחק 🎮',                                 /* index.html:  button.cta  */
   note:  'סוגיה אחת = דקה · אפשר לשחק כמה שרוצים',      /* index.html:  .intro-note */
   /* the board's INT-D carries a striped slot above the title. It is
@@ -4883,8 +4959,7 @@ function renderIntro() {
          the intro overflowed the stage by 86px. */
       '<img class="i-chair" src="' + ROOT + (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
     '</div>' +
-    '<p class="i-sub">' + esc(INTRO_COPY.sub) + '</p>' +
-    '<p class="i-para">' + esc(INTRO_COPY.para) + '</p>' +
+    '<p class="i-sub">' + esc(INTRO_COPY.line) + '</p>' +                /* TAMAR */
     '<div class="i-stage" aria-hidden="true">' +
       '<img class="i-build" src="' + ROOT + (M.props.building['1170'] || M.props.building['390']) + '" alt=""></div>' +
     '<button type="button" class="p-c i-cta">' + esc(INTRO_COPY.cta) + '</button>';

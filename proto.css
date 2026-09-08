@@ -1226,27 +1226,22 @@ body.no-ph .ph{ display:none !important; }
 
 /* =====================================================================
    BEAT 3 · THE BILL · B3-OVERLAY
-   bill_title + bill_date only, over the MK card. What shows through is
-   the card and nothing else. Dismiss COLLAPSES INTO the card beneath.
+   One line, over the MK card. What shows through is the card and nothing
+   else. Dismiss COLLAPSES INTO the card beneath.
    ===================================================================== */
 /* the bill pane's own column. The surface is .ov--stage's; this is only
    the content that arrives on it. */
 .b3inner{ gap:var(--sp-4); text-align:center; }
 .ov--stage.is-dismissable{ cursor:pointer; }
-/* ITEM 31 · BEAT 3, REBUILT. .b3title (a 30px display line), .b3date (a
-   paper chip) and .b3go (the closing hint) are retired: the screen is now
-   one sentence and one question, and nothing else is allowed on it.
-   The sentence is prose at reading size, with the DATE and the BILL NAME
-   lifted inside it — they are the two facts the beat exists to state, and
-   marking them in place keeps it one sentence instead of three stacked
-   objects. The question is the loud half, because it is the thing being
-   asked and the cascade answers it. */
-.b3say{
-  margin:0; font-size:17px; font-weight:700; line-height:1.55;
-  color:#D8D2C4; text-wrap:pretty;
-}
-.b3say__d, .b3say__t{ color:#FBF7EE; font-weight:900; }
-.b3say__d{ font-variant-numeric:tabular-nums; }
+/* T5 · BEAT 3, DOWN TO THE QUESTION. .b3say and its two marked runs
+   (.b3say__d the date, .b3say__t the bill name) go the way ITEM 31 sent
+   .b3title, .b3date and .b3go: the beat is one line now, and the line is
+   the question. Deleted rather than left behind a retired class, because
+   the only element on the screen should not have a stylesheet describing
+   a paragraph that is no longer built.
+   .b3inner keeps its gap and its centring — it is a one-child column
+   today and the gap costs nothing, but it is also where anything the beat
+   grows back would land. */
 .b3ask{
   margin:0; font-family:var(--font-display); font-weight:900;
   font-size:26px; line-height:1.2; color:#F6F1E2; text-wrap:balance;
@@ -1961,9 +1956,32 @@ body.no-ph .ph{ display:none !important; }
    patch behind the line, both pure black at partial alpha. There is no
    0-blur term, so it can never read as an outline, and no colour, so it
    can never read as a glow. */
+/* T1 · ONE LINE, AT THE QUESTION'S SIZE, IN SimplerPro REGULAR.
+   THE FAMILY IS NEW HERE AND THAT IS THE POINT. This rule named no family,
+   so it inherited --font-ui from body — system-ui, where `700` is a real
+   semibold. The line is specified as SimplerPro, which ships 400 and 900
+   and nothing between, so naming the family forces the weight to be
+   chosen rather than inherited: left at 700 it would resolve UPWARD and
+   silently print the Black across every line of it.
+   400, AND NOT 900, for three reasons. It is a fourteen-word sentence
+   running four to five lines, and the Black at 21-26px over five lines is
+   a wall rather than a voice. The title directly above it is already
+   SimplerPro Black at 52-84px, and a second Black block under it competes
+   with the one thing on the screen that should dominate. And the
+   standfirst this absorbs was already --font-body at 400, so the copy it
+   replaces keeps its weight rather than gaining one.
+   THE MEASURE AND THE LEADING COME WITH IT. At the question's size this is
+   now a paragraph, not a label: 20ch keeps the line count honest at 360
+   and 1.3 gives SimplerPro's tall em box somewhere to sit. */
 .i-sub{ margin:clamp(10px,2.4vh,20px) 0 0; font-size:clamp(21px,3.1vh,26px);
-  font-weight:700; color:#EFECE4; position:relative; z-index:4; flex:none;
+  font-family:var(--font-body); font-weight:400; line-height:1.3;
+  max-width:20ch; text-wrap:balance;
+  color:#EFECE4; position:relative; z-index:4; flex:none;
   text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
+/* T1 · .i-para IS NO LONGER RENDERED. The rule stays because the string
+   stays — INTRO_COPY.para survives unrendered and putting it back is one
+   line in renderIntro(), which is the arrangement the note there already
+   describes for `note` and `lede`. */
 /* 21 · THE STANDFIRST INHERITED --font-ui FROM body AND NAMED NO FAMILY,
    so switching it means stating one. 700 -> 400 for the same reason as
    .eg-eyebrow: 700 would resolve to the Black. The colour is NOT touched
@@ -3068,6 +3086,14 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   font-size:var(--fs-body); line-height:1.22; text-align:center;
 }
 .stmodal__meta{ margin:0; font-size:var(--fs-meta); font-weight:700; color:var(--ink-soft); }
+/* T7 · the date's label. SimplerPro Regular and the date's own grey, one
+   step down in size — it names the field rather than competing with it.
+   400 IS WRITTEN OUT because the family ships 400 and 900: inheriting the
+   700 above would resolve upward and print the Black on a caption. */
+.stmodal__metalab{
+  display:block; font-family:var(--font-body); font-weight:400;
+  font-size:var(--fs-micro); line-height:1.3; color:var(--ink-soft);
+}
 .stmodal__body{
   margin:2px 0 0; font-size:var(--fs-meta); font-weight:700;
   line-height:1.55; text-align:start; align-self:stretch;
