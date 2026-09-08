@@ -4557,6 +4557,67 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 }
 .eg-chip.has-v .eg-chip__v{ color:var(--ink); }
 .eg-chip.is-bump{ animation:egBump 260ms var(--e-land); }
+
+/* =====================================================================
+   ITEM 19 · THE FREE-TEXT ROW
+   The wrapper is a column so the field can sit UNDER the row it names
+   rather than inside it — see the note in egBeat3() for why it cannot be
+   a child of the button. The row itself is a .eg-chip and is styled by
+   every rule above; nothing here restyles it.
+   ===================================================================== */
+.eg-other{ display:flex; flex-direction:column; gap:6px; }
+.eg-other__g{ font-size:19px; line-height:1; opacity:.75; }
+.eg-other__in{
+  appearance:none; width:100%; box-sizing:border-box;
+  border:0; border-radius:12px; padding:11px 14px 12px;
+  font-family:var(--font-body); font-size:17px;   /* 17 so iOS does not zoom */
+  font-weight:400; color:var(--ink); background:var(--paper);
+  box-shadow:0 0 0 2px rgba(19,19,16,.30) inset, 0 2px 0 rgba(0,0,0,.22);
+  direction:rtl;
+}
+.eg-other__in::placeholder{ color:var(--ink-soft); opacity:.75; }
+.eg-other__in:focus{ outline:3px solid var(--edge); outline-offset:2px; }
+
+/* =====================================================================
+   ITEM 20B · THE VARIANT SWITCHER
+   Three chips, one on. It is chrome for choosing what the card says, so
+   it is deliberately quieter than the card and than the actions: no
+   yellow, no die-cut ring, nothing that competes with the artifact it is
+   editing. A disabled tab is a variant with nothing to lead with — see
+   egBeat4() — and reads as unavailable rather than as an error.
+   ===================================================================== */
+.eg-vars{
+  display:flex; gap:7px; align-self:center; flex:none; margin-top:2px;
+  opacity:0; transition:opacity var(--t-f5-in) var(--e-settle);
+}
+.eg-vars.is-in{ opacity:1; }
+.eg-var{
+  appearance:none; border:0; cursor:pointer; border-radius:999px;
+  padding:7px 14px 8px; font-family:var(--font-ui); font-size:13px; font-weight:700;
+  color:#D8D2C4; background:rgba(255,255,255,.10);
+  -webkit-tap-highlight-color:transparent;
+  transition:background var(--t-press) linear, color var(--t-press) linear;
+}
+.eg-var.is-on{ background:var(--paper); color:var(--ink); }
+.eg-var[disabled]{ opacity:.4; cursor:default; }
+
+/* ITEM 20A · the share action, in the exit row above the two doors. R-B
+   rather than a second P-C: the yellow on this screen is the way out, and
+   two primaries would make the player choose between leaving and sharing
+   by weight rather than by intent. */
+.eg-shareb{ min-height:52px; }
+.eg-shareb.is-copied{ color:var(--primary); }
+
+/* ---- ITEM 20B · variant B leads with the topic and states no number --- */
+.eg-share__blead{
+  margin:0; display:flex; align-items:center; gap:11px;
+  font-family:var(--font-display); font-weight:900; font-size:clamp(20px,5.4vw,26px);
+  line-height:1.16; color:var(--ink); text-wrap:balance;
+}
+.eg-share__bico{ flex:none; line-height:0; }
+/* ---- variant C · the record at the lead's size ----------------------- */
+.eg-share__lead--c{ flex-wrap:wrap; }
+.eg-share__of{ font-family:var(--font-display); font-weight:900; font-size:19px; color:var(--ink-soft); }
 @keyframes egBump{ 40%{ transform:translateY(2px) scale(.985); } 100%{ transform:none; } }
 
 /* ---- the share card ------------------------------------------------ */

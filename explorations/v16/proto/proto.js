@@ -5730,6 +5730,22 @@ function topicFace(t, px) {
 let ALLOC = {};
 
 /* =====================================================================
+   ITEM 19 · THE FREE-TEXT ROW
+   Its COINS live in ALLOC like any other row's, under a key that is not
+   and cannot become a topic id — data.js's ids are slugs and this starts
+   with two underscores — so every sum over ALLOC (egPlaced, egRemaining)
+   counts them without a special case, and every lookup BY TOPIC misses
+   them without a special case either. That second half is the whole
+   safety property; see cardTopics().
+   Its NAME lives here, alone, in a variable no card and no share code
+   references. It is not in ALLOC, not in PROFILE and not in the save, so
+   it cannot be reached by anything that walks those.
+   ===================================================================== */
+const OTHER_KEY = '__other';
+const OTHER_MAX = 24;                 /* the hard cap on what can be typed */
+let ALLOC_OTHER_NAME = '';            /* NEVER leaves this screen */
+
+/* =====================================================================
    THE END-GAME ROUTER. One screen, four stages, each replacing the last
    — the same shape as the round's beats, and for the same reason: the
    stage is a fixed box with overflow:hidden and a scrolling column here
@@ -5737,6 +5753,9 @@ let ALLOC = {};
    ===================================================================== */
 async function endGame() {
   ALLOC = {};
+  /* ITEM 19 · the label goes with the coins. Replaying must not leave a
+     previous run's word sitting on an empty row. */
+  ALLOC_OTHER_NAME = '';
   showScreen('end');
   /* THE HUD HAS TO BE REPAINTED HERE. Its count and coin chip were only
      ever written by renderMap(), because the map was the only screen
@@ -6067,6 +6086,38 @@ function egFlyOne(node, x0, y0, cx, cy, x1, y1, delay, onFirst, onLast) {
   }, delay);
 }
 
+/* ITEM 19 · the row's own copy. The glyph is a mark rather than a drawn
+   object: the eight above name real topics and carry real artwork, and
+   giving this one a picture would claim it is a ninth topic. */
+const EG_OTHER_LABEL = 'אחר';                                          /* TAMAR */
+const EG_OTHER_PH    = 'ומה עוד חשוב לכם?';                            /* TAMAR */
+const OTHER_GLYPH    = '<span class="eg-other__g" aria-hidden="true">✎</span>';
+
+/* =====================================================================
+   ITEM 19 + 20B · THE ONE GATE THE FREE TEXT CANNOT PASS
+   Every topic name the card or the share string is allowed to say comes
+   from here and from nowhere else. THE ENFORCEMENT IS THE FIRST LINE:
+   it walks TOPICS() — data.js's own eight — and looks each id up in
+   ALLOC. The free-text row's coins are under OTHER_KEY, which is not any
+   topic's id, so they are not reachable by this walk; the player's text
+   is in ALLOC_OTHER_NAME, which this function does not mention and could
+   not return if it did, because what it returns are `t` objects taken
+   from DATA.topics.
+   THAT IS ALSO THE FALLBACK ITEM 20B ASKS FOR, for free and without a
+   branch: if אחר holds the most coins it is simply not in the list, so
+   the highest FIXED topic is what comes back — and if no fixed topic has
+   any, the list is empty and the caller omits the line. There is no
+   "if top is other" test anywhere, because there is no code path on
+   which `other` could have been top.
+   ===================================================================== */
+function cardTopics(n) {
+  return TOPICS()
+    .map(t => ({ t, v: ALLOC[t.id] || 0 }))
+    .filter(x => x.v > 0)
+    .sort((a, b) => b.v - a.v)
+    .slice(0, n || 1);
+}
+
 const egPlaced    = () => Object.values(ALLOC).reduce((a, b) => a + b, 0);
 const egRemaining = () => wallet - egPlaced();
 
@@ -6094,13 +6145,19 @@ async function egBeat3() {
     '<div class="eg-acts" id="egActs"></div>';
 
   const chips = $('#egChips', c);
-  TOPICS().forEach(t => {
+  /* ITEM 19 · ONE MAKER FOR ALL NINE ROWS. "Behaves like any other topic
+     row for allocation purposes" is not a promise kept by matching two
+     code paths — it is the same code path, called once more with a
+     different key and a different face. The increment, the cap against
+     what is left, the bump, the disabled state and item 14's coin flight
+     all come along because none of them knows which row it is on. */
+  const mkChip = (key, icoHTML, label) => {
     const b = el('button', 'eg-chip');
     b.type = 'button';
-    b.dataset.topic = t.id;
+    b.dataset.topic = key;
     b.innerHTML =
-      '<span class="eg-chip__ico">' + topicFace(t, 30) + '</span>' +
-      '<span class="eg-chip__name">' + esc(t.label) + '</span>' +
+      '<span class="eg-chip__ico">' + icoHTML + '</span>' +
+      '<span class="eg-chip__name">' + esc(label) + '</span>' +
       '<span class="eg-chip__v" aria-hidden="true"></span>';
     pressable(b).addEventListener('click', () => {
       const left = egRemaining();
@@ -6114,18 +6171,63 @@ async function egBeat3() {
       egBalancePulse();
       /* the last portion is the remainder, so the wallet can always be
          emptied exactly — see the note above */
-      ALLOC[t.id] = (ALLOC[t.id] || 0) + Math.min(egPortion(), left);
+      ALLOC[key] = (ALLOC[key] || 0) + Math.min(egPortion(), left);
       b.classList.remove('is-bump'); void b.offsetWidth; b.classList.add('is-bump');
       egPaint();
+      if (key === OTHER_KEY) revealOther();
     });
     chips.appendChild(b);
-  });
+    return b;
+  };
+  TOPICS().forEach(t => mkChip(t.id, topicFace(t, 30), t.label));
+
+  /* ITEM 19 · אחר, under the eight, with the field it opens.
+     THE FIELD IS A SIBLING OF THE BUTTON, NOT INSIDE IT — a text input
+     inside a button cannot be focused without the button swallowing the
+     tap, and every tap on the row has to keep allocating. It appears on
+     the first tap and stays; taps after that only add coins, exactly as
+     they do on the eight above.
+     EMPTY IS ALLOWED AND IS NOT AN ERROR STATE. Coins may sit on an
+     unnamed אחר for the whole screen; nothing here requires the field,
+     validates it, or marks it. */
+  const otherWrap = el('div', 'eg-other');
+  chips.appendChild(otherWrap);
+  const otherBtn = mkChip(OTHER_KEY, OTHER_GLYPH, EG_OTHER_LABEL);     /* TAMAR */
+  otherWrap.appendChild(otherBtn);
+  const field = el('input', 'eg-other__in');
+  field.type = 'text';
+  field.maxLength = OTHER_MAX;                 /* the hard cap, 24 */
+  field.placeholder = EG_OTHER_PH;                                     /* TAMAR */
+  field.setAttribute('dir', 'auto');
+  field.setAttribute('autocomplete', 'off');
+  field.setAttribute('autocorrect', 'off');
+  field.setAttribute('autocapitalize', 'off');
+  field.setAttribute('spellcheck', 'false');
+  field.setAttribute('enterkeyhint', 'done');
+  field.setAttribute('aria-label', EG_OTHER_LABEL);                    /* TAMAR */
+  field.value = ALLOC_OTHER_NAME;
+  field.hidden = !(ALLOC_OTHER_NAME || (ALLOC[OTHER_KEY] || 0) > 0);
+  otherWrap.appendChild(field);
+  /* CAPPED IN THREE PLACES because maxlength alone is a UI hint: a paste,
+     an IME commit and a scripted set can all exceed it. This is the value
+     the variable ever holds. */
+  const takeOther = () => { ALLOC_OTHER_NAME = field.value.replace(/\s+/g, ' ').trim().slice(0, OTHER_MAX); };
+  field.addEventListener('input', takeOther);
+  field.addEventListener('blur', () => { takeOther(); field.value = ALLOC_OTHER_NAME; });
+  field.addEventListener('keydown', e => { if (e.key === 'Enter') field.blur(); });
+  const revealOther = () => {
+    if (!field.hidden) return;
+    field.hidden = false;
+    field.focus();
+  };
 
   const acts = $('#egActs', c);
   const clear = el('button', 'eg-clear', 'התחלה מחדש');                /* TAMAR */
   clear.type = 'button';
   pressable(clear).addEventListener('click', () => {
     ALLOC = {};
+    ALLOC_OTHER_NAME = '';                         /* ITEM 19 · reset takes it too */
+    const f = $('.eg-other__in'); if (f) { f.value = ''; f.hidden = true; }
     /* ITEM 14 · a row still waiting for its coins is holding the number it
        had; the reset has to release that or the row keeps a value the
        allocation no longer has until a token that is already in the air
@@ -6217,36 +6319,170 @@ function egPaint() {
    token, not their identity. */
 const SHARE_NAME = false;
 
+/* =====================================================================
+   ITEM 20B · THREE CARDS, ONE DEFAULT, AND THE DEFAULT IS NOT OURS
+   A leads with the surprise count and is UNCHANGED — same strings, same
+   order, same markup as it shipped. B leads with the topic and states no
+   number at all. C is the prediction record alone.
+   'a' IS RE-ASSERTED ON EVERY ARRIVAL, not just declared here. A module
+   variable would keep whatever the player last picked and quietly make
+   that the default for the rest of the session; decision table #8 says
+   the default is A and is Tamar's and the NGO's to move, so the card
+   opens on A every time it is opened.
+   THE FULL SPLIT IS NEVER ON ANY OF THEM. cardTopics() is asked for one
+   topic, never for the list.
+   ===================================================================== */
+const SHARE_VARIANTS = ['a', 'b', 'c'];
+let SHARE_VARIANT = 'a';
+const SHARE_TAB = {                                                    /* TAMAR */
+  a: 'הפתעות',
+  b: 'נושא',
+  c: 'ניחושים',
+};
+const SHARE_ACT  = 'שיתוף';                                            /* TAMAR */
+const SHARE_DONE = 'הועתק';                                            /* TAMAR */
+
+/* the card's own strings, named once so the three variants and the share
+   TEXT read the identical words. Every one of them is a string that was
+   already on the card; nothing here is new copy. */
+const CARD_COPY = {
+  tag:       'הח״כ ה-121',                                             /* TAMAR · shipped */
+  surprises: 'פעמים שהכנסת הפתיעה אותי',                                /* TAMAR · shipped */
+  topic:     'הכי הרבה הקצאתי ל',                                      /* TAMAR · shipped */
+  guessed:   'ניחשתי נכון ',                                           /* TAMAR · shipped */
+  outOf:     ' מתוך ',                                                 /* TAMAR · shipped */
+};
+
+/* ITEM 20B · the three bodies. `tops` is whatever cardTopics() allowed —
+   see the gate. None of these functions can reach ALLOC_OTHER_NAME, and
+   none of them takes a topic from anywhere but this argument. */
+function shareCardBody(v, s, tops) {
+  const topicLine = tops.length
+    ? '<p class="eg-share__topic">' +
+        '<span class="eg-share__ico">' + topicFace(tops[0].t, 22) + '</span>' +
+        esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</p>'
+    : '';
+  const record =
+    '<p class="eg-share__second">' + esc(CARD_COPY.guessed) + N(s.correct) +
+      esc(CARD_COPY.outOf) + N(s.asked) + '</p>';
+  if (v === 'b') {
+    /* THE TOPIC LEADS AND THERE IS NO NUMBER ON THE CARD. Not the record,
+       not the surprise count, not the coins — "no numbers" is the whole
+       variant, so the record line is absent rather than demoted. */
+    return tops.length
+      ? '<p class="eg-share__blead">' +
+          '<span class="eg-share__bico">' + topicFace(tops[0].t, 34) + '</span>' +
+          '<span>' + esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</span></p>'
+      : '';
+  }
+  if (v === 'c') {
+    /* THE RECORD ALONE, at the lead's size. No topic line at all — that
+       is what "no topics" means, and it is also why C is the one variant
+       that is always available. */
+    return '<p class="eg-share__lead eg-share__lead--c">' +
+             '<span>' + esc(CARD_COPY.guessed.trim()) + '</span>' +
+             '<b class="eg-num eg-share__n">' + N(s.correct) + '</b>' +
+             '<span class="eg-share__of">' + esc(CARD_COPY.outOf) + N(s.asked) + '</span></p>';
+  }
+  /* A · unchanged */
+  return '<p class="eg-share__lead">' +
+           '<span>' + esc(CARD_COPY.surprises) + '</span>' +
+           '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
+         topicLine +
+         '<hr class="eg-share__rule">' +
+         record;
+}
+
+/* ITEM 20A · the string that actually gets shared, built from the same
+   two sources the card is: endStats() and cardTopics(). It cannot carry
+   the free text for the same structural reason the card cannot. */
+function shareText(v) {
+  const s = endStats(), tops = cardTopics(1);
+  const L = [CARD_COPY.tag];
+  if (v === 'b') {
+    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
+  } else if (v === 'c') {
+    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+  } else {
+    L.push(CARD_COPY.surprises + ': ' + s.surprises);
+    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
+    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+  }
+  return L.join('\n');
+}
+
+/* ITEM 20A · THE OS SHEET IS THE TARGET AND THERE IS NO CUSTOM ONE.
+   navigator.share first; where it does not exist, or refuses, the text
+   goes to the clipboard instead. TEXT ONLY — see the feasibility report
+   for why no image is built: an SVG-in-<img> rasterisation cannot load
+   the webfont or the topic art, and html2canvas would be a dependency.
+   A CANCEL IS NOT A FAILURE. AbortError is the player closing the sheet
+   and must not fall through to copying something they chose not to send. */
+async function shareCard(btn) {
+  const text = shareText(SHARE_VARIANT);
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share({ text }); return 'shared'; }
+    catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) { btn.classList.add('is-copied'); btn.textContent = SHARE_DONE;   /* TAMAR */
+      setTimeout(() => { btn.classList.remove('is-copied'); btn.textContent = SHARE_ACT; }, 1600); }
+    return 'copied';
+  } catch (e) { return 'failed'; }
+}
+
 async function egBeat4() {
   const c = egStage();
   const s = endStats();
   const top = egTopTopic();
+  SHARE_VARIANT = 'a';                 /* the default, on every arrival */
 
   c.innerHTML = '<h2 class="eg-h2">' + esc('הכרטיס שלכם') + '</h2>';   /* TAMAR */
   requestAnimationFrame(() => $('.eg-h2', c).classList.add('is-in'));
   await egStep(T.f5In);
 
+  const tops = cardTopics(1);
   const card = el('div', 'eg-share');
-  card.innerHTML =
+  const head =
     '<div class="eg-share__head">' +
       '<span class="as-d eg-share__av" aria-hidden="true">' + avatarSvg() + '</span>' +
-      '<p class="eg-share__tag">' + esc('הח״כ ה-121') + '</p>' +        /* TAMAR */
+      '<p class="eg-share__tag">' + esc(CARD_COPY.tag) + '</p>' +
       (SHARE_NAME && PROFILE.name
         ? '<p class="eg-share__name">' + esc(PROFILE.name) + '</p>' : '') +
-    '</div>' +
-    '<p class="eg-share__lead">' +
-      '<span>' + esc('פעמים שהכנסת הפתיעה אותי') + '</span>' +          /* TAMAR */
-      '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
-    (top
-      ? '<p class="eg-share__topic">' +
-          '<span class="eg-share__ico">' + topicFace(top.t, 22) + '</span>' +
-          esc('הכי הרבה הקצאתי ל') + esc(top.t.label) + '</p>'          /* TAMAR */
-      : '') +
-    '<hr class="eg-share__rule">' +
-    '<p class="eg-share__second">' + esc('ניחשתי נכון ') + N(s.correct) +
-      esc(' מתוך ') + N(s.asked) + '</p>';                             /* TAMAR */
+    '</div>';
+  const paintCard = () => {
+    card.dataset.v = SHARE_VARIANT;
+    card.innerHTML = head + shareCardBody(SHARE_VARIANT, s, tops);
+  };
+  paintCard();
   c.appendChild(card);
   requestAnimationFrame(() => card.classList.add('is-in'));
+
+  /* ITEM 20B · the switcher. B is offered only when there is a fixed
+     topic for it to lead with: with none, its body is empty by the rule
+     above, and a variant that renders a blank card is not a choice. A and
+     C are always available. */
+  const sw = el('div', 'eg-vars', '');
+  sw.setAttribute('role', 'group');
+  SHARE_VARIANTS.forEach(v => {
+    const b = el('button', 'eg-var' + (v === SHARE_VARIANT ? ' is-on' : ''), esc(SHARE_TAB[v]));
+    b.type = 'button'; b.dataset.v = v;
+    b.setAttribute('aria-pressed', v === SHARE_VARIANT);
+    if (v === 'b' && !tops.length) b.disabled = true;
+    pressable(b).addEventListener('click', () => {
+      if (b.disabled) return;
+      SHARE_VARIANT = v;
+      paintCard();
+      $$('.eg-var', sw).forEach(x => {
+        x.classList.toggle('is-on', x.dataset.v === v);
+        x.setAttribute('aria-pressed', x.dataset.v === v);
+      });
+    });
+    sw.appendChild(b);
+  });
+  c.appendChild(sw);
+  requestAnimationFrame(() => sw.classList.add('is-in'));
 
   /* BEAT 5 · the buttons arrive last and stay. Nothing is appended after
      them, so this is the end of the screen and of the game. */
@@ -6269,6 +6505,12 @@ async function egBeat4() {
     });
     acts.appendChild(again);
   }
+  /* ITEM 20A · the share action. It sits above the two doors because it
+     is what this screen is for; the doors are the way off it. */
+  const share = el('button', 'r-b eg-shareb', esc(SHARE_ACT));         /* TAMAR */
+  share.type = 'button';
+  pressable(share).addEventListener('click', () => shareCard(share));
+  acts.insertBefore(share, acts.firstChild);
   const back = el('button', 'p-c eg-go', 'חזרה למפה ›');               /* TAMAR */
   pressable(back).addEventListener('click', () => goMap());
   acts.appendChild(back);
