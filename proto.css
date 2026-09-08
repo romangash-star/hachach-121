@@ -294,6 +294,28 @@
   --card-scale: 1;         /* set from JS so a 620px card fits a short
                               phone without ever introducing a scroll    */
 
+  /* =====================================================================
+     T9 FOLLOW-UP · ONE DYNAMIC VIEWPORT UNIT, FOR EVERYTHING INSIDE
+     T9 put a dvh ladder on the stage BOX and stopped there, which was
+     half a fix: every dimension INSIDE the stage was still plain vh, and
+     on iOS plain vh is the LARGE viewport — the height with the toolbars
+     hidden. Measured on the device: vh 773 against a 665 stage. So the
+     chair, the title, the leading and six other things were each sized
+     16% larger than the box they had to fit in, and .stage's
+     overflow:hidden cut the difference off the top and the bottom.
+     ONE TOKEN RATHER THAN TWENTY DUPLICATED DECLARATIONS. The stage can
+     carry a four-rung ladder because it is one property in one rule;
+     doing that at twenty sites would be eighteen extra lines and two
+     places per site to keep in step. This is the same ladder said once:
+     1dvh where dvh exists, 1vh where it does not, and every site reads
+     `calc(<n> * var(--dvu))` where it used to say `<n>vh`.
+     IT IS NOT --vh. That one is set from JS off window.innerHeight, which
+     on iOS reports the LARGE viewport and is therefore the very number
+     this token exists to stop using. --vh stays where it is, as the
+     stage ladder's own fallback rung, and nothing inside reads it.
+     ===================================================================== */
+  --dvu: 1vh;
+
   /* the guess-vs-reality strip, inside the card at its foot. 88px before
      the caption row came out. */
   --gx-h: 71px;
@@ -469,6 +491,7 @@ body{
 @media (max-width: 480px){
   .stage{ max-width:none; }
 }
+@supports (height: 1dvh){ :root{ --dvu: 1dvh; } }
 
 .stage::before{
   content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
@@ -1076,7 +1099,7 @@ body.no-ph .ph{ display:none !important; }
    is to cancel the gap out on the one pair that needs it. Same trick as the
    board, which calls the variable --gap. */
 .ov-inner{ display:flex; flex-direction:column; align-items:center;
-  --ovgap:clamp(8px, 1.6vh, 16px);
+  --ovgap:clamp(8px, calc(1.6 * var(--dvu)), 16px);
   gap:var(--ovgap); width:100%; max-width:358px; }
 /* align-items:center on a flex column shrink-wraps every child, so the
    vote row was 219px of a 326px line. The board writes width:100% here. */
@@ -1157,7 +1180,7 @@ body.no-ph .ph{ display:none !important; }
   display:block; flex:none;
   /* was clamp(96px, 23vh, 196px) — at that size it read as an icon beside
      the question instead of the thing the question is about */
-  width:auto; height:clamp(168px, 40vh, 330px); aspect-ratio:168 / 196;
+  width:auto; height:clamp(168px, calc(40 * var(--dvu)), 330px); aspect-ratio:168 / 196;
   object-fit:contain;
   filter:url(#dcw) drop-shadow(0 5px 0 rgba(0,0,0,.34));
   transition:transform var(--t-b2-seat) var(--e-settle);
@@ -1171,7 +1194,7 @@ body.no-ph .ph{ display:none !important; }
   background:var(--paper); color:var(--ink);
   box-shadow:0 0 0 3px var(--edge), 0 0 0 5px var(--keyline), 0 5px 0 rgba(0,0,0,.34);
   font-family:var(--font-display); font-weight:900;
-  font-size:clamp(21px, 4.2vh, 32px); line-height:1;
+  font-size:clamp(21px, calc(4.2 * var(--dvu)), 32px); line-height:1;
   opacity:0; pointer-events:none;
   transform:translate(-50%,-50%) scale(.82);
   transition:opacity var(--t-b2-seat) var(--e-settle),
@@ -1537,7 +1560,7 @@ body.no-ph .ph{ display:none !important; }
 /* the top pad is what a short phone can least afford: at 640px of height
    fitBeat() is already scaling the whole beat, and 44px of air above the
    board is 44px the grid pays for. Fluid, so the tall phones keep it. */
-.b5{ padding-top:clamp(14px, 5vh, 44px); gap:var(--sp-2); justify-content:flex-start; }
+.b5{ padding-top:clamp(14px, calc(5 * var(--dvu)), 44px); gap:var(--sp-2); justify-content:flex-start; }
 .b5 > *{ flex:none; }
 .b5fit{ transform-origin:top center; }
 
@@ -1906,14 +1929,14 @@ body.no-ph .ph{ display:none !important; }
    keeps a small auto margin so it settles at the foot of the group instead
    of being pushed to the foot of the screen. */
 .sc-intro{ align-items:center; text-align:center;
-  justify-content:center; padding-top:clamp(6px, 1.6vh, 14px); }
+  justify-content:center; padding-top:clamp(6px, calc(1.6 * var(--dvu)), 14px); }
 /* the plaza the building stands on */
 .sc-intro::before{
   content:""; position:absolute; left:-16px; right:-16px; bottom:-12px; height:62%;
   z-index:0; pointer-events:none;
   background:linear-gradient(to top,#6E6242 0%,#514A38 38%,rgba(64,62,58,0) 100%);
 }
-.i-tag{ flex:none; position:relative; z-index:5; margin:clamp(6px,1.5vh,16px) 0; }
+.i-tag{ flex:none; position:relative; z-index:5; margin:clamp(6px,calc(1.5 * var(--dvu)),16px) 0; }
 /* THE TITLE AND THE CHAIR ARE ONE COMPOSITE STICKER. The chair sits ON the
    letters and both carry the same white die-cut edge — the overlap of the
    two cuts is the whole idea, and it only works because neither is boxed. */
@@ -1937,8 +1960,8 @@ body.no-ph .ph{ display:none !important; }
 @property --i-chair-sa{ syntax:'<number>'; inherits:false; initial-value:0.3; }
 
 .i-chair{ display:block; position:relative; z-index:3;
-  margin-top:clamp(-64px, -7.5vh, -40px);
-  width:auto; height:clamp(150px, 36vh, 324px); aspect-ratio:278 / 324;
+  margin-top:clamp(-64px, calc(-7.5 * var(--dvu)), -40px);
+  width:auto; height:clamp(150px, calc(36 * var(--dvu)), 324px); aspect-ratio:278 / 324;
   filter:url(#dcw) drop-shadow(0 var(--i-chair-sy) var(--i-chair-sb)
                                rgba(0,0,0,var(--i-chair-sa))); }
 
@@ -1992,7 +2015,7 @@ body.no-ph .ph{ display:none !important; }
    patch behind the line, both pure black at partial alpha. There is no
    0-blur term, so it can never read as an outline, and no colour, so it
    can never read as a glow. */
-.i-sub{ margin:clamp(10px,2.4vh,20px) 0 0; font-size:clamp(21px,3.1vh,26px);
+.i-sub{ margin:clamp(10px,calc(2.4 * var(--dvu)),20px) 0 0; font-size:clamp(21px,calc(3.1 * var(--dvu)),26px);
   font-weight:700; color:#EFECE4; position:relative; z-index:4; flex:none;
   text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
 /* 21 · THE STANDFIRST INHERITED --font-ui FROM body AND NAMED NO FAMILY,
@@ -2021,9 +2044,9 @@ body.no-ph .ph{ display:none !important; }
    so are the other seven elements switched in item 21; their 1.6 was
    measured against their own sizes and none of them is two centred lines
    at 19px. */
-.i-para{ margin:clamp(6px,1.2vh,10px) 0 0; max-width:30ch;
+.i-para{ margin:clamp(6px,calc(1.2 * var(--dvu)),10px) 0 0; max-width:30ch;
   font-family:var(--font-body);
-  font-size:clamp(16px,2.3vh,19px); font-weight:400;
+  font-size:clamp(16px,calc(2.3 * var(--dvu)),19px); font-weight:400;
   line-height:1.4; color:#FBF7EE; position:relative; z-index:4; flex:none;
   text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
 .i-stage{ position:absolute; left:-16px; right:-16px; bottom:-12px; top:0;
@@ -2070,8 +2093,8 @@ body.no-ph .ph{ display:none !important; }
    Adding 12 above and removing 12 below leaves the group exactly as tall
    as it was, so nothing above the CTA moves and the CTA moves the full
    12. Verified: title top unchanged, CTA top +12 at every width. */
-.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 clamp(0px,calc(2.4vh - 12px),8px);
-  width:280px; font-size:clamp(21px,3.1vh,26px);
+.i-cta{ margin:clamp(30px,calc(4 * var(--dvu) + 12px),46px) 0 clamp(0px,calc(2.4 * var(--dvu) - 12px),8px);
+  width:280px; font-size:clamp(21px,calc(3.1 * var(--dvu)),26px);
   position:relative; z-index:6; flex:none; }
 
 /* =====================================================================
@@ -2139,7 +2162,7 @@ body.no-ph .ph{ display:none !important; }
    viewport HEIGHT, not width: height is what runs out on a 667px phone,
    and the chair below it is competing for the same space. */
 .i-ls{ display:inline-flex; align-items:center; line-height:1;
-  font-size:clamp(52px, 9.6vh, 84px); }
+  font-size:clamp(52px, calc(9.6 * var(--dvu)), 84px); }
 /* a run of Western numerals, kept LTR inside the RTL row */
 .i-ls .i-run{ display:inline-flex; direction:ltr; flex:none; }
 /* §2 · the title gets LIFT, not contrast. It already carries a white
@@ -4436,7 +4459,7 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
    ===================================================================== */
 .sc-end{
   align-items:stretch; justify-content:flex-start;
-  padding:clamp(8px,2vh,18px) 0 calc(10px + env(safe-area-inset-bottom));
+  padding:clamp(8px,calc(2 * var(--dvu)),18px) 0 calc(10px + env(safe-area-inset-bottom));
   position:relative; overflow:hidden;
 }
 /* the column carries every beat; #egFx is its SIBLING and sits under it,
@@ -4444,7 +4467,7 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 .eg-col{
   position:relative; z-index:2;
   flex:1; min-height:0; display:flex; flex-direction:column;
-  align-items:stretch; gap:clamp(8px,1.6vh,14px);
+  align-items:stretch; gap:clamp(8px,calc(1.6 * var(--dvu)),14px);
   justify-content:center; text-align:center;
 }
 .eg-fx{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
@@ -4745,7 +4768,7 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 @keyframes egFall{
   0%   { transform:translate3d(0,0,0) rotate(0deg); opacity:0; }
   12%  { opacity:1; }
-  100% { transform:translate3d(var(--cf-drift,0), 104vh, 0) rotate(var(--cf-spin,180deg));
+  100% { transform:translate3d(var(--cf-drift,0), calc(104 * var(--dvu)), 0) rotate(var(--cf-spin,180deg));
          opacity:0; }
 }
 
@@ -5129,4 +5152,4 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 /* three classes deep on purpose: it has to outrank the profile sheet's own
    `max-height:100%` (.stmodal[data-profile] .stmodal__box), which is what
    lets that sheet fill the stage when no keyboard is up */
-.kb-open .stmodal .stmodal__box{ max-height:calc(var(--kb-vis, 100vh) - 2 * var(--sp-4)); }
+.kb-open .stmodal .stmodal__box{ max-height:calc(var(--kb-vis, calc(100 * var(--dvu))) - 2 * var(--sp-4)); }
