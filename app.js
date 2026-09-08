@@ -98,6 +98,10 @@ let player = { name:"", avatarId:AVATARS[0].id, gender:"" }; // gender: 'm' | 'f
 let progress = {}; // topicId -> { issues: { issueId: {completed, coins, completedAt} } }
 let totalCoins = 0;
 
+// ===== Security helpers =====
+function esc(s){ if(!s && s!==0) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function safeUrl(url){ const u=String(url||'').trim(); return /^https?:\/\//i.test(u)?u:''; }
+
 // ===== Mobile viewport fix =====
 function setVh(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
 setVh();
@@ -108,7 +112,7 @@ window.addEventListener('orientationchange', () => setTimeout(setVh, 100));
 function loadProgress(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){ const p = JSON.parse(raw); if(p.player) player = Object.assign(player,p.player); if(p.progress) progress = p.progress; if(typeof p.totalCoins==='number') totalCoins = p.totalCoins; }
+    if(raw){ const p = JSON.parse(raw); if(p.player && typeof p.player==='object'){ ['name','gender','avatarId','avatarCfg'].forEach(k=>{ if(p.player[k]!==undefined) player[k]=p.player[k]; }); } if(p.progress) progress = p.progress; if(typeof p.totalCoins==='number') totalCoins = p.totalCoins; }
   }catch(e){}
 }
 function saveProgress(){
@@ -241,7 +245,7 @@ function renderGender(){
 // ===== Home =====
 function renderHome(){
   const mini = document.getElementById('userMini');
-  mini.innerHTML = getAvatarSvg() + '<span class="un">'+(player.name||g("אורח","אורחת"))+'</span>';
+  mini.innerHTML = getAvatarSvg() + '<span class="un">'+esc(player.name||g("אורח","אורחת"))+'</span>';
   document.getElementById('coinChip').innerHTML = '🪙 '+totalCoins;
 
   // Fast completion: one core issue per topic = 8 to finish the map
@@ -268,9 +272,9 @@ function renderHome(){
     card.style.setProperty('--tc',t.color); card.style.setProperty('--tc2',t.color2);
     card.innerHTML =
       (done?'<div class="check">✔</div>':'') +
-      '<div class="em">'+t.icon+'</div>' +
-      '<div class="nm">'+t.label+'</div>' +
-      '<div class="tsub">'+t.sub+'</div>' +
+      '<div class="em">'+esc(t.icon)+'</div>' +
+      '<div class="nm">'+esc(t.label)+'</div>' +
+      '<div class="tsub">'+esc(t.sub)+'</div>' +
       '<div class="status">'+(done?'✓ הושלם':(half?'1/2 סוגיות':'2 סוגיות'))+'</div>';
     card.onclick = ()=>{ sfxTap(); enterTopic(t.id); };
     grid.appendChild(card);
@@ -289,10 +293,12 @@ function issueIsDone(topicId, issueId){ const p=progress[topicId]; return !!(p&&
 
 // ===== Explain sheet & glossary =====
 function sanitizeHtml(s){
-  /* allow only basic formatting tags; strip everything else */
   const tmp=document.createElement('div');
   tmp.textContent=s;
-  return tmp.innerHTML.replace(/&lt;(\/?(b|strong|em|i|br|p|ul|ol|li|a)(\s[^&>]*)?)&gt;/gi,'<$1>');
+  let out=tmp.innerHTML.replace(/&lt;(\/?(b|strong|em|i|br|p|ul|ol|li|a)(\s[^&>]*)?)&gt;/gi,'<$1>');
+  // Block any href that is not http(s) — prevents javascript: and data: URIs
+  out=out.replace(/href="([^"]*)"/gi,(m,url)=>/^https?:\/\//i.test(url)?m:'href="#"');
+  return out;
 }
 function openExplain(title, body, credit){
   document.getElementById('explainTitle').textContent = title;
@@ -309,18 +315,18 @@ function explainWord(w){ const d=GLOSSARY[w]; if(!d) return; openExplain(w, d, '
 function explainIssue(){
   if(!currentIssue) return;
   const t = currentTopic;
-  let body = '<b>למה זה חשוב?</b><br>'+currentIssue.tf_explain+'<br><br><b>מה עמד להצבעה?</b><br>'+currentIssue.bill_title+' ('+currentIssue.bill_date+')<br>'+currentIssue.bill_summary;
+  let body = '<b>למה זה חשוב?</b><br>'+esc(currentIssue.tf_explain)+'<br><br><b>מה עמד להצבעה?</b><br>'+esc(currentIssue.bill_title)+' ('+esc(currentIssue.bill_date)+')<br>'+esc(currentIssue.bill_summary);
   if(currentIssue.source && currentIssue.source.url){
-    body += '<br><br><a class="src-link" href="'+currentIssue.source.url+'" target="_blank" rel="noopener">🔗 מקור: '+currentIssue.source.name+'</a>';
+    body += '<br><br><a class="src-link" href="'+safeUrl(currentIssue.source.url)+'" target="_blank" rel="noopener noreferrer">🔗 מקור: '+esc(currentIssue.source.name)+'</a>';
   }
   if(currentIssue.knesset_url){
-    body += '<br><a class="src-link" href="'+currentIssue.knesset_url+'" target="_blank" rel="noopener">🏛️ הצבעה רשמית בכנסת (voteId '+currentIssue.voteId+')</a>';
+    body += '<br><a class="src-link" href="'+safeUrl(currentIssue.knesset_url)+'" target="_blank" rel="noopener noreferrer">🏛️ הצבעה רשמית בכנסת (voteId '+esc(currentIssue.voteId)+')</a>';
   }
   openExplain(t.icon+' '+currentIssue.title, body, '📖 הסבר על הסוגיה');
 }
 function markupText(text){
   if(!text) return '';
-  let out = text;
+  let out = esc(text);
   const terms = Object.keys(GLOSSARY).sort((a,b)=>b.length-a.length);
   terms.forEach(term=>{
     const escaped = term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -406,8 +412,8 @@ function renderIssueStep(){
   const header =
     '<div style="position:relative;padding-top:2px">'+
       '<button class="float-explain" onclick="explainIssue()">🤔 מה זה?</button>'+
-      '<span class="issue-topic-tag">'+currentTopic.icon+' '+currentTopic.label+'</span>'+
-      '<div class="issue-title">'+currentIssue.emoji+' '+currentIssue.title+'</div>'+
+      '<span class="issue-topic-tag">'+esc(currentTopic.icon)+' '+esc(currentTopic.label)+'</span>'+
+      '<div class="issue-title">'+esc(currentIssue.emoji)+' '+esc(currentIssue.title)+'</div>'+
     '</div>';
 
   if(currentStep===0){
@@ -442,10 +448,10 @@ function renderIssueStep(){
     }
     let srcLink = '';
     if(currentIssue.source && currentIssue.source.url){
-      srcLink = '<a class="src-link" href="'+currentIssue.source.url+'" target="_blank" rel="noopener">🔗 מקור: '+currentIssue.source.name+'</a>';
+      srcLink = '<a class="src-link" href="'+safeUrl(currentIssue.source.url)+'" target="_blank" rel="noopener noreferrer">🔗 מקור: '+esc(currentIssue.source.name)+'</a>';
     }
     if (currentIssue.knesset_url){
-      srcLink += ' <a class="src-link" href="'+currentIssue.knesset_url+'" target="_blank" rel="noopener">🏛️ הצבעה רשמית בכנסת</a>';
+      srcLink += ' <a class="src-link" href="'+safeUrl(currentIssue.knesset_url)+'" target="_blank" rel="noopener noreferrer">🏛️ הצבעה רשמית בכנסת</a>';
     }
     c.innerHTML = header +
       '<div class="reveal-box" style="text-align:center">'+
@@ -462,8 +468,8 @@ function renderIssueStep(){
     c.innerHTML = header +
       '<div class="bill-card">'+
         '<div class="bill-label'+(isStance?' stance':'')+'">'+(isStance?'💭 עמדות מוצהרות':'🏛️ הצעה אמיתית בכנסת')+'</div>'+
-        '<div class="bill-title">'+currentIssue.bill_title+'</div>'+
-        '<div class="bill-year">'+currentIssue.bill_date+'</div>'+
+        '<div class="bill-title">'+esc(currentIssue.bill_title)+'</div>'+
+        '<div class="bill-year">'+esc(currentIssue.bill_date)+'</div>'+
         '<div class="bill-summary">'+markupText(currentIssue.bill_summary)+'</div>'+
       '</div>'+
       '<div class="vote-prompt">איך '+g("היית מצביע","היית מצביעה")+'?</div>'+
@@ -579,7 +585,7 @@ function lockTip(){
 function showExpansion(){
   let body = 'בגרסה הסופית יופיע כאן הסבר מעמיק על '+currentTopic.label+', עם קישורים לפרוטוקולי הכנסת, מאמרים באתר המגדלור ומקורות נוספים.';
   if(currentIssue.source && currentIssue.source.url){
-    body += '<br><br><a class="src-link" href="'+currentIssue.source.url+'" target="_blank" rel="noopener">🔗 מקור לדוגמה: '+currentIssue.source.name+'</a>';
+    body += '<br><br><a class="src-link" href="'+safeUrl(currentIssue.source.url)+'" target="_blank" rel="noopener noreferrer">🔗 מקור לדוגמה: '+esc(currentIssue.source.name)+'</a>';
   }
   body += '<br><br><i>(פרוטוטייפ — התוכן יורחב על ידי צוות המגדלור)</i>';
   openExplain('📚 הרחבה: '+currentTopic.label, body, '📚 המגדלור');
@@ -680,8 +686,8 @@ function mkAvatar(pol){
   // Uses official Knesset photo when a URL base is configured; falls back to initials badge.
   if(window.MK_PHOTO_BASE && pol.mk_id){
     const url = window.MK_PHOTO_BASE.replace('{id}', pol.mk_id);
-    return '<div class="feed-mk-photo"><img src="'+url+'" alt="'+pol.name+'" '+
-           'onerror="this.parentNode.innerHTML=\''+mkInitials(pol)+'\'"></div>';
+    return '<div class="feed-mk-photo"><img src="'+esc(url)+'" alt="'+esc(pol.name)+'" '+
+           'onerror="this.parentNode.innerHTML=\''+mkInitials(pol).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\'"></div>';
   }
   return mkInitials(pol);
 }
