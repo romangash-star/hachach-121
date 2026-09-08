@@ -401,6 +401,12 @@ function renderTopic(tid){
   topicIssues.forEach(iss=>{
     document.querySelector('#row-'+CSS.escape(iss.id)+' .issue-hd')?.addEventListener('click',()=>toggleRow(iss.id));
     document.getElementById('form-'+iss.id)?.addEventListener('submit',e=>{ e.preventDefault(); saveIssueLocal(iss.id); });
+    document.querySelector('[data-del-issue="'+iss.id+'"]')?.addEventListener('click',()=>{
+      if(confirm('מחק את השאלה "'+iss.title+'"?')){
+        delete issues[iss.id];
+        markDirty(); renderTopic(currentTopic); renderSidebar(); updateTabCounts();
+      }
+    });
   });
 }
 
@@ -456,6 +462,7 @@ function buildIssueForm(iss){
     fg('קישור','source_url','<input class="form-input ltr" name="source_url" value="'+esc(iss.source_url||'')+'" placeholder="https://...">')+
     '</div>'+
     '<div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">✓ עדכן שאלה</button>'+
+    '<button type="button" class="btn btn-danger btn-sm" data-del-issue="'+iss.id+'">✕ מחק שאלה</button>'+
     '<span class="save-status" id="st-'+iss.id+'"></span></div>'+
     '</form>';
 }
@@ -614,7 +621,10 @@ function renderPoliticians(){
       '<input class="form-input" data-pf="avatar" data-key="'+key+'" value="'+esc(pol.avatar||'')+'" placeholder="🙂" maxlength="4" style="width:60px">'+
       '<input class="form-input ltr" data-pf="mk_id" data-key="'+key+'" type="number" value="'+(pol.mk_id||'')+'" placeholder="MK ID" style="flex:1">'+
       '</div>'+
-      '<button class="btn btn-primary btn-sm" style="margin-top:6px" data-save-pol="'+key+'">✓ עדכן</button>'+
+      '<div style="display:flex;gap:6px;margin-top:6px">'+
+      '<button class="btn btn-primary btn-sm" data-save-pol="'+key+'">✓ עדכן</button>'+
+      '<button class="btn btn-danger btn-sm" data-del-pol="'+key+'">✕ מחק</button>'+
+      '</div>'+
       '<span class="save-status" id="pst-'+key+'"></span>'+
       '</div>';
     card.querySelector('[data-save-pol]').addEventListener('click',()=>{
@@ -627,6 +637,12 @@ function renderPoliticians(){
       const st=document.getElementById('pst-'+key);
       st.textContent='✓';st.className='save-status visible';
       setTimeout(()=>{ st.className='save-status'; },2000);
+    });
+    card.querySelector('[data-del-pol]').addEventListener('click',()=>{
+      if(confirm('מחק את החכ"מ "'+pol.name+'" ('+key+')?')){
+        delete dataObj.politicians[key];
+        markDirty(); renderPoliticians();
+      }
     });
     grid.appendChild(card);
   });
