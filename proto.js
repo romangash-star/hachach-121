@@ -1521,7 +1521,21 @@ function firstRunIntro(done) {
       '<h2 class="b1intro__t">' + esc(INTRO_B1.title) + '</h2>' +
       /* esc(), not ph(): this is a written sentence pending Tamar's
          approval, not a description of one that has not been written. */
-      '<p class="b1intro__b">' + esc(INTRO_B1.body) + '</p>' +
+      /* T17 · THE BREAK IS PUT IN AT RENDER, AFTER THE COMMA.
+         Tamar's sentence has one, and it is where the sense divides:
+         "נחשו אם המשפט הבא נכון," / "אחר כך תגלו את התשובה". Left to the
+         measure the line broke wherever it ran out of room, which was
+         mid-clause.
+         A <br> INSERTED HERE, NOT A NEWLINE IN THE STRING. The string
+         stays a plain sentence in INTRO_B1 for Tamar to rewrite at will;
+         nothing in it encodes layout. And it degrades the right way: the
+         replace only fires when a comma is present, so a comma-less
+         rewrite falls straight through to normal wrapping rather than to
+         one unbreakable line — which is what a nowrap span would have
+         given. Escaped FIRST, then the tag is added, so the string can
+         never inject markup. */
+      '<p class="b1intro__b">' +
+        esc(INTRO_B1.body).replace(/,\s*/, ',<br>') + '</p>' +
       '<button type="button" class="p-c b1intro__go">' + esc(INTRO_B1.cta) + '</button>' +
     '</div>';
   $('#stage').appendChild(o);
