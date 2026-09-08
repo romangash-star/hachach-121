@@ -117,6 +117,10 @@ const T = {
   coin:      ms('--t-coin'),
   coinFly:     ms('--t-coin-fly'),
   coinStagger: ms('--t-coin-stagger'),
+  egFly:       ms('--t-eg-fly'),        /* ITEM 14 · one allocation token */
+  egFlyStep:   ms('--t-eg-fly-step'),
+  egFlyFade:   ms('--t-eg-fly-fade'),
+  egPulse:     ms('--t-eg-pulse'),
   nodePress:   ms('--t-node-press'),
   screen:      ms('--t-screen'),
   mapIn:       ms('--t-map-in'),
@@ -5933,6 +5937,136 @@ const egPortion = () => {
   const tenth = wallet / 10;
   return Math.max(25, Math.round(tenth / 25) * 25);
 };
+/* =====================================================================
+   ITEM 14 · THE COINS GO WHERE THE PLAYER PUT THEM
+   Feedback only. Nothing here reads or writes ALLOC, egPortion() or the
+   totals — the allocation is exactly the line it always was and this is
+   layered over it.
+
+   THE ROW'S NUMBER WAITS FOR THE COINS. That is the whole point of the
+   item and it is the one thing here that touches the render: the tap
+   moves the state immediately (so the balance is honest and a second tap
+   is charged correctly), but the ROW keeps showing what it was showing
+   until the first token lands. Without that the number changes on tap and
+   the flight is decoration arriving after the fact.
+   The hold is a data attribute on the chip rather than a variable,
+   because egPaint() is the one painter and it has to be able to see it.
+
+   THREE FLIGHTS, NEVER A QUEUE. A fourth tap inside the window gets no
+   sprites at all — it decrements, it increments, and it is done. Nothing
+   is buffered: a backlog would land coins seconds after the tap that
+   bought them, which is worse than no coins.
+
+   prefers-reduced-motion: no sprites and no pulse. The row is then never
+   held, so its number ticks on the tap, exactly as before this item.
+   ===================================================================== */
+const EG_FLY_CAP = 3;
+let EG_FLY_LIVE = 0;
+
+/* CSS's ease-in-out, cubic-bezier(.42,0,.58,1), SOLVED rather than
+   approximated. The item names the CSS keyword and the usual JS stand-in
+   (easeInOutCubic) is a visibly different curve — it leaves the origin
+   flatter and arrives harder. Six Newton steps is exact to well under a
+   pixel over 420ms. */
+const EG_EASE = (() => {
+  const cx = 3 * 0.42, bx = 3 * (0.58 - 0.42) - cx, ax = 1 - cx - bx;
+  const cy = 0,        by = 3 * 1 - cy,             ay = 1 - cy - by;
+  const fx = t => ((ax * t + bx) * t + cx) * t;
+  const fy = t => ((ay * t + by) * t + cy) * t;
+  const dx = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => {
+    let t = x;
+    for (let i = 0; i < 6; i++) {
+      const e = fx(t) - x, d = dx(t);
+      if (Math.abs(e) < 1e-5 || d === 0) break;
+      t -= e / d;
+    }
+    return fy(Math.min(1, Math.max(0, t)));
+  };
+})();
+
+/* the balance is the source, so the balance is what reacts to the tap */
+function egBalancePulse() {
+  if (egReduced()) return;
+  const L = $('#egLeft'); if (!L) return;
+  L.classList.remove('is-pulse'); void L.offsetWidth; L.classList.add('is-pulse');
+}
+
+/* returns TRUE only if sprites are actually in the air — the caller uses
+   that to decide whether the row's number waits or lands on the tap */
+function egCoinFlight(chip) {
+  if (egReduced()) return false;
+  if (EG_FLY_LIVE >= EG_FLY_CAP) return false;
+  const layer = $('#coinfly'), src = $('#egLeft');
+  if (!layer || !src || !chip) return false;
+  const box = layer.getBoundingClientRect();
+  /* the NUMBER, where there is one — the coins leave the figure that just
+     went down, not the sentence around it. At zero left the line has no
+     <b> and the line itself is the origin. */
+  const from = $('b', src) || src;
+  const a = from.getBoundingClientRect(), b = chip.getBoundingClientRect();
+  if (!a.width || !b.width) return false;
+
+  /* FROM ITS FOOT, NOT ITS MIDDLE. Spawning on the figure's centre put
+     the whole handful over the number for the first ~100ms — on top of
+     the one digit that had just changed, at the exact moment the pulse is
+     asking the player to look at it. 0.85 of the height leaves from just
+     under it, which is still the balance and does not cover it. */
+  const x0 = a.left + a.width / 2 - box.left, y0 = a.top + a.height * 0.85 - box.top;
+  const n  = 5 + Math.floor(Math.random() * 4);          /* 5-8 */
+  EG_FLY_LIVE++;
+
+  for (let i = 0; i < n; i++) {
+    const t = el('i', 'coin-t coin-t--eg');
+    /* NO TWO TAPS ALIKE, and the spread is on both ends: a slightly
+       different launch point and angle, and a different place to land
+       WITHIN the row. The inset keeps the arrival off the row's own
+       edges so a coin never appears to land outside it. */
+    const jx = (Math.random() - 0.5) * 18, jy = (Math.random() - 0.5) * 10;
+    const inx = 18;
+    const x1 = b.left - box.left + inx + Math.random() * Math.max(1, b.width - 2 * inx);
+    const y1 = b.top  - box.top  + b.height * (0.3 + Math.random() * 0.4);
+    /* THE ARC IS A QUADRATIC WHOSE CONTROL POINT IS PUSHED OFF THE CHORD,
+       perpendicular to it, so the trip bows instead of dropping straight
+       down the column. The push is randomised in size AND sign, which is
+       what varies the launch angle: half the handful leaves to one side. */
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1;
+    const bow = (26 + Math.random() * 34) * (Math.random() < 0.5 ? -1 : 1);
+    const cx = mx + (-dy / len) * bow, cy = my + (dx / len) * bow;
+    layer.appendChild(t);
+    t.style.transform = 'translate(' + (x0 + jx - 6.5) + 'px,' + (y0 + jy - 6.5) + 'px)';
+    egFlyOne(t, x0 + jx, y0 + jy, cx, cy, x1, y1, i * T.egFlyStep,
+      i === 0     ? () => { delete chip.dataset.hold; egPaint(); } : null,
+      i === n - 1 ? () => { EG_FLY_LIVE = Math.max(0, EG_FLY_LIVE - 1); } : null);
+  }
+  return true;
+}
+
+function egFlyOne(node, x0, y0, cx, cy, x1, y1, delay, onFirst, onLast) {
+  setTimeout(() => {
+    const t0 = performance.now();
+    /* the fade is a TIME, not a share of the curve: the last
+       --t-eg-fly-fade of the trip, wherever the easing has got to. */
+    const fadeAt = (T.egFly - T.egFlyFade) / T.egFly;
+    (function tick(now) {
+      const k = Math.min(1, (now - t0) / T.egFly);
+      const e = EG_EASE(k), m = 1 - e;
+      const x = m * m * x0 + 2 * m * e * cx + e * e * x1;
+      const y = m * m * y0 + 2 * m * e * cy + e * e * y1;
+      node.style.transform = 'translate(' + (x - 6.5) + 'px,' + (y - 6.5) + 'px) scale(' +
+        (1 - 0.28 * e).toFixed(3) + ')';
+      node.style.opacity = k > fadeAt ? ((1 - k) / (1 - fadeAt)).toFixed(3) : '1';
+      if (k < 1) requestAnimationFrame(tick);
+      else {
+        node.remove();
+        if (onFirst) onFirst();
+        if (onLast) onLast();
+      }
+    })(t0);
+  }, delay);
+}
+
 const egPlaced    = () => Object.values(ALLOC).reduce((a, b) => a + b, 0);
 const egRemaining = () => wallet - egPlaced();
 
@@ -5971,6 +6105,13 @@ async function egBeat3() {
     pressable(b).addEventListener('click', () => {
       const left = egRemaining();
       if (left <= 0) return;
+      /* ITEM 14 · LAUNCHED BEFORE THE STATE MOVES, so the coins are aimed
+         at the row as it looks on the tap — after egPaint() the row may
+         have grown a number and shifted under them. It returns false when
+         it is capped or under reduced motion, and then the row is not
+         held and its number lands on the tap as it always did. */
+      if (egCoinFlight(b)) b.dataset.hold = '1';
+      egBalancePulse();
       /* the last portion is the remainder, so the wallet can always be
          emptied exactly — see the note above */
       ALLOC[t.id] = (ALLOC[t.id] || 0) + Math.min(egPortion(), left);
@@ -5983,7 +6124,15 @@ async function egBeat3() {
   const acts = $('#egActs', c);
   const clear = el('button', 'eg-clear', 'התחלה מחדש');                /* TAMAR */
   clear.type = 'button';
-  pressable(clear).addEventListener('click', () => { ALLOC = {}; egPaint(); });
+  pressable(clear).addEventListener('click', () => {
+    ALLOC = {};
+    /* ITEM 14 · a row still waiting for its coins is holding the number it
+       had; the reset has to release that or the row keeps a value the
+       allocation no longer has until a token that is already in the air
+       happens to land on it. */
+    $$('.eg-chip', $('#egChips')).forEach(x => { delete x.dataset.hold; });
+    egPaint();
+  });
   const go = el('button', 'p-c eg-go', 'לכרטיס שלכם ›');               /* TAMAR */
   pressable(go).addEventListener('click', () => egBeat4());
   acts.append(clear, go);
@@ -6017,8 +6166,16 @@ function egPaint() {
   $('#egChips') && $$('.eg-chip', $('#egChips')).forEach(b => {
     const v = ALLOC[b.dataset.topic] || 0;
     const out = $('.eg-chip__v', b);
-    out.innerHTML = v > 0 ? N(v) : '';
-    b.classList.toggle('has-v', v > 0);
+    /* ITEM 14 · A HELD ROW KEEPS WHAT IT IS SHOWING. The value and the
+       paper fill are the same statement — "there are coins on this" — so
+       both wait for the first token, or the row lights up on the tap and
+       only the figure arrives with the coins. Everything else on this
+       pass still runs: the balance, the disabled state, the clear button.
+       The hold is released by the flight itself, or by the reset. */
+    if (!b.dataset.hold) {
+      out.innerHTML = v > 0 ? N(v) : '';
+      b.classList.toggle('has-v', v > 0);
+    }
     /* the control disables itself when there is nothing left to place —
        it is not an error state, it is the end of the supply */
     b.disabled = left <= 0;

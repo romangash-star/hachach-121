@@ -355,6 +355,14 @@
   --t-screen:      300ms;   /* map -> round. Under the brief's 350ms cap. */
   --t-coin-fly:    450ms;   /* one token, spawn to chip                   */
   --t-coin-stagger: 40ms;   /* between tokens                            */
+  /* ITEM 14 · the ALLOCATION's flight, which is a different trip from the
+     award's above: a short hop from the balance line to a topic row
+     rather than a long haul to the HUD chip, so it gets its own four
+     numbers rather than being folded into those two. */
+  --t-eg-fly:      420ms;   /* one token, balance line to topic row       */
+  --t-eg-fly-step:  25ms;   /* between tokens                             */
+  --t-eg-fly-fade: 100ms;   /*   ... of which this is the fade, at the end */
+  --t-eg-pulse:    200ms;   /* the balance's own acknowledgement           */
   --t-map-in:      260ms;   /* the map settling under the round leaving   */
 }
 :root[data-hold="short"]{ --t-hold: var(--t-hold-short); }
@@ -4410,6 +4418,32 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 }
 .eg-fx{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
 
+/* =====================================================================
+   ITEM 14 · THE ALLOCATION'S COINS
+   THE SAME TOKEN, SMALLER. .coin-t is the award's 19px coin and this is
+   that object at 13px — same fill, same inset keyline, same hard offset —
+   because a second coin drawn a second way would be a second currency.
+   It is a handful landing on a 56px row rather than a payment arriving at
+   the HUD, so it reads at the size a handful is.
+   THE LAYER IS #coinfly, SHARED. It is already "out of every layout, over
+   everything", which is exactly what an arc between two elements in a
+   scrolling column needs — .eg-fx is inside the column and behind it
+   (z-index 1 against .eg-col's 2), so a sprite hosted there would fly
+   BEHIND the rows it is landing on. */
+.coin-t--eg{
+  width:13px; height:13px;
+  box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.55), 0 1px 0 rgba(0,0,0,.3);
+}
+/* the balance's own acknowledgement: it is the number that just went
+   down, so it is the thing that reacts. One pulse, no travel — the
+   coins carry the movement and this only has to say "from here". */
+.eg-left.is-pulse{ animation:eg-left-pulse var(--t-eg-pulse) var(--e-out); }
+@keyframes eg-left-pulse{
+  0%  { transform:scale(1) }
+  50% { transform:scale(1.06) }
+  100%{ transform:scale(1) }
+}
+
 /* ---- type ---------------------------------------------------------- */
 .eg-eyebrow{
   /* 21 · 400, not the 700 it carried in system-ui. The family ships two
@@ -4640,6 +4674,12 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
   }
   .eg-cf{ display:none; }
   .eg-chip.is-bump{ animation:none; }
+  /* ITEM 14 · no sprites at all and no pulse — egCoinFlight() refuses to
+     emit and egBalancePulse() refuses to add the class, so this is the
+     backstop rather than the mechanism. The numbers tick normally: with
+     no flight there is no hold on the row, so its value lands on the tap
+     exactly as it did before this item. */
+  .eg-left.is-pulse{ animation:none; }
 }
 
 /* =====================================================================
