@@ -4,7 +4,7 @@
    THE ARC (sheet §1.0, revised 29 Aug — verified against data.js):
      1 CLAIM     אמת/שקר   answered, NOT resolved
      2 POSITION  the player as the 121st MK, unscored
-     3 CONTEXT   bill_title + bill_date ONLY
+     3 CONTEXT   one line, no fields read (T5; was bill_title + bill_date)
      4 CASCADE   one MK at a time, predict then instant verdict
      5 REVEAL    claim resolves · tally counts up · resolution · sources
 
@@ -2207,6 +2207,69 @@ function stickerModal(o) {
    Fixed to the same lookup every other topic-icon site in this file
    already uses, `M.topics[issue.topic]`, so the modal draws the icon the
    map and the HUD are drawing for the same issue. */
+/* T5b · THE OUTCOME SENTENCE COMES OFF THE BILL SUMMARY BEFORE IT IS SHOWN.
+   bill_summary is a CONTEXT field with an OUTCOME sentence welded onto the
+   end of it on some issues — s1 finishes "עבר 61 מול 55." and its own
+   _tally is {for:61, against:55}, the exact pair the finale board counts up
+   to. The modal opens at beat 2. Left whole, the field hands the player the
+   answer two beats before the cascade asks for it, which is the locked
+   "crowd data never appears between the player's own vote and the reveal".
+   The split is here rather than in data.js because the field is Tamar's to
+   write and Roman's to serve; this is the one place it is read.
+
+   THE BOUNDARY IS A SENTENCE, NOT A SUBSTRING. Cutting at the first digit
+   would have taken e1's "המע\"מ ל-18%", a1's "90 ח\"כים" and v1's climate
+   targets — all context, all load-bearing. The unit removed is the final
+   SENTENCE, and only when that sentence carries a vote count.
+
+   WHAT COUNTS AS A VOTE COUNT. The data writes "מול", not "בעד/נגד" —
+   "עבר 61 מול 55", "עברה בקריאה טרומית 55 מול 10". Both forms are matched
+   anyway, because vote_result (beat 5's own field) writes the other one,
+   "27 חברי כנסת בעד, 42 נגד", and the CMS has no rule keeping the two
+   fields in separate dialects. Verified over every issue in data.js: the
+   pattern fires on 14 of the 16 vote_result strings — the two it skips
+   have no numbers in them at all — and on exactly 2 of the 16
+   bill_summary fields, s1 and s2, in both cases on the last sentence.
+
+   WHEN IT CANNOT CUT CLEANLY IT DOES NOT CUT. If the count sits anywhere
+   but the final sentence, the summary is returned whole rather than
+   guessed at, and the issue is a content report. No issue is in that state
+   today; the branch exists so that a future one is visible instead of
+   silently mangled. */
+const TALLY_SENT =
+  /\d{1,3}\s*(?:קולות\s*)?(?:בעד\s+)?מול\s+\d{1,3}|\d{1,3}[^.!?\d]{0,20}בעד[^.!?]{0,24}?\d{1,3}\s*נגד/;
+
+/* sentence split without a lookbehind — Safari only grew those in 16.4 and
+   this file has no build step to lower them. Runs of terminators (e2's
+   summary ends "..") stay with the sentence they close. */
+function sentencesOf(t) {
+  const out = [];
+  let start = 0;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === '.' || t[i] === '!' || t[i] === '?') {
+      while (i + 1 < t.length && '.!?'.indexOf(t[i + 1]) > -1) i++;
+      out.push(t.slice(start, i + 1));
+      start = i + 1;
+    }
+  }
+  if (start < t.length) out.push(t.slice(start));
+  return out;
+}
+
+function billContext(raw) {
+  const txt = String(raw || '').trim();
+  if (!txt) return '';
+  const s = sentencesOf(txt);
+  const hit = [];
+  for (let i = 0; i < s.length; i++) if (TALLY_SENT.test(s[i])) hit.push(i);
+  if (!hit.length) return txt;                                  /* nothing to take off */
+  if (hit.length > 1 || hit[0] !== s.length - 1) return txt;     /* mid-text: report, do not guess */
+  /* a summary that is ONLY its outcome sentence renders with no body
+     rather than with the tally — the modal still carries title, date and
+     art, and the locked rule outranks a full-looking panel. */
+  return s.slice(0, -1).join('').trim();
+}
+
 const LAW_DATE_LABEL = 'תאריך ההצבעה:';                                /* TAMAR · T7 */
 function lawModal() {
   /* ITEM 46 · THE 576, CHOSEN ON CACHING RATHER THAN ON SIZE. The 256 was
@@ -2233,7 +2296,7 @@ function lawModal() {
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
     metaLabel: LAW_DATE_LABEL,                                         /* TAMAR · T7 */
-    body:  issue.bill_summary || '',
+    body:  billContext(issue.bill_summary),                              /* T5b */
     art:   h ? ROOT + h : '',
     /* ITEM 9 · the hook a per-issue graphic drops into later. It is on the
        hero, not on the modal, so whatever fills it does not have to know
@@ -2731,24 +2794,22 @@ function beat2() {
            whether or not the line was there. */
       '</div>' +
     '</div>' +
-    /* ITEM 31 · BEAT 3 IS TITLE AND DATE, IN ONE SENTENCE, AND NOTHING
-       ELSE. It was a 30px display title, a date chip and a closing hint;
-       it is now the brief's two lines. The constraint is locked: no
-       summary, no sources, no tally here — bill_summary stays behind the
-       bill button at beat 2, and the tally is beat 5's.
-       The date and the title are marked inside the sentence rather than
-       set as their own blocks, so the screen reads as one statement
-       followed by one question. */
+    /* T5 · BEAT 3 IS ONE LINE. ITEM 31's sentence is retired with it.
+       It read "בתאריך {bill_date} הועלתה להצבעה הצעת החוק: {bill_title}."
+       and both fields are still on screen a beat earlier — bill_title is
+       what lawModal() titles itself with, bill_date is the line T7 just
+       labelled inside it, and issue.title is the underlined handle in
+       beat 2's own sentence. Restating them here spent the beat on facts
+       the player has already been given and pushed the question, which is
+       the only thing this beat is for, to the bottom of a paragraph.
+       NEITHER FIELD IS READ HERE ANY MORE. bill_date and bill_title are
+       beat 2's, through the modal, and nowhere else in this beat.
+       The white pill under it is not new and is not built here: the
+       affordance tachlesTransition() schedules at T.tcTapAt is .tctap,
+       already floating at the bottom of this same overlay. */
     '<div class="ovpane ovpane--bill is-below">' +
       '<div class="ov-inner b3inner">' +
-        '<p class="b3say">' +
-          esc('בתאריך ') +                                        /* TAMAR */
-          '<b class="b3say__d">' + esc(issue.bill_date || '') + '</b>' +
-          esc(' הועלתה להצבעה הצעת החוק: ') +                      /* TAMAR */
-          '<b class="b3say__t">' + esc(issue.bill_title || '') + '</b>' +
-          esc('.') +
-        '</p>' +
-        '<p class="b3ask">' + esc('מה לדעתך הצביעו הח״כים?') + '</p>' +  /* TAMAR */
+        '<p class="b3ask">' + esc('נחשו מה הצביעו שאר הח״כים') + '</p>' +  /* TAMAR · T5 */
       '</div>' +
     '</div>';
   $('#stage').appendChild(ov);
