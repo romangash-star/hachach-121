@@ -9,7 +9,7 @@
 
 @font-face{
   font-family:'SimplerPro';
-  src:url('../../../fonts/SimplerPro_HLAR-Black.woff2') format('woff2');
+  src:url('fonts/SimplerPro_HLAR-Black.woff2') format('woff2');
   font-weight:900; font-style:normal; font-display:block;
 }
 /* 13b · THE REGULAR IS DECLARED AND LOADED, AND NOTHING IS WIRED TO IT YET.
@@ -28,7 +28,7 @@
    safer default for the body copy it exists to become. */
 @font-face{
   font-family:'SimplerPro';
-  src:url('../../../fonts/SimplerPro_HLAR-Regular.woff2') format('woff2');
+  src:url('fonts/SimplerPro_HLAR-Regular.woff2') format('woff2');
   font-weight:400; font-style:normal; font-display:swap;
 }
 
