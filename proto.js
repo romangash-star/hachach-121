@@ -5230,7 +5230,7 @@ function nodeHTML(t, i, h, cur) {
         (done ? '<span class="node-check" aria-hidden="true">✓</span>' : '') +
       '</button>' +
     '</span>' +
-    '<span class="node-name">' + esc(t.label) + '</span>' +
+    '<span class="node-name">' + esc(t.sub || t.label) + '</span>' +
     '<span class="node-status">' + statusLine(t.id) + '</span>' +
   '</div>';
 }
