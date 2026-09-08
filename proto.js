@@ -5207,7 +5207,17 @@ function renderIntro() {
     '<p class="i-sub">' + esc(INTRO_COPY.line) + '</p>' +                /* TAMAR */
     '<div class="i-stage" aria-hidden="true">' +
       '<img class="i-build" src="' + ROOT + (M.props.building['1170'] || M.props.building['390']) + '" alt=""></div>' +
-    '<button type="button" class="p-c i-cta">' + esc(INTRO_COPY.cta) + '</button>';
+    '<button type="button" class="p-c i-cta">' + esc(INTRO_COPY.cta) + '</button>' +
+    /* v28d · THE HAMIGDALOR LOCKUP, placement D. Out of flow, so it adds
+       nothing to the composed group and moves none of it — measured ±0px
+       on every element of the intro, before and after.
+       THE PATH IS A LITERAL and that is deliberate: the chair and the
+       building come from M.props.*, which make_manifest.py generates and
+       which is not ours to add to. If the manifest ever carries the logo
+       this becomes M.props.logo['600'] and nothing else changes.
+       NO FILTER — see .i-logo in proto.css. */
+    '<img class="i-logo" src="' + ROOT + 'assets/mk/hamigdalor_logo_600.webp" ' +
+      'alt="" aria-hidden="true">';
 
   /* ONE PRIMARY ACTION AND IT GOES TO THE MAP. Not to a character step:
      §4.1 kills creation-as-first-step, the default avatar is already in

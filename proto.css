@@ -2016,6 +2016,43 @@ body.no-ph .ph{ display:none !important; }
   z-index:0; pointer-events:none;
   background:linear-gradient(to top,#6E6242 0%,#514A38 38%,rgba(64,62,58,0) 100%);
 }
+/* =====================================================================
+   v28d · THE HAMIGDALOR LOCKUP · placement D, size S2, no filter
+   D is the bottom END-EDGE corner — physically left, which in RTL is the
+   end. .screen is position:relative and .sc-intro carries no horizontal
+   padding, so inset 0 here IS the stage's shipped 16px/12px gutter line:
+   the same anchor the v28 board measured D at.
+
+   SIZED AGAINST THE STAGE, NOT AGAINST ITS OWN COLUMN. S2 is 28% of the
+   STAGE width applied to the INK box, and the ink box is now the file box
+   — the derivative was trimmed to the master's true alpha bounds
+   (5272x1312 of 5525x2125), so height:auto gives the ink aspect directly
+   and none of the board's negative-offset correction is needed.
+   .sc-intro is the stage minus its 16px gutters, so 28% of the stage is
+   28% of this box plus 0.28 x 32 = 8.96px. Exact at every width in
+   portrait, where the horizontal safe-area insets are 0; a landscape
+   phone with side insets would need the 8.96 to grow with them, and this
+   app is portrait-only.
+
+   NO FILTER, AND THAT IS THE CORRECT IMPLEMENTATION OF "PURE WHITE".
+   The artwork is already #FFFFFF (wordmark + lamp) and #A6A6A6 (beam);
+   the white tint's channel multiply is the identity matrix, so applying
+   feColorMatrix would cost a filter pass to change nothing. Leaving it
+   off is also what best protects the two tones — mask-image plus a
+   background-color would flatten them into one flat fill and take the
+   beam with it, which is the thing this lockup is built not to do.
+   IF THE TINT EVER MOVES OFF WHITE, feColorMatrix is the mechanism and
+   the board's #tint-paper is the worked example. Not today.
+
+   pointer-events:none: it sits over the intro's lower third, where the
+   CTA is, and it is decoration, not a control.
+   ===================================================================== */
+.i-logo{
+  position:absolute; z-index:7; left:0; bottom:0;
+  width:calc(28% + 8.96px); height:auto;
+  display:block; pointer-events:none;
+}
+
 .i-tag{ flex:none; position:relative; z-index:5; margin:clamp(6px,1.5vh,16px) 0; }
 /* THE TITLE AND THE CHAIR ARE ONE COMPOSITE STICKER. The chair sits ON the
    letters and both carry the same white die-cut edge — the overlap of the
