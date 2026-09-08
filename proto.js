@@ -358,41 +358,8 @@ addEventListener('resize', placeChyron);
 /* the map's connector is drawn in device pixels, so it has to be redrawn
    when the window changes size. Cheap, and a no-op on the other screens. */
 addEventListener('resize', () => { if ($('#mapline')) redrawPath(); });
-/* orientationchange fires BEFORE the new size is readable, so the measure
-   is deferred rather than taken on the event. */
 addEventListener('orientationchange', () => setTimeout(sizeStage, 250));
-/* THE ONE THAT ACTUALLY FIRES IN AN IN-APP BROWSER. WhatsApp's WKWebView
-   and Instagram's collapse their chrome after first paint without firing
-   `resize` on the window at all — the layout viewport never changed, only
-   the visual one did. visualViewport.resize is the event that reports it,
-   and on the browsers that DO fire both this is simply a second call to
-   an idempotent function. */
 if (window.visualViewport) visualViewport.addEventListener('resize', sizeStage);
-
-/* =====================================================================
-   T9b · MEASURED AGAIN AFTER FIRST PAINT, NOT ONLY AT LOAD
-   The reported symptom — the stage in the top two thirds with ground
-   below it — is a height measured while the toolbars were still moving.
-   The three events above cover every case where the browser TELLS us;
-   these cover the case where it does not. A WKWebView that settles its
-   chrome silently fires nothing, so the only way to catch it is to look
-   again after it has stopped.
-   TWO DELAYS AND A LOAD, and no interval: 250ms catches the ordinary
-   settle, 800ms catches a slow one, and after that nothing is watching a
-   viewport that is not changing. sizeStage() is idempotent — it writes
-   --vh and re-fits the card — so an extra call costs a style write and a
-   measure, and never accumulates.
-   pageshow FOR THE BACK BUTTON. Returning to the page from the bfcache
-   restores the DOM without a load event; on iOS that is also how you come
-   back from a link the in-app browser opened in Safari, and the chrome
-   can be a different height than it was when the page was frozen. */
-function settleStage() { sizeStage(); placeChyron(); }
-addEventListener('load', () => {
-  settleStage();
-  setTimeout(settleStage, 250);
-  setTimeout(settleStage, 800);
-});
-addEventListener('pageshow', settleStage);
 
 /* ===== §N · THE SOFT KEYBOARD ========================================
    THE STAGE DOES NOT MOVE. window.innerHeight is what --vh mirrors, and
