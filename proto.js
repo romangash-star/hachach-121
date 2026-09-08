@@ -228,6 +228,11 @@ const DEV = {
      the whole run, which is not a thing to ask of anyone in a meeting.
      Like ?intro, an override never writes the flag. */
   mapIntro: qPick('mapintro', { on:true, off:false }, null),
+  /* T13 · and the same switch again, for the same reason twice stated
+     above it: the avatar's beacon is a once-ever thing and a once-ever
+     thing cannot otherwise be looked at twice. on/off force the beacon
+     WITHOUT writing the flag. */
+  beacon: qPick('beacon', { on:true, off:false }, null),
   /* §3 · the title's sticker edge. `solid` is the shipped white and the
      default; `keyline-multi` adds a coloured outer stroke per glyph from
      the topic palette; `keyline-one` adds the same in a single accent.
@@ -4582,6 +4587,17 @@ let EG_CONFETTI_SPENT = false;
    sticker once. */
 let MAP_INTRO_SEEN = false;
 
+/* T13 · THE MAP AVATAR'S BEACON, ONCE EVER. Same reasoning as `mi`
+   directly above: it goes in the save rather than in a key of its own, so
+   ?reset clears the beacon with progress, profile and the first-arrival
+   sticker in one place. Additive and optional — no SAVE_VER bump, and a
+   save written before this has no `ab`, restores clean, and beacons once.
+   SPENT MEANS TAPPED, NOT SEEN. The flag is written by the tap on the
+   avatar and by nothing else: arriving on the map, looking at it and
+   leaving does not spend it, because the beacon's whole job is to get
+   that tap and it has not got it yet. */
+let AV_BEACON_SPENT = false;
+
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
    playable, so every access is wrapped and every failure is "no save". */
@@ -4595,6 +4611,7 @@ function saveState() {
       v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD,
       cf: EG_CONFETTI_SPENT,
       mi: MAP_INTRO_SEEN,
+      ab: AV_BEACON_SPENT,                                       /* T13 */
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -4640,6 +4657,7 @@ function restoreSave() {
   /* ITEM 43 · coerced, never validated, for the reason above: a malformed
      `mi` shows one sticker again and must not cost a run. */
   MAP_INTRO_SEEN = s.mi === true;
+  AV_BEACON_SPENT = s.ab === true;                               /* T13 */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
@@ -4750,6 +4768,7 @@ function showScreen(name) {
   const av = $('#hudAvatar'), x = $('#hudX');
   if (av) av.hidden = (name === 'round');
   if (x)  x.hidden  = (name !== 'round');
+  syncAvBeacon(name);                                            /* T13 */
   /* the banner is no longer inside #scRound, so hiding the round no
      longer hides it — that is the whole point of the promotion, and it
      is also the one thing the promotion has to pay for. */
@@ -5604,6 +5623,35 @@ function markMapIntroSeen() {
   MAP_INTRO_SEEN = true;
   saveState();
 }
+/* T13 · ARMED FROM ONE PLACE, AND IT IS THE ROUTER. showScreen() is the
+   only code that knows which screen is up, and it is already what shows
+   and hides this button. Arming here rather than in goMap() is what makes
+   "never left breathing on any other screen" a property of the code
+   instead of a promise: the round and the intro hide the avatar outright,
+   and the end-game keeps the map's HUD but is not the map, so it does not
+   get the class. Leaving the map removes it on the same call that swaps
+   the button for the ✕.
+   THE STROKE IS NOT TOUCHED HERE. It is permanent and unconditional and
+   lives entirely in .hud-you's own rule; only the pulse is state. */
+function avBeaconOn() {
+  if (DEV.beacon !== null) return DEV.beacon;
+  return !AV_BEACON_SPENT;
+}
+function syncAvBeacon(screen) {
+  const av = $('#hudAvatar'); if (!av) return;
+  av.classList.toggle('is-beacon', screen === 'map' && avBeaconOn());
+}
+function spendAvBeacon() {
+  /* an override never spends the real flag — same contract as
+     markMapIntroSeen() and markIntroSeen() */
+  if (DEV.beacon === null) {
+    if (AV_BEACON_SPENT) return;
+    AV_BEACON_SPENT = true;
+    saveState();
+  }
+  const av = $('#hudAvatar'); if (av) av.classList.remove('is-beacon');
+}
+
 function maybeMapIntro() {
   if (seenMapIntro()) return false;
   if ($('#stage').dataset.screen !== 'map') return false;
@@ -6675,6 +6723,10 @@ function boot() {
   if (!PROFILE.avatarId && presets()[0]) PROFILE.avatarId = presets()[0].id;
   paintHudAvatar();
   pressable($('#hudAvatar')).addEventListener('click', () => {
+    /* T13 · SPENT BEFORE THE GUARD, NOT AFTER. The double-tap that lands
+       while 2b is already open is still a tap on the avatar, and a beacon
+       that survived it would be pulsing behind an open sheet. */
+    spendAvBeacon();                                             /* T13 */
     if ($('.stmodal[data-profile]')) return;
     profileModal();
   });

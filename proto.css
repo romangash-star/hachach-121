@@ -516,7 +516,61 @@ body{
 .hud-coins .num{ direction:ltr; unicode-bidi:isolate; }
 .hud-coins.is-awarding{ animation:coin-bump var(--t-coin) var(--e-out); }
 @keyframes coin-bump{ 0%,100%{transform:none} 35%{transform:translateY(-3px) scale(1.04)} }
-.hud-you{ width:40px; height:40px; }
+/* ---- T13 · THE MAP AVATAR: A PERMANENT STROKE AND A ONE-SHOT BEACON.
+   THE GOLD IS --f5-gold, and it is the token the item asks for: the
+   finale board's 121st-vote marker paints .f5av's ring out of it and
+   .f5n.is-mine's numeral to match. It is declared once, at :root, in the
+   §5 block — aliased there rather than pointed at --primary precisely so
+   that "the marker gold" is addressable as one name, which is what makes
+   this reuse a reference and not a coincidence. On this branch its value
+   is #FFD60A.
+   THE RING IS .f5av's RING, at its small size: 2.5px of gold and 4px of
+   keyline, the same two numbers the strip and the plate use. The avatar
+   is now the same object in both places — it is the player, and the
+   player is marked the same way on the map as on the board.
+   border-radius is set because the ring is a box-shadow and the SVG's
+   own round shell does not give the BUTTON a shape to spread from. */
+.hud-you{
+  width:40px; height:40px; border-radius:50%;
+  box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5);
+}
+/* THE BEACON IS THE GOLD, NOT THE FINALE'S CREAM. --f5-glow is
+   245,227,170 — a warm yellow-cream — and it is reserved for the S-1
+   board; this is 255,214,10, the marker gold decomposed to a triple
+   because a spread shadow needs alpha and the token is a hex. The two are
+   not interchangeable and are not meant to look alike: one is a soft
+   warm wash on a dark board, this is a hard saturated ring on a 40px
+   sticker, and it stops.
+   IT PULSES OUT OF THE STROKE IT WILL LEAVE BEHIND. The animation's
+   floor IS the resting box-shadow above, so when the class comes off
+   nothing jumps: the beacon stops on the frame it is already on and the
+   ring is simply what remains.
+   THE CLASS IS ONLY EVER ON THE MAP — showScreen() puts it there and
+   takes it off — and the selector says so a second time, so a beacon can
+   never be left running on a screen this rule did not intend. */
+:root{ --av-beacon:255,214,10; }
+@keyframes av-beacon{
+  0%,100%{ box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5),
+                      0 0 10px 1px rgba(var(--av-beacon),.30),
+                      0 0 22px 4px rgba(var(--av-beacon),.13); }
+  50%    { box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5),
+                      0 0 16px 3px rgba(var(--av-beacon),.62),
+                      0 0 34px 9px rgba(var(--av-beacon),.28); }
+}
+.stage[data-screen="map"] .hud-you.is-beacon{
+  animation:av-beacon 2000ms ease-in-out infinite;
+}
+/* the same contract §5's board keeps: no motion, and it holds at the
+   midpoint rather than at the floor, so the beacon is still legible as a
+   beacon to somebody who has switched motion off. */
+@media (prefers-reduced-motion: reduce){
+  .stage[data-screen="map"] .hud-you.is-beacon{
+    animation:none;
+    box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5),
+               0 0 16px 3px rgba(var(--av-beacon),.62),
+               0 0 34px 9px rgba(var(--av-beacon),.28);
+  }
+}
 /* A4 · the right slot holds whichever of the two is on this screen, and
    holds the SAME 40px box either way so the row never shifts when the
    avatar swaps for the ✕. */
