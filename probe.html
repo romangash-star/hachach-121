@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<!-- the game's own viewport meta, verbatim, so the probe is measuring the
+     same viewport the stage is given. viewport-fit=cover included. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Viewport probe — הח״כ ה-121</title>
+<style>
+  :root{ color-scheme: dark; }
+  /* THE GAME'S OWN html/body RULE, verbatim from proto.css, so the probe
+     inherits the same containing block the stage does. If this is what is
+     wrong, the probe is wrong in the same way and the numbers say so. */
+  html, body{
+    margin:0; padding:0;
+    position:fixed; inset:0;
+    width:100%; height:100%;
+    overflow:hidden;
+    background:#403E3A;
+    -webkit-text-size-adjust:100%;
+  }
+  body{ font:14px/1.45 ui-monospace,'SF Mono',Menlo,Consolas,monospace; color:#EFECE4; }
+
+  /* anything the striped block does not cover is painted magenta, so the
+     band under the yellow line is unmistakably INSIDE this page */
+  #below{ position:absolute; inset:0; z-index:0;
+    background:repeating-linear-gradient(45deg, rgba(255,59,192,.20) 0 12px, transparent 12px 24px); }
+
+  /* the reference block: exactly the height the game gives its stage.
+     box-sizing:border-box is load-bearing — the 4px marker line is a
+     BORDER, and on content-box it was adding 4px to the measured height
+     and reporting 629 against units of 625. That 4px was the probe's,
+     not the browser's. */
+  #stageSim{
+    position:absolute; top:0; left:0; right:0; z-index:1;
+    box-sizing:border-box;
+    height:100vh;
+    height:calc(var(--vh, 1vh) * 100);
+    height:100svh;
+    height:100dvh;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.030) 0 12px, transparent 12px 24px),
+      #403E3A;
+    border-bottom:4px solid #FFD60A;
+  }
+  #stageSim::after{
+    content:'⟵ 100dvh ends here';
+    position:absolute; left:8px; bottom:8px;
+    font:600 12px/1 system-ui,sans-serif; color:#FFD60A;
+  }
+
+  /* the readout scrolls inside the fixed body, so a short screen can still
+     reach the copy button */
+  .wrap{ position:absolute; inset:0; z-index:2; overflow-y:auto;
+    -webkit-overflow-scrolling:touch; padding:12px 12px 44px; }
+  h1{ font:700 17px/1.2 system-ui,sans-serif; margin:0 0 8px; }
+  .ua{ background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.18);
+    border-radius:9px; padding:9px 11px; margin:0 0 6px;
+    font:12px/1.5 ui-monospace,Menlo,monospace; color:#FFD60A; word-break:break-all; }
+  .engine{ font:700 13px/1.4 system-ui,sans-serif; margin:0 0 12px; color:#B6E521; }
+  .hint{ font-size:12px; color:#BEB9AC; margin:0 0 12px; max-width:46ch; }
+  table{ border-collapse:collapse; width:100%; background:rgba(0,0,0,.45);
+    border-radius:10px; overflow:hidden; }
+  td{ padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.09);
+    font-variant-numeric:tabular-nums; }
+  tr:last-child td{ border-bottom:0; }
+  td:first-child{ color:#BEB9AC; font:12px/1.35 system-ui,sans-serif; width:54%; }
+  td:last-child{ text-align:right; font-weight:600; }
+  .hit{ color:#B6E521; } .miss{ color:#FF8A6E; }
+  .btn{ display:block; width:100%; margin:14px 0 0; padding:15px 12px;
+    font:700 16px/1 system-ui,sans-serif; color:#131310; background:#FFD60A;
+    border:0; border-radius:12px; box-shadow:0 3px 0 #C6A800; }
+  .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #C6A800; }
+  #out{ width:100%; margin-top:10px; box-sizing:border-box; background:rgba(0,0,0,.55);
+    color:#EFECE4; border:1px solid rgba(255,255,255,.16); border-radius:10px;
+    padding:10px; font:12px/1.5 ui-monospace,Menlo,monospace; }
+  .k{ font:11px/1.2 system-ui,sans-serif; color:#8B8371; margin:14px 0 4px;
+      letter-spacing:.08em; text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<div id="below"></div>
+<div id="stageSim"></div>
+
+<div class="wrap">
+  <h1>Viewport probe</h1>
+
+  <!-- FIRST, AND ON SCREEN RATHER THAN ONLY IN THE PASTE. The last run came
+       back from CriOS, which means the link had bounced out of the webview
+       into Chrome and the browser we needed was never measured. -->
+  <p class="ua" id="ua">reading…</p>
+  <p class="engine" id="engine"></p>
+
+  <p class="hint">The striped block is exactly the height the game gives its stage. If the
+  <b style="color:#FFD60A">yellow line</b> sits above the bottom of the screen, the
+  <b style="color:#FF3BC0">magenta hatch</b> below it is the band you are seeing — and it is inside
+  this page, so CSS can reach it. If the band below the line is plain grey instead, it is the
+  browser's own chrome and no CSS of ours can paint it.</p>
+
+  <div class="k">the ladder</div>
+  <table><tbody id="rowsA"></tbody></table>
+  <div class="k">what the browser reports</div>
+  <table><tbody id="rowsB"></tbody></table>
+
+  <button class="btn" id="copy" type="button">Copy all of this</button>
+  <textarea id="out" readonly rows="10"></textarea>
+</div>
+
+<script>
+(function(){
+  var UA = navigator.userAgent;
+  document.getElementById('ua').textContent = UA;
+
+  /* NAMED, NOT GUESSED AT LATER. iOS routes every engine through WebKit, so
+     the token is the only thing that separates "Safari", "Chrome's iOS
+     shell" and "an app's embedded webview" — and the difference is the
+     whole question this probe exists to answer. */
+  function engine(){
+    var ios = /iPhone|iPad|iPod/.test(UA);
+    if (/FBAN|FBAV|FB_IAB|Instagram/.test(UA)) return 'IN-APP WEBVIEW — Facebook / Instagram';
+    if (/WhatsApp/i.test(UA))                  return 'IN-APP WEBVIEW — WhatsApp';
+    if (/CriOS/.test(UA))                      return 'Chrome on iOS — NOT the in-app webview';
+    if (/FxiOS/.test(UA))                      return 'Firefox on iOS — NOT the in-app webview';
+    if (/EdgiOS/.test(UA))                     return 'Edge on iOS — NOT the in-app webview';
+    if (ios && /Safari/.test(UA))              return 'Safari on iOS — NOT the in-app webview';
+    if (ios)                                   return 'iOS WKWebView — no browser token, this IS an in-app webview';
+    if (/Android/.test(UA) && /wv/.test(UA))   return 'Android WebView — in-app';
+    return 'desktop or unrecognised — this will not reproduce the bug';
+  }
+  var eng = engine();
+  var e = document.getElementById('engine');
+  e.textContent = eng;
+  if (eng.indexOf('NOT the in-app') > -1 || eng.indexOf('desktop') > -1) e.style.color = '#FF8A6E';
+
+  var probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;visibility:hidden;';
+  document.body.appendChild(probe);
+
+  function read(u){ probe.style.height = ''; probe.style.height = '100' + u;
+    return probe.getBoundingClientRect().height || 0; }
+  function sup(u){ try { return !!(window.CSS && CSS.supports && CSS.supports('height','100'+u)); }
+                   catch(err){ return false; } }
+  function px(n){ return (Math.round(n * 10) / 10) + 'px'; }
+
+  function data(){
+    var vv = window.visualViewport, de = document.documentElement, bd = document.body;
+    var sim = document.getElementById('stageSim').getBoundingClientRect();
+    var visible = vv ? vv.height : window.innerHeight;
+    var gap = visible - sim.height;
+    var win = sup('dvh') ? '100dvh' : sup('svh') ? '100svh' : 'JS --vh / 100vh';
+    return {
+      ladder: [
+        ['winning declaration', win, 'hit'],
+        ['100dvh', sup('dvh') ? px(read('dvh')) : 'NOT SUPPORTED', sup('dvh') ? '' : 'miss'],
+        ['100svh', sup('svh') ? px(read('svh')) : 'NOT SUPPORTED', sup('svh') ? '' : 'miss'],
+        ['100lvh', sup('lvh') ? px(read('lvh')) : 'NOT SUPPORTED', sup('lvh') ? '' : 'miss'],
+        ['100vh',  px(read('vh')), '']
+      ],
+      browser: [
+        ['stage block, measured', px(sim.height), ''],
+        ['gap below it', px(gap), gap > 1 ? 'miss' : 'hit'],
+        ['window.innerHeight', window.innerHeight + 'px', ''],
+        ['visualViewport.height', vv ? px(vv.height) : 'NO visualViewport', vv ? '' : 'miss'],
+        ['visualViewport.offsetTop', vv ? px(vv.offsetTop) : '—', ''],
+        ['visualViewport.scale', vv ? vv.scale : '—', ''],
+        ['documentElement.clientHeight', de.clientHeight + 'px', ''],
+        ['body.clientHeight', bd.clientHeight + 'px', ''],
+        ['screen.height', screen.height + 'px', ''],
+        ['devicePixelRatio', window.devicePixelRatio, ''],
+        ['orientation', (screen.orientation && screen.orientation.type) || '—', '']
+      ]
+    };
+  }
+
+  function rows(id, list){
+    var h = '', i;
+    for (i = 0; i < list.length; i++)
+      h += '<tr><td>' + list[i][0] + '</td><td class="' + (list[i][2] || '') + '">' +
+           list[i][1] + '</td></tr>';
+    document.getElementById(id).innerHTML = h;
+  }
+
+  function text(d){
+    var L = ['VIEWPORT PROBE', eng, UA, ''], all = d.ladder.concat([['','','']], d.browser), i;
+    for (i = 0; i < all.length; i++) L.push(all[i][0] ? all[i][0] + ': ' + all[i][1] : '');
+    return L.join('\n');
+  }
+
+  function paint(){
+    var d = data();
+    rows('rowsA', d.ladder);
+    rows('rowsB', d.browser);
+    document.getElementById('out').value = text(d);
+  }
+
+  document.getElementById('copy').addEventListener('click', function(){
+    var ta = document.getElementById('out'), btn = this;
+    function done(){ btn.textContent = 'Copied — paste it back';
+      setTimeout(function(){ btn.textContent = 'Copy all of this'; }, 2200); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(done, function(){ ta.select(); });
+    } else {
+      ta.removeAttribute('readonly'); ta.select();
+      if (ta.setSelectionRange) ta.setSelectionRange(0, 99999);
+      try { document.execCommand('copy'); done(); } catch(err){}
+      ta.setAttribute('readonly', '');
+    }
+  });
+
+  paint();
+  addEventListener('resize', paint);
+  addEventListener('orientationchange', function(){ setTimeout(paint, 300); });
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', paint);
+    visualViewport.addEventListener('scroll', paint);
+  }
+  /* the toolbars settle after first paint — the same reason T9b re-measures */
+  setTimeout(paint, 400); setTimeout(paint, 1200); setTimeout(paint, 3000);
+})();
+</script>
+</body>
+</html>
