@@ -1340,7 +1340,17 @@ body.no-ph .ph{ display:none !important; }
    The 6px is the declared gap; measured ink to ink it reads as 12.0px
    with the leading either side, baseline to baseline 31.0. */
 .b2q__tail{
-  display:block; margin-top:6px;
+  /* v27 PART 1 · 6px -> 0. The tail is part of the question and has to
+     group with the claim, not float between the claim and the buttons.
+     It read as floating because the two gaps matched: 11.99px ink-to-ink
+     above it against 6.5px below. MEASURE INK, NOT BOXES — the 30px
+     claim's line box hangs ~5.5px of leading below its last glyph and
+     the 21px tail carries its own above, so more than half of that 12px
+     was leading and only 6 of it was the margin. Removing the margin
+     entirely lands the ink gap at the ~6px asked for, which is now
+     visibly tighter than the 6.5px below rather than double it.
+     Neither font size moved; both are decided. */
+  display:block; margin-top:0;
   font-family:var(--font-display); font-weight:900;
   font-size:21px; line-height:1.15;
 }

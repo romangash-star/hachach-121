@@ -367,7 +367,11 @@ addEventListener('resize', () => { if ($('#mapline')) redrawPath(); });
    when a .b2q__tab is on screen, so this is a no-op on every screen but
    beat 2. No ResizeObserver — the resize event is what the stage already
    listens to. */
-addEventListener('resize', () => { if ($('.b2q__tab')) placeQTab(); });
+addEventListener('resize', () => {
+  if (!$('.b2q__tab')) return;
+  fitBeat2();          /* the budget moves with the viewport */
+  placeQTab();         /* and line 1 moved with the chair */
+});
 addEventListener('orientationchange', () => setTimeout(sizeStage, 250));
 if (window.visualViewport) visualViewport.addEventListener('resize', sizeStage);
 
@@ -2825,6 +2829,9 @@ function beat2() {
 
   /* NO INSTRUCTION LINE. Three vote chips are the instruction. */
 
+  /* v27 · the chair yields BEFORE the tab is placed: resizing it moves
+     line 1, and placeQTab() reads line 1's rect. */
+  fitBeat2();
   /* v26f · placed in the same tick the pane is appended, before a frame
      is painted, so the tab never shows at an unplaced position */
   placeQTab();
@@ -3041,6 +3048,58 @@ const Q_TAIL = 'מה ההצבעה שלך?';                                     
    the resize stack sizeStage/placeChyron/redrawPath already share, and
    is a no-op on every screen with no .b2q__tab, exactly as redrawPath
    is a no-op with no #mapline. */
+
+/* ===== v27 · BEAT 2 FITS, AND THE CHAIR IS WHAT YIELDS ==============
+   THE BUG THIS CLOSES. Beat 2 overflowed 360x640 on fourteen of the
+   sixteen issues — g2 by 128px, and on s1 the three vote buttons were
+   ENTIRELY off the stage, so the player could not vote. .ov--stage is
+   place-items:center inside a stage with overflow:hidden, so the excess
+   split top and bottom and was clipped in silence: nothing looked
+   broken, the buttons were simply not there.
+
+   A BUDGET, NOT A SCALE. The bottom stack is the interaction and never
+   moves: the vote row keeps its 60px and its gap, the question keeps
+   whatever height its own text needs, and the padding — safe-area
+   included — is identical at every viewport. What is left over is the
+   chair, which is decoration. It is measured as a remainder rather than
+   re-derived term by term, because the terms are spread across four
+   rules and a flex gap and a re-derivation would drift the first time
+   one of them moved; the remainder is the same number and cannot.
+
+   ONE PASS IS ENOUGH. The chair's height does not change the column
+   width, so the question's line breaks — and therefore the non-chair
+   remainder — are identical before and after the resize. There is no
+   second reflow to chase.
+
+   THE FLOOR IS 150px. Below that the chair stops being the thing the
+   question is about and becomes an icon beside it — which is the exact
+   failure ITEM 36's predecessor is on record for at clamp(96px,...).
+   At 150 the chair is 129px wide and still reads as a chair: arms,
+   cushion and pedestal all survive. If the floor is hit and the screen
+   still overflows the chair does NOT squash further — that is a
+   content-length problem and it is reported as one. */
+const CHAIR_MAX = 330;
+const CHAIR_MIN = 150;
+
+function fitBeat2() {
+  const ov = $('.ov--stage'); if (!ov) return;
+  const pane = $('.ovpane--vote', ov); if (!pane) return;
+  const inner = $('.ov-inner', pane); if (!inner) return;
+  const chair = $('.b2chair', pane); if (!chair) return;
+
+  const cs = getComputedStyle(ov);
+  const avail = ov.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const chairH = chair.getBoundingClientRect().height;
+  /* everything that is not the chair: the seat's 61px reserve for the
+     tape, the column gaps, the headline, the question block and the
+     vote row. Measured, so a change to any of them is picked up. */
+  const rest = inner.getBoundingClientRect().height - chairH;
+
+  let target = avail - rest;
+  if (target > CHAIR_MAX) target = CHAIR_MAX;
+  if (target < CHAIR_MIN) target = CHAIR_MIN;
+  chair.style.height = target.toFixed(2) + 'px';
+}
 
 function placeQTab() {
   const q = $('.b2q'); if (!q) return;
