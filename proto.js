@@ -401,6 +401,27 @@ if (window.visualViewport) {
   visualViewport.addEventListener('resize', kbSync);
   visualViewport.addEventListener('scroll', kbSync);
 }
+/* =====================================================================
+   T9b(c) · THE WINDOW'S OWN SCROLL, WHICH WAS THE ONE GAP
+   The reset itself already existed — the last two lines of kbSync() put
+   the page back whenever an offset appears — but it was only ever reached
+   from visualViewport's own events and from focus. A pan that moves the
+   LAYOUT viewport fires `scroll` on the window and nothing else, so
+   nothing was listening to it.
+   DEBOUNCED, AND THROUGH kbSync() RATHER THAN A SECOND RESET. One frame
+   is enough to coalesce a flick, and routing it through the existing
+   function means there is still exactly one piece of code that decides
+   what to do about an offset — including its handling of a focused field,
+   which a parallel reset would have had to duplicate and keep in step.
+   IT CANNOT UNDO A ZOOMED PAN, and that is not a defect in it: while
+   visualViewport.scale > 1 the visual viewport's offset inside the layout
+   viewport is the user's pinch, and window.scrollTo does not address it.
+   See the report — that case is item (a)'s to prevent, not this one's. */
+let vpKick = 0;
+addEventListener('scroll', () => {
+  if (vpKick) return;
+  vpKick = setTimeout(() => { vpKick = 0; kbSync(); }, 120);
+}, { passive: true });
 addEventListener('focusin', () => setTimeout(kbSync, 50));
 /* activeElement is body again only AFTER focusout has run */
 addEventListener('focusout', () => setTimeout(kbSync, 0));
