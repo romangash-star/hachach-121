@@ -1951,12 +1951,37 @@ async function commitClaim(ans, card, dir) {
    inlined so the JS-driven move is as findable as the CSS ones. */
 const CLAIM_LIFT_EASE = 'cubic-bezier(.2,.8,.2,1)';
 
-/* ITEM 3 · both marks gain the exclamation. הופתעתם is the surprise the
-   locked rule asks for — something that happened TO the player — and the
-   mark is what keeps it an event rather than a label. */
+/* ITEM 3 · both marks carry the exclamation, and that part has not moved.
+   T6c · THE PILL GOES SINGULAR, AND IT NOW SAYS WHAT THE DISC SAYS.
+   LION'S DECISION, 09 SEP, TAKEN OVER A STOP I RAISED — recorded that way
+   on purpose. The locked list named the MK disc as the ONLY surface
+   allowed "טעית", so this was flagged rather than applied; Lion widened
+   the exception to TWO SURFACES. It is his call, not a reading of the
+   old rule, and not something a later editor may extend a third time.
+
+   WAS: 'צדקתם!' / 'הופתעתם!' — plural, and "surprised" where the disc
+   said "wrong". Two voices four seconds apart in one round.
+
+   THE PLURAL WAS NOT AN ACCIDENT, WHICH IS WHY THIS NEEDS SAYING OUT
+   LOUD: t() treats the PLURAL as the gender-neutral voice, not as a
+   fallback — PROFILE.gender === null resolves to the `p` slot, and that
+   is the state of every player who skips or un-picks the voice step.
+   Some two dozen second-person strings speak אתם there.
+   >>> THAT RULE IS UNCHANGED AND APP-WIDE. Lion confirmed it on 09 Sep.
+   >>> THIS PILL IS A DELIBERATE EXCEPTION TO IT, NOT DRIFT AWAY FROM IT,
+   >>> AND NOT A PRECEDENT. If you are reading this while making some
+   >>> other string singular: don't. Nothing here licenses that.
+
+   WHAT THE SINGULAR COSTS TAMAR: nothing. צדקת and טעית are spelled
+   identically in the masculine and feminine second-person past —
+   צָדַקְתָּ/צָדַקְתְּ and טָעִיתָ/טָעִית differ only in pointing, which
+   this build does not set — so neither adds a slot to the gendered set.
+   It also RETIRES a debt: 'צדקתם'/'הופתעתם' are masculine plural, the
+   feminine plural צדקתן/הופתעתן had no slot anywhere, and that address
+   was therefore wrong-gendered rather than merely unwritten. */
 const CLAIM_MARK = {                      /* TAMAR */
-  ok:  'צדקתם!',
-  bad: 'הופתעתם!',
+  ok:  'צדקת!',                           /* TAMAR · T6c, 09 Sep */
+  bad: 'טעית!',                           /* TAMAR · T6c, 09 Sep */
 };
 
 /* ITEM 50 · THE PILL'S RESTING ANGLE, READ FROM THE SHEET SO THERE IS ONE
@@ -3669,18 +3694,27 @@ async function runAxis(g, guess, vote) {
      · the claim reveal calls stamp(ok, truth) and passes אמת / שקר /
        חלקית, so this constant never reaches the claim card.
      · the verdict PILL is CLAIM_MARK, a different constant on a different
-       object, and it keeps "הופתעתם!". So do the finale, the record and
-       the share card. The surprise framing is intact everywhere else.
-   DO NOT GENERALISE THIS. If a second surface is ever asked for it, that
-   is a new decision by Tamar, not an extension of this one.
+       object. T6c · IT NOW CARRIES THE IDENTICAL PAIR — Lion's decision
+       of 09 Sep, which widened the exception from one surface to two.
+       The two constants are still SEPARATE, and deliberately: they are
+       different objects on different planes, and one of them can be
+       retuned without the other. If the pair is ever changed, change it
+       in BOTH or the round speaks in two voices again — which is the
+       thing T6c existed to fix.
+     · the finale, the record and the share card are NOT included. The
+       surprise framing is intact on all three and they were never fed by
+       either constant.
+   DO NOT GENERALISE THIS. Two surfaces is where Lion stopped it. A third
+   is a new decision by him, not an extension of this one.
    THE PAIR MATCHES. The first pass of T6 left "צדקת" bare against a
    "טעית!" that had just gained a mark, which read as one of the two
    having been edited and the other forgotten — an exclamation is a
    loudness, and only one side was loud. Tamar closed it on 09 Sep.
    BOTH SIDES OR NEITHER, if this is ever retuned: these two strings are
    the same object in two states and the mark is part of the register,
-   not part of the verdict. CLAIM_MARK — the pill — has carried both
-   marks since ITEM 3, so the disc now agrees with it.
+   not part of the verdict. T6c · AND THE PILL IS NOW A THIRD AND FOURTH
+   COPY OF THE SAME TWO WORDS, so "both sides" means all four — see
+   CLAIM_MARK, which carries the identical pair and says why.
 
    `ring` is retired with the ring text and is not read anywhere. */
 const D2_COPY_PLACEHOLDER = {
