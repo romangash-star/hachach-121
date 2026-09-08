@@ -510,10 +510,19 @@ function renderTopics(){
       '<div class="form-group" style="flex:1"><label class="form-label" style="font-size:10px">משני</label>'+
       '<input class="form-input ltr" data-tf="color2" data-idx="'+idx+'" value="'+esc(t.color2||'')+'"></div>'+
       '</div></div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
       '<button class="btn btn-primary btn-sm" data-save-topic="'+idx+'">✓ עדכן נושא</button>'+
-      '<span class="save-status" id="tst-'+idx+'"></span>';
-    card.querySelectorAll('button[data-save-topic]').forEach(btn=>{
-      btn.addEventListener('click',()=>saveTopicLocal(card,idx));
+      '<button class="btn btn-danger btn-sm" data-del-topic="'+idx+'">✕ מחק נושא</button>'+
+      '<span class="save-status" id="tst-'+idx+'"></span></div>';
+    card.querySelector('[data-save-topic]').addEventListener('click',()=>saveTopicLocal(card,idx));
+    card.querySelector('[data-del-topic]').addEventListener('click',()=>{
+      const tid=t.id;
+      const issuesInTopic=Object.values(issues).filter(i=>i.topic===tid).length;
+      const warn=issuesInTopic>0?' — יש '+issuesInTopic+' שאלות בנושא זה שיישארו ללא נושא':'';
+      if(confirm('מחק את הנושא "'+t.label+'"?'+warn)){
+        dataObj.topics.splice(idx,1);
+        markDirty(); renderTopics(); renderSidebar(); updateTabCounts();
+      }
     });
     grid.appendChild(card);
   });
@@ -654,8 +663,37 @@ async function commitToGitHub(){
       '<a class="status-link" href="'+commitUrl+'" target="_blank">'+result.commit.sha.substring(0,7)+'</a>';
     setStatus('ok','Commit: '+result.commit.sha.substring(0,7)+' — האתר יתעדכן בעוד ~1-2 דקות');
   }catch(err){
-    setCommitStatus('err','שגיאה: '+err.message);
-    btn.disabled=false; dirty=true; updateCommitBtn();
+    /* SHA mismatch — file was updated externally; reload and retry once */
+    if(err.message && err.message.includes('does not match')){
+      setCommitStatus('loading','SHA ישן — טוען מחדש ומנסה שוב…');
+      try{
+        const fresh=await ghFetch('/repos/'+REPO+'/contents/'+FILE+'?ref='+BRANCH);
+        fileSha=fresh.sha;
+        /* retry with updated SHA */
+        const sorted2=Object.values(issues).sort((a,b)=>{
+          const ta=TOPIC_ORDER.indexOf(a.topic),tb=TOPIC_ORDER.indexOf(b.topic);
+          return ta!==tb?ta-tb:a.id.localeCompare(b.id);
+        });
+        dataObj.issues=sorted2;
+        const nc='const DATA = '+JSON.stringify(dataObj)+';';
+        const enc=btoa(unescape(encodeURIComponent(nc)));
+        const now2=new Date().toLocaleString('he-IL',{timeZone:'Asia/Jerusalem',hour12:false});
+        const result2=await ghFetch('/repos/'+REPO+'/contents/'+FILE,{
+          method:'PUT',
+          body:JSON.stringify({message:'CMS: עדכון נתונים ('+now2+')',content:enc,sha:fileSha,branch:BRANCH}),
+        });
+        fileSha=result2.content.sha;
+        dirty=false; updateCommitBtn();
+        setCommitStatus('ok','✓ נשמר ב-GitHub (אחרי sync אוטומטי)');
+        setStatus('ok','Commit: '+result2.commit.sha.substring(0,7)+' — האתר יתעדכן בעוד ~1-2 דקות');
+      }catch(err2){
+        setCommitStatus('err','שגיאה לאחר retry: '+err2.message);
+        btn.disabled=false; dirty=true; updateCommitBtn();
+      }
+    } else {
+      setCommitStatus('err','שגיאה: '+err.message);
+      btn.disabled=false; dirty=true; updateCommitBtn();
+    }
   }
 }
 
