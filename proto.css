@@ -1079,7 +1079,13 @@ body.no-ph .ph{ display:none !important; }
      content box, so --card-w's own max-width:100% can finally bite.
      Nothing changes at 375 or 390, where 340 already fitted. */
   display:grid; place-items:center; grid-template-columns:minmax(0,1fr);
-  padding:calc(18px + env(safe-area-inset-top)) 16px
+  /* T20 · --ov-top IS THE HUD RESERVATION and it is written by
+     reserveHudGap() on every build and every resize. The fallback is the
+     old literal, so a build that never reaches the JS — or any other
+     .ov--stage — is exactly what it was. The overlay still covers the
+     whole stage: this pads the CONTENT down, it does not move the blur,
+     which is the half of this surface the HUD is meant to sit over. */
+  padding:var(--ov-top, calc(18px + env(safe-area-inset-top))) 16px
           calc(16px + env(safe-area-inset-bottom));
   /* softer than beat 3's: what is behind it — the answer just given and
      the cards ahead — is meant to be recognisable as those things */
@@ -1280,7 +1286,24 @@ body.no-ph .ph{ display:none !important; }
    NO PANEL, TINT, STROKE OR OUTLINE — board variants E and F were built
    and rejected; F reads as a fourth button above the three. */
 .b2q{ font-family:var(--font-display); font-weight:900;
-  font-size:30px; line-height:1.1; text-wrap:balance;
+  /* T20 · 30 -> 26, DECIDED 09 SEP, AND IT IS A FIT FIX RATHER THAN A
+     TYPE PREFERENCE. T20 part 1 reserves 12px of air under the HUD, which
+     the chair had been running behind on every issue at 360x640. That
+     reservation costs the column 50px, and at a 30px claim g2 — six lines,
+     the longest tachles_prompt of the sixteen at 124 characters — then hit
+     the 150px chair floor and overflowed 24.87px onto the vote row. Three
+     buttons off the bottom of the screen is precisely the failure v27
+     exists to prevent, so the two changes ship together or neither does.
+     WHY NOT 22, which would have bought more: the tail is fixed at 21/900
+     and is out of scope, so at 22 the claim and its own tail are within a
+     pixel at the same weight and stop reading as two levels; and the
+     תכלס tab's body clearance falls from 3.05px to 0.17px, which is
+     contact. 26 against 21 still reads as a hierarchy and leaves the tab
+     at 1.73px. 26 is the largest size that fits, not the smallest that
+     works.
+     --b2q-size STAYS so 30 and 22 can still be drawn beside 26 without
+     editing this file; ?qsize is the switch and 26 is now its default. */
+  font-size:var(--b2q-size, 26px); line-height:1.1; text-wrap:balance;
   color:#FBF7EE; text-align:center; margin:0;
   /* v26 · 26 -> 38. The 12px is room between the law-title link and the
      question, and it is on the MARGIN rather than on padding for a
@@ -1333,10 +1356,59 @@ body.no-ph .ph{ display:none !important; }
      translateX(-50%) is what makes `left` mean the tab's CENTRE, so the
      placement never needs the tab's own width. It is listed BEFORE the
      rotate, so it applies in the parent's frame after the rotation —
-     the rotate still pivots on transform-origin 100% 100% and the +11px
-     descent is untouched by the horizontal move. */
+     the rotate still pivots on transform-origin 100% 100% and the
+     descent is untouched by the horizontal move.
+
+     T20 · 5.5 -> 3.76, AND THE NUMBER THAT IS HELD IS THE CLEARANCE, NOT
+     THE DESCENT. The tab hangs off bottom:100%, which is .b2q's padding
+     box top, and the claim's first-line INK sits below that by the half
+     leading — 1.5px at 30px/1.1, 1.3px at 26. Shrinking the claim to 26
+     for the fit therefore walked the ink up into the tab and took the
+     body clearance from 3.05 to 1.31 without anything touching the tab
+     at all. 1.31 is less than the tab's own 2.4px border, which is the
+     same territory the 0.05px on B2 was rejected in: a copy edit or a
+     font fallback closes it and nobody sees it coming.
+     3.76 puts the clearance back on r1's 3.05 exactly. r1 is the issue
+     that sets it because the figure depends on the first word's ascent
+     and r1's is the shallower of the pair — hold the tighter one and the
+     other has more air, not less.
+     THE DESCENT FOLLOWS AND IS NOT THE ANCHOR. It reads 8.76 now against
+     the 11 recorded at a 30px claim. The v26 boards fixed the ל
+     ascender window at 4.77px and the clearance against it; the descent
+     was the consequence of holding that at 30, not the thing chosen.
+
+     ===================================================================
+     WHAT ONE CONSTANT CANNOT DO, MEASURED 09 SEP AND LEFT UNFIXED.
+     The sixteen split by whether the first word has a letter reaching
+     above the x-height band, and the tab is placed for one of the two
+     groups whatever number goes here:
+
+       NINE with no tall ascender — פטור האם חוק מתן חוות — sit at
+       3.05 to 4.47 and are the group this 3.76 is held on.
+       SEVEN whose first word carries a ל or a ט — לאפשר להקים לא
+       ביטול הטלת, on r2 b1 g1 a1 a2 v2 s2 — are IN CONTACT. They read
+       −1.08 here, and −1.72 on the build this replaces: the overlap has
+       been there since the tab shipped and neither the 26px claim nor
+       this value introduced it. 3.76 improves them by 0.64 and does not
+       clear them.
+
+     THE GAP BETWEEN THE TWO GROUPS IS 4.13 TO 4.55px, which is the
+     4.77px ascender window the v26 boards recorded. That is not a
+     coincidence: it IS the window, and it is exactly the distance a
+     single translateY has to fail by on one side or the other.
+     translateY(-0.37px) was measured and rejected — it puts the seven on
+     3.05 and floats the other nine to 7.18 with the descent at 4.63,
+     which trades a defect on seven for a visible change on nine.
+
+     THE REAL FIX IS A DESCENT CONDITIONAL ON THE FIRST WORD'S TALLEST
+     GLYPH, not a better constant. placeQTab() already measures that word
+     to place the tab horizontally and already has the Range; the same
+     pass could read its actualBoundingBoxAscent and write the vertical
+     offset per issue. Whoever picks that up: do not spend it on tuning
+     this number again.
+     =================================================================== */
   position:absolute; z-index:2; left:0; right:auto; bottom:100%;
-  transform:translateX(-50%) translateY(5.5px) rotate(4deg);
+  transform:translateX(-50%) translateY(3.76px) rotate(4deg);
   transform-origin:100% 100%;
   display:block; white-space:nowrap; pointer-events:none;
   background:#2E2A26; color:#F4F1E8;

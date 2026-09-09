@@ -238,6 +238,12 @@ const DEV = {
      looked at twice, and resetting the save to see it spends the whole
      run. on/off force it WITHOUT writing the flag. */
   preHow: qPick('prehow', { on:true, off:false }, null),
+  /* T20 · the claim's size on beat 2. 26 SHIPS as of 09 Sep — see .b2q in
+     proto.css for why, and note it is a fit decision rather than a type
+     one. 30 and 22 stay reachable so the three can be drawn beside each
+     other without editing the file; 30 is the old value and 22 is the one
+     that was ruled out. */
+  qsize: qPick('qsize', { '30':30, '26':26, '22':22 }, 26),
   /* §3 · the title's sticker edge. `solid` is the shipped white and the
      default; `keyline-multi` adds a coloured outer stroke per glyph from
      the topic palette; `keyline-one` adds the same in a single accent.
@@ -3191,11 +3197,59 @@ const Q_TAIL = 'מה ההצבעה שלך?';                                     
 const CHAIR_MAX = 330;
 const CHAIR_MIN = 150;
 
+/* =====================================================================
+   T20 PART 1 · THE TOP OF THE BUDGET, WHICH v27 NEVER HAD.
+   v27 reserved from the bottom up — the vote row, the gaps, the padding —
+   and let the chair take whatever was left. Nothing reserved from the
+   TOP, and .ov--stage is inset:0 over the whole stage with 18px of
+   padding, so the column began 18px down while the HUD's painted edge
+   ends at 51. The chair's first 33px of box therefore ran behind pills it
+   is z-indexed under, on every issue, in every build. e2 only makes it
+   obvious because e2's question is the longest and squeezes the chair
+   into the space where the overlap shows.
+
+   MEASURED ON INK. Two corrections to the box, both upward:
+     · #dcw dilates SourceAlpha by 5 user-space px before compositing the
+       white die-cut, so the chair paints 5px ABOVE its own border box.
+       That is why the real overlap is 38 and not the 33 a box reading
+       gives, and why v27's note says 32.
+     · the HUD's pills carry .ib-b's 0 3px 0 extrusion, which paints
+       below the HUD's box.
+   HUD_INK names the second. It is a constant rather than a parse of
+   computed box-shadow because a shadow string is four numbers whose
+   meaning depends on their count, and getting that wrong silently is
+   worse than a named 3 that a grep for .ib-b finds.
+
+   IT IS COMPUTED, NOT WRITTEN AS A LITERAL. The HUD's own height moves
+   with the safe-area inset and with anything that changes the pill row,
+   and a literal padding-top would be right on one device. Reading the
+   HUD's rect against the stage's costs one measurement in a function
+   that is already measuring four. */
+const HUD_GAP  = 12;   /* T20 · the visible air asked for, ink to ink */
+const HUD_INK  = 3;    /* .ib-b's extrusion, painted below the HUD box */
+const CHAIR_DILATE = 5;/* #dcw feMorphology radius, painted above the box */
+
+function reserveHudGap(ov) {
+  const hud = $('.hud'), st = $('#stage');
+  if (!hud || !st) return;
+  const need = (hud.getBoundingClientRect().bottom - st.getBoundingClientRect().top)
+             + HUD_INK + HUD_GAP + CHAIR_DILATE;
+  /* never SHRINK the overlay's own padding: 18px is the design's minimum
+     air on a screen whose HUD is somehow shorter than that. */
+  const cur = parseFloat(getComputedStyle(ov).paddingTop) || 0;
+  ov.style.setProperty('--ov-top', Math.max(need, 18) .toFixed(2) + 'px');
+  return cur;
+}
+
 function fitBeat2() {
   const ov = $('.ov--stage'); if (!ov) return;
   const pane = $('.ovpane--vote', ov); if (!pane) return;
   const inner = $('.ov-inner', pane); if (!inner) return;
   const chair = $('.b2chair', pane); if (!chair) return;
+
+  /* BEFORE the budget reads its own padding, not after: the reservation
+     is part of what "available" means now. */
+  reserveHudGap(ov);
 
   const cs = getComputedStyle(ov);
   const avail = ov.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
@@ -3295,15 +3349,21 @@ function placeQTab() {
 
 function qBlock(text, extra) {
   const cls = 'b2q' + (extra ? ' ' + extra : '');
+  /* T20 · the switch writes the size onto the block itself, so the CSS
+     var has a value only when the comparison asked for one and the
+     shipped default stays in the stylesheet where it belongs. Compared
+     against the SHIPPED size, so ?qsize=26 is a no-op and the default
+     path never writes an inline style. */
+  const size = DEV.qsize !== 26 ? ' style="--b2q-size:' + DEV.qsize + 'px"' : '';
   const t   = String(text || '');
   const i   = t.indexOf(Q_TAIL);
   /* the tab is drawn in every branch: it labels the question, not the
      string, and a placeholder question is still the question */
   const tab = '<span class="b2q__tab">' + esc('תכלס') + '</span>';     /* TAMAR */
   if (i < 0 || i + Q_TAIL.length !== t.length)
-    return '<p class="' + cls + '">' + tab + markGlossary(t) + '</p>';
+    return '<p class="' + cls + '"' + size + '>' + tab + markGlossary(t) + '</p>';
   const claim = t.slice(0, i).replace(/\s+$/, '');
-  return '<p class="' + cls + '">' + tab + markGlossary(claim) +
+  return '<p class="' + cls + '"' + size + '>' + tab + markGlossary(claim) +
          '<span class="b2q__tail">' + esc(Q_TAIL) + '</span></p>';
 }
 
