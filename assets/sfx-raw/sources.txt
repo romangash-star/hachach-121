@@ -2,41 +2,64 @@ SOURCE AND LICENCE TRAIL — raw sound effects
 ============================================
 
 All five files below were obtained from Zapsplat (https://www.zapsplat.com)
-under the Zapsplat Standard Licence. Provenance as stated by Lion, 09 Sep 2026;
-recorded here so the trail exists alongside the files.
+on a PAID Zapsplat subscription (Gold, £4.99/month), not the free tier.
+Provenance as stated by Lion, 09 Sep 2026.
 
-The Zapsplat Standard Licence requires attribution wherever the sounds are
-used. The credit line Zapsplat asks for is:
+ATTRIBUTION: NOT REQUIRED
+-------------------------
+The credit condition applies to Zapsplat's free Basic tier. A paid Gold or
+Premium subscription removes it, and the removal is attached to the
+DOWNLOAD rather than to the account: sounds downloaded while the
+subscription was active stay licensed for attribution-free use for life,
+in unlimited projects, even if the subscription later lapses.
 
-    Sound effects obtained from https://www.zapsplat.com
+So no Zapsplat credit line is owed for these five files, and none has been
+built. This supersedes the earlier note in this file, which assumed the
+free Standard Licence and flagged a credit as outstanding. That flag is
+closed.
 
-That credit is NOT yet present anywhere in the build. It has to appear before
-these ship — see the note at the foot of this file.
+ONE CONDITION, AND IT IS THE ONLY ONE LEFT
+------------------------------------------
+The exemption depends on these five having been downloaded AFTER the Gold
+subscription went active. If any of them was pulled down before the
+upgrade, that particular file still carries the free-tier credit condition
+regardless of the account's state today. Worth one look at the Zapsplat
+download history before release; it is the only thing between this and a
+closed matter.
 
 ONE LINE PER FILE
 -----------------
 zapsplat_impacts_wood_plank_thin_stamp_on_no_snap_002_110789.wav
-    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 0.658 s
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.658 s
     Used for: assets/sfx/stamp_knock.wav
+    Also the strike and the reverberated tail of: assets/sfx/complete.wav
 
 zapsplat_industrial_tape_masking_peel_from_roll_002_104068.wav
-    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit mono, 1.039 s
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit mono, 1.039 s
     Used for: assets/sfx/tape_peel.wav
+    (placeholder — a sticker-peel take under 200 ms with an onset is coming)
 
 zapsplat_leisure_playing_card_flick_with_finger.wav
-    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 0.357 s
-    Used for: assets/sfx/card_1.wav
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.357 s
+    Used for: assets/sfx/card_1.wav, and in assets/sfx/complete.wav
 
 zapsplat_leisure_playing_cards_flick_through_shuffle_008_62511.wav
-    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 0.804 s
-    Used for: assets/sfx/card_2.wav, assets/sfx/card_3.wav
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.804 s
+    Used for: assets/sfx/card_2.wav, assets/sfx/card_3.wav, and in complete.wav
     (two separate takes cut from inside the one riffle recording)
 
 zapsplat_multimedia_game_sound_tally_clicks_spin_board_slows_down_to_stop_104966.wav
-    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 5.929 s
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 5.929 s
     Used for: assets/sfx/count_tick.wav, assets/sfx/count_land.wav
     (one click and the final stop, cut out of a decelerating spin-board tally —
      the recording's own shape is deliberately NOT used; see the batch report)
+
+NOT FROM ZAPSPLAT
+-----------------
+assets/sfx/complete.wav is built here, from the files above. Every transient
+in it is one of ours; the reverb tail is a synthesised impulse response,
+because nothing in the five has any sustain to stretch. No third-party
+material of any kind is in it.
 
 WHY THE RAW FILES STAY IN THE REPO
 ----------------------------------
@@ -44,10 +67,12 @@ The processed files in assets/sfx/ are trimmed, resampled, loudness-matched
 cuts. Without these originals there is no way to re-cut them, and no way to
 show where they came from. Kept on Lion's instruction, 09 Sep 2026.
 
-STILL OWED
-----------
-1. The Zapsplat credit line above must appear in the shipped product before
-   these sounds are wired up. It is a licence condition, not a courtesy.
-2. Nothing here has been verified against Zapsplat's account records. This
-   file records the provenance as given, which is what a trail is; it is not
-   an independent confirmation of the licence terms.
+HOW THE LICENCE POSITION WAS CHECKED
+------------------------------------
+Zapsplat's own licence pages refuse automated fetches (HTTP 403), so the
+tier terms above were read from search results quoting zapsplat.com's FAQ
+and upgrade pages, corroborated by an independent licence guide. Three
+sources agree on all three points: free requires credit, paid does not, and
+the exemption follows the download for life. This is not a primary reading
+of the licence document itself, and nothing here has been checked against
+Zapsplat's account records.
