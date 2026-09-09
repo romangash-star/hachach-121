@@ -1,0 +1,53 @@
+SOURCE AND LICENCE TRAIL — raw sound effects
+============================================
+
+All five files below were obtained from Zapsplat (https://www.zapsplat.com)
+under the Zapsplat Standard Licence. Provenance as stated by Lion, 09 Sep 2026;
+recorded here so the trail exists alongside the files.
+
+The Zapsplat Standard Licence requires attribution wherever the sounds are
+used. The credit line Zapsplat asks for is:
+
+    Sound effects obtained from https://www.zapsplat.com
+
+That credit is NOT yet present anywhere in the build. It has to appear before
+these ship — see the note at the foot of this file.
+
+ONE LINE PER FILE
+-----------------
+zapsplat_impacts_wood_plank_thin_stamp_on_no_snap_002_110789.wav
+    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 0.658 s
+    Used for: assets/sfx/stamp_knock.wav
+
+zapsplat_industrial_tape_masking_peel_from_roll_002_104068.wav
+    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit mono, 1.039 s
+    Used for: assets/sfx/tape_peel.wav
+
+zapsplat_leisure_playing_card_flick_with_finger.wav
+    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 0.357 s
+    Used for: assets/sfx/card_1.wav
+
+zapsplat_leisure_playing_cards_flick_through_shuffle_008_62511.wav
+    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 0.804 s
+    Used for: assets/sfx/card_2.wav, assets/sfx/card_3.wav
+    (two separate takes cut from inside the one riffle recording)
+
+zapsplat_multimedia_game_sound_tally_clicks_spin_board_slows_down_to_stop_104966.wav
+    Zapsplat · Standard Licence · https://www.zapsplat.com · 96 kHz/24-bit stereo, 5.929 s
+    Used for: assets/sfx/count_tick.wav, assets/sfx/count_land.wav
+    (one click and the final stop, cut out of a decelerating spin-board tally —
+     the recording's own shape is deliberately NOT used; see the batch report)
+
+WHY THE RAW FILES STAY IN THE REPO
+----------------------------------
+The processed files in assets/sfx/ are trimmed, resampled, loudness-matched
+cuts. Without these originals there is no way to re-cut them, and no way to
+show where they came from. Kept on Lion's instruction, 09 Sep 2026.
+
+STILL OWED
+----------
+1. The Zapsplat credit line above must appear in the shipped product before
+   these sounds are wired up. It is a licence condition, not a courtesy.
+2. Nothing here has been verified against Zapsplat's account records. This
+   file records the provenance as given, which is what a trail is; it is not
+   an independent confirmation of the licence terms.
