@@ -362,3 +362,6 @@
 
   /* ── Neon glow on done topic icon ── */
   .topic-card.done .em{filter:drop-shadow(0 0 8px rgba(0,82,255,.7))}
+
+  /* ── Glossary term on paper card (beat-1 claim) ── */
+  .b1claim .gt{color:var(--ink);background:rgba(55,196,255,.30);border-bottom-color:#3EA6D8}

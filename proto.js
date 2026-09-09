@@ -1740,6 +1740,12 @@ function beat1() {
 
   wireSwipe(card, $('.b1target', card), $('.b1prev', card));
 
+  card.addEventListener('click', e => {
+    const t = e.target.closest('.gt'); if (!t) return;
+    e.stopPropagation();
+    glossModal(t.dataset.gt);
+  });
+
   /* B1-2 THEN B2-4, IN THAT ORDER. On a player's first ever issue the
      full-screen overlay comes up over the dealt card and the sticker
      waits behind it; the slap is the first thing that happens after the
@@ -2420,7 +2426,7 @@ function lawModal() {
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
     metaLabel: LAW_DATE_LABEL,                                         /* TAMAR · T7 */
-    body:  billContext(issue.bill_summary),                              /* T5b */
+    bodyHtml: markGlossary(billContext(issue.bill_summary)),              /* T5b */
     art:   h ? ROOT + h : '',
     /* ITEM 9 · the hook a per-issue graphic drops into later. It is on the
        hero, not on the modal, so whatever fills it does not have to know
