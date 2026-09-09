@@ -1479,8 +1479,12 @@ function nudgeCover(card) {
 function leaveCard() {
   const cur = $('.deckcard.is-current'), st = $('.d2');
   /* d2-land holds transform:scale(1) with fill:both, which would win
-     against a transition; the animation has finished landing by now. */
-  if (st) { st.style.animation = 'none'; st.classList.add('is-leaving'); }
+     against a transition; the animation has finished landing by now.
+     T23 · and clearing it is not enough on its own — unhold() forces the
+     style pass that lets the transition start. The CARD needs no such
+     treatment: .deckcard.is-current carries no animation, so its exit
+     transitions from the class change and always did. */
+  if (st) { unhold(st); st.classList.add('is-leaving'); }
   if (cur) cur.classList.add('is-leaving');
 }
 
@@ -2275,11 +2279,14 @@ async function claimReveal(ans, card) {
          transform:translateY(0) forever — and a held animation beats an
          inline style, so the card would not move. Clear it first. */
       card.classList.remove('is-stamped');
-      card.style.animation = 'none';
+      /* T23 · unhold(), not `style.animation = 'none'`. The jolt fills
+         the transform and would otherwise suppress the transition that
+         is added on the very next line. See unhold(). */
+      unhold(card);
       card.classList.add('is-leaving');
       card.style.transform = CARD_EXIT_T;
       card.style.opacity = .2;              /* the deck's own exit value */
-      mark.style.animation = 'none';
+      unhold(mark);                       /* T23 · d2-land-mk, fill:both */
       mark.classList.add('is-leaving');
       mark.style.transform = CARD_EXIT_T;
       mark.style.opacity = .2;
@@ -2292,7 +2299,7 @@ async function claimReveal(ans, card) {
          translate:-50% -50% IS A SEPARATE PROPERTY from transform — that
          is why the pill is centred with `translate` in the sheet — so the
          throw can own transform outright without losing the centring. */
-      chip.style.animation = 'none';
+      unhold(chip);                       /* T23 · cmark-land, fill:both */
       chip.classList.add('is-leaving');
       chip.style.transform = 'translate(' + (dir * 420) + 'px,8px) rotate(' +
                              (dir * 13 + CM_REST) + 'deg)';
@@ -3419,6 +3426,46 @@ const VOTE_INK = 4.6;   /* .v-a's extrusion, painted below its box        */
    values reaching the same place by the only route available. If that
    rule is ever retuned, this is the other half to move with it. */
 const CARD_EXIT_T = 'translate(-420px,8px) rotate(-13deg)';
+
+/* =====================================================================
+   T23 · CLEARING A FILLING ANIMATION IS NOT ENOUGH ON ITS OWN.
+
+   THE BUG. Three objects leave with the claim card — the card, its stamp
+   and the pinned pill — and all three were still holding a fill:both
+   animation when they were told to go: d2-jolt-claim, d2-land-mk and
+   cmark-land. Each site cleared it the obvious way and then set the exit
+   transform in the SAME TICK:
+
+       el.style.animation = 'none';
+       el.classList.add('is-leaving');
+       el.style.transform = CARD_EXIT_T;
+
+   A CSS animation that is running or filling a property suppresses a
+   transition on that property, and the browser only re-evaluates that
+   when it computes a style. Nothing forces it to between those three
+   lines, so no transform transition was ever created and the objects were
+   at translate(-420px,8px) on the first frame after the tap. Measured:
+   the card got an opacity transition and nothing else; the stamp and the
+   pill got no transitions at all. Everything teleported off screen and
+   the only thing that animated was the card's opacity, fading from 1 to
+   .2 over 100ms starting at 220ms — an object already 420px off screen.
+   That is why the exit was invisible. The 320ms was never the problem and
+   is unchanged.
+
+   THE FIX IS THE READ. Touching offsetHeight forces a style and layout
+   pass, so the browser computes one state in which the animation is gone
+   and the transform is still at rest — which is what the transition then
+   has something to travel FROM. It is one line and it is deliberately a
+   named function rather than a bare `void el.offsetHeight` at four call
+   sites: a forced reflow with no explanation is exactly the line somebody
+   deletes as dead code.
+   ===================================================================== */
+function unhold(el) {
+  if (!el) return el;
+  el.style.animation = 'none';
+  void el.offsetHeight;               /* the pass IS the fix — see above */
+  return el;
+}
 
 /* T22b · THE TAIL STEPS WITH THE CLAIM, AND IT IS A RATIO NOT A SIZE.
    21 was set against a claim fixed at 26 — 21/26 is 0.81 — and when the
