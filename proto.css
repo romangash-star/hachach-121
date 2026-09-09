@@ -2340,6 +2340,13 @@ body.no-ph .ph{ display:none !important; }
 .screen[hidden]{ display:none; }
 /* the intro has nothing to count and nobody to be yet */
 .stage[data-screen="intro"] .hud{ display:none; }
+/* T25c · AND OFF FOR THE WHOLE ENDING. The coin chip counts coins that are
+   about to be spent and the progress pill counts topics that are all
+   finished: both are round chrome, and the round is over. It is display
+   rather than visibility so it reserves nothing either — the overlay
+   centres in the whole stage, not in the stage minus a HUD that is not
+   painting. Cleared by goMap(), which is the only way out. */
+.stage.is-ending .hud{ display:none; }
 
 /* §5 ON THE MAP THE HUD IS OUT OF FLOW, and that is what makes the map
    pass BEHIND it rather than start below it. It is the same row, the same
@@ -5340,8 +5347,69 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
    ===================================================================== */
 .ov--end{
   z-index:13; overflow:hidden;
+  /* T25c · THE KEYBOARD IS PAID FOR IN THE FOOT, and it is .stmodal's own
+     mechanism rather than a second one. kbSync() writes --kb-h on the root
+     whenever a field inside #stage is focused and the visual viewport has
+     shrunk by more than 80px; padding the overlay's foot by it means the
+     column re-centres in what is still visible. Measured against a 336px
+     keyboard: the free-text field moves from 182.9px BELOW the visible
+     line to inside it. The surface this replaced moved it 0px. */
   padding:calc(18px + env(safe-area-inset-top)) 16px
-          calc(16px + env(safe-area-inset-bottom));
+          calc(16px + env(safe-area-inset-bottom) + var(--kb-h, 0px));
+}
+/* and the ceiling in px, for the same reason the modal needs one: once the
+   foot has been shortened, a percentage height on a grid item resolves
+   against the auto row rather than the container. --kb-vis is the visible
+   height kbSync() measured. */
+.kb-open .ov--end .egov__pane{
+  max-height:calc(var(--kb-vis, 100vh) - 2 * var(--sp-4));
+}
+
+/* =====================================================================
+   T25c · THE PANES, AND THE DIRECTION THEY TRAVEL.
+
+   Screens 3 and 4 are panes in the same grid cell as screens 1 and 2's
+   column, so the backdrop behind them is the one painted when the ending
+   opened and is never re-rendered.
+
+   OUT LEFT, IN FROM THE RIGHT — forward in RTL. The direction and the
+   easing are .deckcard.is-leaving's: --t-card-exit on --e-in for the half
+   that is leaving, and the app's own arrival curve for the half that is
+   coming, so the ending advances in the vocabulary the round already
+   taught. The DISTANCE is not the deck's 420: a card is thrown off the
+   screen and a pane is replaced in place, so 64px — far enough to read as
+   a direction, not so far that the ending looks like it is being dealt.
+   ===================================================================== */
+.egov__pane{
+  grid-area:1 / 1; z-index:3; position:relative;
+  width:100%; max-width:358px; min-height:0;
+  /* STRETCH, NOT CENTRE, and it is the picker that needs it. .ov--stage is
+     place-items:center, so a grid item takes its content's height — and
+     .sh-track is flex:1 against that, which resolves to zero and the
+     carousel disappears. Stretching the pane gives the track a definite
+     box to take its share of; .eg-col's own justify-content:center is what
+     keeps the shorter screens centred inside it, so nothing that used to
+     centre stops centring. */
+  align-self:stretch; justify-self:center;
+  display:flex; flex-direction:column;
+  transition:transform var(--t-card-exit) var(--e-settle),
+             opacity   var(--t-card-exit) linear;
+}
+.egov__pane.is-next{ transform:translateX(64px); opacity:0; }
+.egov__pane.is-gone,
+.egov__col.is-gone,
+.egov__chair.is-gone{
+  transform:translateX(-64px); opacity:0; pointer-events:none;
+  transition:transform var(--t-card-exit) var(--e-in),
+             opacity   var(--t-card-exit) linear;
+}
+/* the chair carries its own scale in an inline transform written by
+   egPose(), so its exit has to be stated as a whole transform or the
+   translate would drop the .66 and it would leave full size. */
+.egov__chair.is-gone{ transform:translateX(-64px) scale(.66); }
+@media (prefers-reduced-motion: reduce){
+  .egov__pane, .egov__pane.is-next, .egov__pane.is-gone,
+  .egov__col.is-gone, .egov__chair.is-gone{ transition:none !important; }
 }
 /* the column is a grid item in the same cell as the chair, which is what
    lets the chair sit behind it without either being positioned off the
@@ -5519,22 +5587,47 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 }
 
 /* ---- type ---------------------------------------------------------- */
+/* =====================================================================
+   T25 · IT IS THE FIRST LINE OF THE TITLE, NOT A CAPTION ABOVE IT.
+
+   סיימתם / כל הנושאים is one sentence broken across two lines, and at
+   13px/400 the first half was in a different voice from the second: a
+   meta line in the body face, tracked out, in the muted body ink, sitting
+   above a 38px Black. It read as a label for the title rather than as
+   part of it.
+
+   THE VARIABLE IS THE WEIGHT, NOT THE SIZE, and the three drawings say so
+   plainly. At 17px/400 it is still a caption, just a bigger one — the
+   size moved and nothing else did. At 17px/900 in the display face it
+   becomes the sentence's own first line, with the step down to 17 from
+   the h1's 38 doing the hierarchy inside one voice instead of between
+   two. That is what ships.
+
+   THE 21 NOTE BELOW STILL APPLIES and is kept: the family ships 400 and
+   900 only, and a 700 request resolves UPWARD to the Black. 900 is asked
+   for here deliberately, which is a different thing from 700 landing on
+   it by accident.
+   THE TRACKING IS UNRESOLVED. .08em is a small-caption device that helps
+   13px/400 and loosens 17px/900; I would drop it, and it is one line if
+   Lion agrees. Left in so this change moved one variable.
+   ===================================================================== */
 .eg-eyebrow{
-  /* 21 · 400, not the 700 it carried in system-ui. The family ships two
-     faces, 400 and 900, and CSS font matching answers a 700 request from
-     ABOVE first — so leaving 700 here would have printed the Black and
-     made the eyebrow HEAVIER than before, which is the opposite of the
-     change. Same reasoning on .eg-clear and .i-para. */
-  margin:0; font-family:var(--font-body); font-size:var(--fs-meta);
-  font-weight:400; letter-spacing:.08em; color:var(--ink-body);
+  margin:0; font-family:var(--font-display); font-size:var(--fs-body);
+  font-weight:900; letter-spacing:.08em; color:var(--ink-body);
 }
 .eg-h1{
   margin:0; font-family:var(--font-display); font-weight:900;
   font-size:clamp(30px,8vw,var(--fs-hero)); line-height:1.05; color:var(--paper);
 }
+/* T25c · 35, NOT 26, AND IT IS THE WHOLE ENDING'S SIZE NOW. v30c raised
+   the picker's title to 35 and left screens 2 and 3 at --fs-title's 26, so
+   the quietest screen of the ending and the loudest were adjacent. Lion's
+   call, 09 Sep: take 2 and 3 UP rather than lowering 4, because this is
+   the peak of the game and not the place to shrink type. .sh-title's own
+   35 is now redundant and is dropped below. */
 .eg-h2{
   margin:0 0 2px; font-family:var(--font-display); font-weight:900;
-  font-size:var(--fs-title); line-height:1.1; color:var(--paper);
+  font-size:35px; line-height:1.1; color:var(--paper);
   opacity:0; transform:translateY(6px);
   transition:opacity var(--t-f5-in) var(--e-settle), transform var(--t-f5-in) var(--e-settle);
 }
@@ -6310,7 +6403,9 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 /* v30c · 26 -> 35. The title was the same size as beat 3's and read as
    another row of the same list; at 35 it is the screen's own headline,
    which is what it is. */
-.sh-title{ flex:none; font-size:35px; }
+/* T25c · the size is .eg-h2's now — the whole ending is 35 — so this
+   carries only what is particular to the picker's own header row. */
+.sh-title{ flex:none; }
 /* v30c · 49 -> 54 is applied at the ONE declaration that sets the
    height, further down beside the rest of .sh-b — a second rule up here
    would be overridden by it and the two would disagree on which is the
@@ -6372,9 +6467,16 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 .sh-acts{ margin-top:14px; display:flex; flex-direction:column; gap:10px; flex:none; }
 /* v30c · 49 -> 54. The two actions are the end of the run and were the
    shortest buttons in the sequence. */
+/* T25c · ONE PRIMARY PRESS ACROSS ALL FOUR SCREENS. The picker is the
+   only screen with two actions, which is why both of its buttons were 54
+   against .eg-go's 64.5 everywhere else — so the press the ending had
+   trained three times changed size on the fourth. The SHARE button takes
+   .eg-go's height; SAVE keeps 54 and becomes a visible secondary, which
+   is what it always was in the hierarchy and now looks like it. */
 .sh-b{ height:54px; min-height:0; width:100%; box-sizing:border-box; padding:0 18px;
        display:flex; align-items:center; justify-content:space-between; gap:9px;
        font-size:19px; line-height:1; }
+.sh-b.sh-b--share{ height:64.5px; }
 .sh-b .sh-bl{ flex:1; text-align:center; white-space:nowrap; }
 .sh-ico{ width:21px; height:21px; flex:none; display:block; line-height:0; }
 .sh-ic{ width:21px; height:21px; display:block; }
