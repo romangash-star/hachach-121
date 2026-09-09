@@ -826,6 +826,87 @@ const COPY = {
     m: 'חשוף את התוצאות הסופיות של ההצבעה',                          /* TAMAR · T11 */
     f: 'חשפי את התוצאות הסופיות של ההצבעה',                          /* TAMAR · T11 */
   },
+
+  /* =====================================================================
+     T25 · THE END SEQUENCE JOINS THE TABLE.
+     Ten second-person strings across the four ending screens were bare
+     literals in the plural, so a player who had set a gender was addressed
+     as a group for the last four screens of the game. They are routed
+     here now, like every other string that speaks to the player.
+
+     EIGHT OF THE TEN HAVE ONE SINGULAR FORM, AND THAT IS A FACT ABOUT
+     THESE WORDS RATHER THAN ABOUT SINGULAR. Hebrew's second-person
+     singular PAST is spelled identically for את and אתה unvocalised —
+     סיימת, הצבעת, חילקת — and so are the singular dative and possessive:
+     לך, שלך, אותך, תורך. The brief's warning about צדקת/טעית is exactly
+     right and it is why every slot below is written out in full rather
+     than one form being assigned to both: the day one of these strings
+     is re-worded into an imperative or a present tense, m and f diverge,
+     and a table that had collapsed them would go on printing one form
+     for both without anything failing.
+     THE TWO THAT ALREADY DIVERGE ARE THE IMPERATIVES — alloc's חילקו and
+     the picker's בחרו. They are the proof of the paragraph above.
+     ===================================================================== */
+  egDone: {
+    p: 'סיימתם',                                                     /* TAMAR · T25 */
+    m: 'סיימת',                                                      /* TAMAR · T25 */
+    f: 'סיימת',                                                      /* TAMAR · T25 */
+  },
+  egGo1: {
+    p: 'מה יצא לכם ›',                                               /* TAMAR · T25 */
+    m: 'מה יצא לך ›',                                                /* TAMAR · T25 */
+    f: 'מה יצא לך ›',                                                /* TAMAR · T25 */
+  },
+  egRecord: {
+    p: 'מה יצא לכם',                                                 /* TAMAR · T25 */
+    m: 'מה יצא לך',                                                  /* TAMAR · T25 */
+    f: 'מה יצא לך',                                                  /* TAMAR · T25 */
+  },
+  egSurprised: {
+    p: 'פעמים שהכנסת הפתיעה אתכם',                                   /* TAMAR · T25 */
+    m: 'פעמים שהכנסת הפתיעה אותך',                                   /* TAMAR · T25 */
+    f: 'פעמים שהכנסת הפתיעה אותך',                                   /* TAMAR · T25 */
+  },
+  egAligned: {
+    p: 'הצבעתם עם הרוב',                                             /* TAMAR · T25 */
+    m: 'הצבעת עם הרוב',                                              /* TAMAR · T25 */
+    f: 'הצבעת עם הרוב',                                              /* TAMAR · T25 */
+  },
+  egGo2: {
+    p: 'עכשיו תורכם ›',                                              /* TAMAR · T25 */
+    m: 'עכשיו תורך ›',                                               /* TAMAR · T25 */
+    f: 'עכשיו תורך ›',                                               /* TAMAR · T25 */
+  },
+  /* THE ONE WITH THREE VERBS IN IT, and the only allocation string where
+     m and f differ — the opening imperative. The two past-tense verbs
+     after it collapse; the imperative does not. */
+  egAllocLede: {
+    p: 'חילקו את המטבעות שצברתם בין הנושאים ששיחקתם.',                /* TAMAR · T25 */
+    m: 'חלק את המטבעות שצברת בין הנושאים ששיחקת.',                    /* TAMAR · T25 */
+    f: 'חלקי את המטבעות שצברת בין הנושאים ששיחקת.',                   /* TAMAR · T25 */
+  },
+  egAllSpent: {
+    p: 'חילקתם את כל המטבעות',                                       /* TAMAR · T25 */
+    m: 'חילקת את כל המטבעות',                                        /* TAMAR · T25 */
+    f: 'חילקת את כל המטבעות',                                        /* TAMAR · T25 */
+  },
+  egOtherPh: {
+    p: 'ומה עוד חשוב לכם?',                                          /* TAMAR · T25 */
+    m: 'ומה עוד חשוב לך?',                                           /* TAMAR · T25 */
+    f: 'ומה עוד חשוב לך?',                                           /* TAMAR · T25 */
+  },
+  egGo3: {
+    p: 'לכרטיס שלכם ›',                                              /* TAMAR · T25 */
+    m: 'לכרטיס שלך ›',                                               /* TAMAR · T25 */
+    f: 'לכרטיס שלך ›',                                               /* TAMAR · T25 */
+  },
+  /* the picker's title. The second string in this block where m and f
+     actually differ, and for the same reason: it is an imperative. */
+  shTitle: {
+    p: 'בחרו כרטיס לשיתוף',                                          /* TAMAR · T25 */
+    m: 'בחר כרטיס לשיתוף',                                           /* TAMAR · T25 */
+    f: 'בחרי כרטיס לשיתוף',                                          /* TAMAR · T25 */
+  },
 };
 function t(key) {
   const c = COPY[key]; if (!c) return '';
@@ -6611,6 +6692,11 @@ function endRound() {
 }
 
 function goMap(o) {
+  /* T25c · the ending's HUD suppression ends here, and here only. goMap()
+     is the single way out of the sequence — the picker's back control and
+     the map door both funnel through it — so one removal covers every
+     path and the map gets its chip, its count and its avatar back intact. */
+  $('#stage').classList.remove('is-ending');
   /* the round is torn down BEFORE the map is built, so renderMap() and
      showScreen('map') run against a stage with nothing of the round left
      on it. Every way out of a round funnels through here — the exit
@@ -7037,11 +7123,82 @@ async function endGame() {
   await egOverlay();
 }
 
+/* =====================================================================
+   T25c · THE WHOLE ENDING IS ONE OVERLAY, AND THE BLUR IS PAINTED ONCE.
+
+   WHAT IT REPLACES. Screens 1 and 2 were an overlay over the blurred
+   finale board; 3 and 4 were surfaces on #scEnd. The player crossed from
+   one environment into another halfway through an ending that is supposed
+   to be one thing, which is the whole of Lion's note.
+
+   THE KEYBOARD OBJECTION DID NOT SURVIVE THE TEST, and it turned out to
+   be pointing the wrong way. Measured with a 336px iOS keyboard driven
+   exactly as kbSync() drives it, the SURFACE moved the free-text field by
+   0px and left it 182.9px under the keyboard at 390x844 and 150.9px under
+   at 360x640 — and the list could not be scrolled to rescue it, because
+   the scroller's own box is under the keyboard too. §N says why in its
+   first paragraph: --vh mirrors window.innerHeight, and window.innerHeight
+   does not change on iOS when the keyboard opens. A flex surface sized to
+   it does not re-lay-out either.
+   WHAT DOES WORK IS CONSUMING --kb-h, and the app already ships that: the
+   2b profile sheet is an absolutely-positioned overlay with a text field
+   in it, and it survives the keyboard because .stmodal pads its foot by
+   --kb-h and caps its box at --kb-vis. .ov--end does the same now. The
+   overlay is not merely safe here — it is the repair.
+
+   ONE OVERLAY, FOUR CONTENTS. Screens 1 and 2 are the posed column;
+   3 and 4 are panes swapped into the same box. The backdrop is never
+   re-rendered across the entire ending, which is the .ovpane argument
+   from beat 2 carried to its end.
+   ===================================================================== */
 function egStage() {
-  const r = $('#scEnd');
-  r.innerHTML = '<div class="eg-fx" id="egFx" aria-hidden="true"></div>' +
-                '<div class="eg-col" id="egCol"></div>';
-  return $('#egCol', r);
+  const ov = $('.ov--end');
+  /* NO OVERLAY MEANS NO SEQUENCE — a ?screen=end deep link that somehow
+     reached a beat without egOverlay(). The old #scEnd path is kept for
+     exactly that case rather than deleted, because a demo link that
+     throws is worse than one that renders plainly. */
+  if (!ov) {
+    const r = $('#scEnd');
+    r.hidden = false;
+    r.innerHTML = '<div class="eg-fx" id="egFx" aria-hidden="true"></div>' +
+                  '<div class="eg-col" id="egCol"></div>';
+    return $('#egCol', r);
+  }
+  const pane = el('div', 'egov__pane eg-col is-next');
+  pane.id = 'egCol';
+  ov.appendChild(pane);
+  return pane;
+}
+
+/* THE SWAP · OUT LEFT, IN FROM THE RIGHT, WHICH IS FORWARD IN RTL.
+   The direction and the easing are the deck's own — .deckcard.is-leaving
+   travels left on --t-card-exit with --e-in — so the ending advances in
+   the vocabulary the round already taught rather than in a second one.
+   The distance is not the deck's 420px: a card is thrown off the screen
+   and a pane is replaced in place, so it travels 64px, far enough to read
+   as a direction and not so far that the ending looks like it is being
+   dealt. Reduced motion lands both halves immediately. */
+function egSwapIn(pane) {
+  if (!pane) return;
+  const ov = pane.parentElement; if (!ov) return;
+  /* every pane BUT the incoming one leaves. Finding them here rather than
+     being handed one means a beat cannot forget to retire its predecessor
+     and leave two panes stacked in the same grid cell. */
+  [].slice.call(ov.querySelectorAll('.egov__pane, .egov__col, .egov__chair'))
+    .forEach(n => {
+      if (n === pane) return;
+      n.classList.remove('is-next');
+      n.classList.add('is-gone');
+      setTimeout(() => n.remove(), (egReduced() ? 0 : T.cardExit) + 40);
+    });
+  /* A FORCED REFLOW, NOT requestAnimationFrame, and runAxis() is where
+     this file learned that: rAF does not fire in a backgrounded tab, so
+     the class never comes off and the pane stays at opacity:0 — which
+     for a pane rather than a token is the whole screen, permanently.
+     Reading offsetWidth flushes the pending style synchronously and gives
+     the transition its "from" without depending on a frame ever arriving. */
+  void pane.offsetWidth;
+  pane.classList.remove('is-next');
 }
 
 const egReduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -7133,21 +7290,63 @@ function egConfetti(host) {
    ceil(n/2) and the strip is centred on (n-1)/2 steps, which reproduces
    the board's own 95 - i*38 at n=6 exactly and does not invent a second
    layout at any other count. */
-const EG_NODE = 74, EG_SNODE = 31, EG_ROW = 84, EG_SGAP = 7;
+const EG_NODE = 74, EG_SNODE = 31, EG_SGAP = 7;
+/* =====================================================================
+   T25 · THE ROW PITCH IS MEASURED, AND IT USED TO BE A COLLISION.
+
+   EG_ROW was a flat 84 against a 74px node, so a row had 10px between one
+   node's foot and the next node's head — and .egn__lab sits in that 10px
+   with a 4px margin and a 13.2px line. Measured: every label overlapped
+   the ring below it by 7.3px, on all three rows, not only the one that
+   wraps. It was not a crowding problem, it was an overlap.
+
+   PER ROW, NOT ONE PITCH. Only אחריות ציבורית wraps today and it happens
+   to sit in the last row, where there is nothing under it. Reserving two
+   lines on every row to cover that would spend 13px three times for one
+   label. Each row is given the height its OWN tallest label needs, so a
+   re-cut content set that puts a long label in row 0 gets the room there
+   and nowhere else.
+   THE AIR IS NAMED. EG_ROW_AIR is the clear space between a label's foot
+   and the next ring, and it is the number to argue with if this still
+   reads tight. EG_LAB_GAP is .egn__lab's own margin-top, stated here so
+   the arithmetic is not reading a stylesheet value it cannot see.
+   ===================================================================== */
+const EG_LAB_GAP = 4;               /* .egn__lab's margin-top             */
+const EG_ROW_AIR = 10;              /* label foot -> next ring, clear     */
+let EG_ROWS   = [];                 /* each row's y offset, measured      */
+let EG_GRID_H = 0;                  /* the grid at e=0, measured          */
 /* the chair's own two numbers: the board's .66, and how far its inboard
    edge is allowed inside the column. 20px is the overlap the board draws
    at 390 — enough that the arm passes BEHIND the document and the two
    read as one object, not enough to reach the seat. */
 const EG_CHAIR_S = 0.66, EG_CHAIR_BITE = 20;
-/* THE LABEL'S LINE IS MEASURED, NOT ASSUMED. The board's 252 for three
-   rows is (3-1)*84 + 74 + 10, and the 10 is one line of label — which is
-   right for five of the six topics and wrong for אחריות ציבורית, whose
-   label wraps to two at 74px and then runs into the count line under the
-   grid. 10 stays as the fallback for a build that never reaches the
-   measurement; egOverlay() overwrites it with the tallest label it
-   actually rendered, so any re-cut content set re-measures itself. */
-const EG_LAB_DEFAULT = 10;
-let EG_LAB = EG_LAB_DEFAULT;
+/* THE FALLBACK, for a build that somehow poses before it measures: one
+   line of label on every row. egMeasureRows() replaces both values with
+   what was actually rendered. */
+function egRowsFallback(n) {
+  const rows = Math.ceil(n / 2), h = EG_NODE + EG_LAB_GAP + 13.2;
+  EG_ROWS = []; for (let r = 0; r < rows; r++) EG_ROWS.push(r * (h + EG_ROW_AIR));
+  EG_GRID_H = (EG_ROWS[rows - 1] || 0) + h;
+}
+
+/* ONE READ, and it is the only place either number is written. The grid
+   ends at the LAST label's foot rather than a whole row further on: the
+   air under the bottom row is the column's gap, not the grid's, and
+   counting it twice pushed the count line down by 10px for nothing. */
+function egMeasureRows(ov) {
+  const labs = [].slice.call(ov.querySelectorAll('.egn__lab'));
+  const n = labs.length; if (!n) return;
+  const rows = Math.ceil(n / 2);
+  EG_ROWS = [];
+  let y = 0, tall = 0;
+  for (let r = 0; r < rows; r++) {
+    EG_ROWS.push(y);
+    const a = labs[r * 2], b = labs[r * 2 + 1];
+    tall = Math.max(a ? a.offsetHeight : 0, b ? b.offsetHeight : 0);
+    y += EG_NODE + EG_LAB_GAP + tall + EG_ROW_AIR;
+  }
+  EG_GRID_H = EG_ROWS[rows - 1] + EG_NODE + EG_LAB_GAP + tall;
+}
 const EG_EASE3 = e => 1 - Math.pow(1 - e, 3);
 const eg01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
 
@@ -7240,7 +7439,8 @@ function egPose(e) {
   const n = nodes.length; if (!n) return;
   const rows = Math.ceil(n / 2);
   const s = 1 - (1 - EG_SNODE / EG_NODE) * ease;      /* 1 -> .419 */
-  const gh = (rows - 1) * EG_ROW + EG_NODE + EG_LAB;
+  if (EG_ROWS.length !== rows) egRowsFallback(n);
+  const gh = EG_GRID_H;
   const step = EG_SNODE + EG_SGAP;
   const lab = Math.max(0, 1 - ease * 3);              /* gone by ~90ms */
   grid.style.height = (gh - (gh - EG_SNODE) * ease).toFixed(1) + 'px';
@@ -7249,7 +7449,7 @@ function egPose(e) {
        is physical (+42 is right of centre) and RTL reading order puts the
        first node there, which is also where the strip's first node lands. */
     const col = i % 2, row = (i / 2) | 0;
-    const gx = col === 0 ? 42 : -42, gy = row * EG_ROW;
+    const gx = col === 0 ? 42 : -42, gy = EG_ROWS[row] || 0;
     const sx = ((n - 1) / 2 - i) * step;
     const x = gx + (sx - gx) * ease, y = gy - gy * ease;
     node.style.transform = 'translate(calc(-50% + ' + x.toFixed(1) + 'px), ' +
@@ -7318,13 +7518,17 @@ function egPose(e) {
   if (go) {
     const bOp = k < 0.5 ? 1 - k / 0.34 : (k - 0.66) / 0.34;
     go.style.opacity = eg01(bOp).toFixed(2);
-    const want = k < 0.5 ? EG_GO1 : EG_GO2;
+    const want = k < 0.5 ? EG_GO1() : EG_GO2();
     if (go.textContent !== want) go.textContent = want;
   }
 }
 
-const EG_GO1 = 'מה יצא לכם ›';                                        /* TAMAR */
-const EG_GO2 = 'עכשיו תורכם ›';                                       /* TAMAR */
+/* T25 · both were bare literals in the plural; they are the voice table's
+   now. Read at PAINT time rather than captured in a const, because the
+   player can set a gender in 2b at any point and the overlay must not be
+   holding a string from before that. */
+const EG_GO1 = () => t('egGo1');
+const EG_GO2 = () => t('egGo2');
 
 /* =====================================================================
    STEP 1 · THE MAP COMPLETES.
@@ -7341,6 +7545,8 @@ async function egOverlay() {
      at the collapse, and two visible .screen children would each take
      flex:1 and split the stage between them. */
   showScreen('end');
+  /* T25c · the HUD is off for the whole ending — see .stage.is-ending. */
+  $('#stage').classList.add('is-ending');
   $('#scEnd').hidden = true;
   /* ONLY IF THERE IS SOMETHING BEHIND IT. ?screen=end drops straight in
      from the intro and no round has been built; unhiding it would put an
@@ -7365,7 +7571,7 @@ async function egOverlay() {
     '</div>' +
     '<div class="egov__col" id="egovCol">' +
       '<div class="egov__hero">' +
-        '<p class="eg-eyebrow">' + esc('סיימתם') + '</p>' +            /* TAMAR */
+        '<p class="eg-eyebrow">' + esc(t('egDone')) + '</p>' +         /* TAMAR · T25 */
         '<h1 class="eg-h1">' + esc('כל הנושאים') + '</h1>' +           /* TAMAR */
       '</div>' +
       '<div class="egov__map" id="egovMap">' +
@@ -7376,11 +7582,14 @@ async function egOverlay() {
         esc(' סוגיות') + '</p>' +
       '<div class="egov__doc">' +
         '<h2 class="eg-h2 is-in egov__h2">' +
-          esc(PROFILE.name ? 'מה יצא לך, ' + PROFILE.name : 'מה יצא לכם') +  /* TAMAR */
+          /* T25 · the NAMED branch was already the singular form and is
+             unchanged; only the unnamed one was stuck in the plural. */
+          esc(PROFILE.name ? 'מה יצא לך, ' + PROFILE.name          /* TAMAR */
+                           : t('egRecord')) +                      /* TAMAR · T25 */
         '</h2>' +
         '<div class="eg-card f5surf is-in">' +
           '<p class="eg-stat">' +
-            '<span class="eg-stat__l">' + esc('פעמים שהכנסת הפתיעה אתכם') +  /* TAMAR */
+            '<span class="eg-stat__l">' + esc(t('egSurprised')) +      /* TAMAR · T25 */
             '</span><b class="eg-num">' + N(s.surprises) + '</b></p>' +
           '<p class="eg-stat__sub">' + esc('מתוך ') + N(s.asked) +     /* TAMAR */
             esc(' ניחושים לאורך המשחק') + '</p>' +
@@ -7388,7 +7597,7 @@ async function egOverlay() {
         (s.alignOf > 0
           ? '<div class="eg-card f5surf eg-card--quiet is-in">' +
               '<p class="eg-stat eg-stat--sm">' +
-                '<span class="eg-stat__l">' + esc('הצבעתם עם הרוב') +  /* TAMAR */
+                '<span class="eg-stat__l">' + esc(t('egAligned')) +    /* TAMAR · T25 */
                 '</span><b class="eg-num">' +
                 N(s.alignHits + '/' + s.alignOf) + '</b></p>' +
               '<p class="eg-stat__sub">' +
@@ -7402,11 +7611,22 @@ async function egOverlay() {
   $('#stage').appendChild(ov);
 
   /* one read, before the first pose, of what the labels actually came out
-     at — see EG_LAB. .egn is 74px wide with align-items:center, so a
-     label longer than that wraps rather than overflowing, which is why
-     this is a height question and not a width one. */
-  const labs = [].slice.call(ov.querySelectorAll('.egn__lab'));
-  EG_LAB = labs.reduce((m, l) => Math.max(m, l.offsetHeight + 4), EG_LAB_DEFAULT);
+     at. .egn is 74px wide with align-items:center, so a label longer than
+     that wraps rather than overflowing — which is why this is a height
+     question and not a width one. See egMeasureRows().
+
+     AFTER THE FACE HAS LOADED, AND THAT IS NOT A DETAIL. Measured against
+     the fallback face every one of the six labels wrapped to two lines,
+     so the first version of this reserved 26px on every row and came out
+     at a 114px pitch instead of 101 — a grid 25px taller than the content
+     needs, decided by a font that was not going to be the one on screen.
+     By the time anyone reaches the end-game the face is long since
+     loaded and this resolves in the same tick; it costs something only on
+     a cold ?screen=end deep link, which is a demo path. */
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (e) { /* measure anyway */ }
+  }
+  egMeasureRows(ov);
 
   egPose(0);
   const go = $('.egov__go', ov);
@@ -7468,16 +7688,17 @@ function egHandoff() {
    blur starts to lift, so the ground fades UP underneath rather than
    arriving into an empty frame.
    ===================================================================== */
+/* T25c · THE OVERLAY NO LONGER COLLAPSES HERE. It used to build beat 3
+   on #scEnd and then fade itself out over it, which is what made the
+   ground change. The round behind it is torn down — it has been blurred
+   furniture since the sequence began and there is nothing left to reveal
+   — and the same overlay carries the last two screens. */
 async function egCollapse() {
-  const ov = $('.ov--end');
   const sr = $('#scRound');
-  $('#scEnd').hidden = false;
   if (sr) { sr.hidden = true; sr.classList.remove('is-finale'); }
+  /* screens 1 and 2's column and chair are retired by egSwapIn(), which
+     takes every pane but the incoming one — see there. */
   await egBeat3();
-  if (!ov) return;
-  ov.classList.add('ov--collapse');
-  ov.style.pointerEvents = 'none';
-  setTimeout(() => ov.remove(), (egReduced() ? 0 : T.ovCollapse) + 40);
 }
 
 /* =====================================================================
@@ -7649,7 +7870,8 @@ function egFlyOne(node, x0, y0, cx, cy, x1, y1, delay, onFirst, onLast) {
    object: the eight above name real topics and carry real artwork, and
    giving this one a picture would claim it is a ninth topic. */
 const EG_OTHER_LABEL = 'אחר';                                          /* TAMAR */
-const EG_OTHER_PH    = 'ומה עוד חשוב לכם?';                            /* TAMAR */
+/* T25 · the voice table's, read at paint time — see EG_GO1. */
+const EG_OTHER_PH    = () => t('egOtherPh');                           /* TAMAR · T25 */
 const OTHER_GLYPH    = '<span class="eg-other__g" aria-hidden="true">✎</span>';
 
 /* =====================================================================
@@ -7701,7 +7923,7 @@ async function egBeat3() {
     egStripHTML() +
     '<h2 class="eg-h2 is-in">' + esc('במה להשקיע?') + '</h2>' +        /* TAMAR */
     '<p class="eg-lede">' +
-      esc('חילקו את המטבעות שצברתם בין הנושאים ששיחקתם.') +            /* TAMAR */
+      esc(t('egAllocLede')) +                                          /* TAMAR · T25 */
     '</p>' +
     '<p class="eg-left" id="egLeft"></p>' +
     /* .scrolls IS NOT DECORATION HERE. The list is a scroll container —
@@ -7767,7 +7989,7 @@ async function egBeat3() {
   const field = el('input', 'eg-other__in');
   field.type = 'text';
   field.maxLength = OTHER_MAX;                 /* the hard cap, 11 */
-  field.placeholder = EG_OTHER_PH;                                     /* TAMAR */
+  field.placeholder = EG_OTHER_PH();                                   /* TAMAR · T25 */
   field.setAttribute('dir', 'auto');
   field.setAttribute('autocomplete', 'off');
   field.setAttribute('autocorrect', 'off');
@@ -7810,7 +8032,7 @@ async function egBeat3() {
     $$('.eg-chip', $('#egChips')).forEach(x => { delete x.dataset.hold; });
     egPaint();
   });
-  const go = el('button', 'p-c eg-go', 'לכרטיס שלכם ›');               /* TAMAR */
+  const go = el('button', 'p-c eg-go', t('egGo3'));                    /* TAMAR · T25 */
   pressable(go).addEventListener('click', () => egBeat4());
   acts.append(clear, go);
 
@@ -7819,6 +8041,14 @@ async function egBeat3() {
   chips.addEventListener('scroll', egFade, { passive: true });
 
   egPaint();
+  /* T25c · THE PANE ARRIVES, ITS PARTS DO NOT. The lede, the list and the
+     actions used to fade up 6-8px each, which was written when this screen
+     arrived on an empty ground. It arrives as one object now — see
+     egSwapIn() — and a second entrance layered inside the first is the
+     thing T24 took off the reveal gate for the same reason. The classes
+     stay because .is-in is also the resting state; they are simply set in
+     the same frame instead of a beat later. */
+  egSwapIn(c);
   requestAnimationFrame(() => {
     $('.eg-lede', c).classList.add('is-in');
     chips.classList.add('is-in');
@@ -7887,7 +8117,7 @@ function egPaint() {
       ? esc('אין מטבעות לחלוקה')                                        /* TAMAR */
       : left > 0
         ? esc('נותרו לחלוקה ') + '<b>' + N(left) + '</b> ' + esc('מטבעות') /* TAMAR */
-        : esc('חילקתם את כל המטבעות') + ' ●';                            /* TAMAR */
+        : esc(t('egAllSpent')) + ' ●';                                  /* TAMAR · T25 */
     L.classList.toggle('is-spent', wallet > 0 && left <= 0);
   }
   $('#egChips') && $$('.eg-chip', $('#egChips')).forEach(b => {
@@ -7949,7 +8179,11 @@ const SH_ASPECTS = { '916': [1080, 1920], '45': [1080, 1350] };
 const SH_LINK    = 'hac121.org';
 const SH_FILE    = 'hac121-card.png';
 const SH_COPY = {
-  title:    'בחרו כרטיס לשיתוף',                            /* TAMAR */
+  /* T25 · SH_COPY.title is gone; the picker's heading is the voice
+     table's t('shTitle'), because it is an imperative addressed to the
+     player and m and f genuinely differ on it. Everything else in this
+     table either names an object or speaks in the player's own first
+     person on the card, where the past tense collapses m and f. */
   tag:      'הח״כ ה-121',                                   /* TAMAR */
   claim:    'תפסתי את<br>הכיסא ה-121',          /* C's title; the break is the design's */ /* TAMAR */
   claimTxt: 'תפסתי את הכיסא ה-121',            /* the same words, for the text fallback */ /* TAMAR */
@@ -8229,15 +8463,20 @@ async function egBeat4() {
      round. ON THE GROUND, never over the card: card D is cream and a
      cream pill on it would vanish. */
   c.innerHTML =
+    /* T25c · THE LETTERHEAD RUNS TO THE END. It crossed onto screen 3 in
+       v30c and stopped there, so the one object carrying the ending's
+       continuity abandoned it one screen early. */
+    egStripHTML() +
     '<div class="sh-hd">' +
       '<button type="button" class="sh-back" id="shBack">' +
         '<i aria-hidden="true">›</i>' + esc(SH_COPY.back) + '</button>' +
-      '<h2 class="eg-h2 sh-title">' + esc(SH_COPY.title) + '</h2>' +
+      '<h2 class="eg-h2 sh-title">' + esc(t('shTitle')) + '</h2>' +    /* TAMAR · T25 */
     '</div>' +
     '<div class="sh-track" id="shTrack"><div class="sh-rail" id="shRail"></div></div>' +
     '<div class="sh-dots" id="shDots" role="tablist"></div>' +
     '<div class="sh-tg" id="shTg" role="radiogroup"></div>' +
     '<div class="sh-acts" id="shActs"></div>';
+  egSwapIn(c);                                   /* T25c · out left, in right */
   const track = $('#shTrack', c), rail = $('#shRail', c), dots = $('#shDots', c), tg = $('#shTg', c), acts = $('#shActs', c);
 
   /* ---- the carousel: three slots, absolutely placed, one transform ----
