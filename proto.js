@@ -1192,6 +1192,18 @@ const SFX_SRC = {
   peel:  'tape_peel.wav',
   tick:  'count_tick.wav',
   land:  'count_land.wav',
+  /* the player's own vote joining the count. A DIFFERENT RECORDING, not a
+     third cut of the tally: count_tick and count_land come from one
+     spin-board take and correlate at r=0.36, so a third instance of it
+     would make the chamber and the player the same object. This is a
+     poker chip set down — r=0.06 against the tick, which is the
+     unrelated-recording floor. */
+  vote:  'count_vote.wav',
+  /* SOFT ATTACK ON PURPOSE: the coin spawns 340ms after the stamp starts
+     and a hard transient on top of its tail would read as a collision.
+     35ms from 10% to 90% of peak. */
+  coin:  'coin.wav',
+  deck:  'deck.wav',
   done:  'complete.wav'
 };
 let AC = null;                 /* the AudioContext, created on first gesture */
@@ -1321,6 +1333,15 @@ const coinCount = n => Math.max(3, Math.min(5, Math.round(n / 25) + 2));
    and the running total is correct after any interleaving. */
 function award(n, from) {
   if (!n) return;
+  /* SOUND · ONCE PER AWARD, AT SPAWN. award() is already called at
+     T.stamp — 340ms after the stamp lands — so this IS the 340ms mark,
+     and it is the coins leaving rather than arriving: the flight takes
+     another ~450ms and a sound at the far end of that is 790ms behind
+     the verdict it belongs to.
+     ABOVE THE coinFlight() BRANCH, so the degenerate case is covered:
+     an award with no origin pays as a plain count-up with no tokens at
+     all, and it still gets its one sound. */
+  sfx('coin');
   const chip = $('.hud-coins'), out = $('#coinNum');
   if (S) S.coins += n;             /* the round's own tally; null on the map */
 
@@ -5785,6 +5806,7 @@ function tickVote(board, tally) {
     nBox.classList.add('is-mine');
     nEl.textContent = String(to);
     paintBar();
+    sfx('vote');                    /* SOUND · motion is off, sound is not */
     return Promise.resolve();
   }
 
@@ -5838,6 +5860,10 @@ function tickVote(board, tally) {
       if (bar) bar.classList.add('is-plus1');
       paintBar();
       buzz(18);
+      /* SOUND · THE 121ST VOTE, in the silence the beat leaves for it.
+         Everything about the +1 already fires on one frame on purpose;
+         this is the fifth thing on that frame. */
+      sfx('vote');
       setTimeout(() => {
         /* THE WINDOWS DO NOT SURVIVE THE BEAT. The settled numeral is the
            single text node it was before the tick, so nothing downstream
@@ -8536,6 +8562,18 @@ async function egBeat3() {
     pressable(b).addEventListener('click', () => {
       const left = egRemaining();
       if (left <= 0) return;
+      /* SOUND · THE SAME COIN, ONCE PER TAP. egCoinFlight() emits 5-8
+         tokens and returns false when it is capped or under reduced
+         motion, so the sound is fired HERE, on the allocation itself,
+         rather than inside it — one tap, one coin, and reduced motion
+         does not silence it.
+         THE SAME FILE, NOT A VARIANT. This is a coin being spent rather
+         than earned, and the direction is carried by the screen and the
+         arithmetic. A second timbre for "spent" would be the set
+         informing rather than confirming, and on a screen whose whole
+         design is not to editorialise about where the money goes, a
+         different sound per direction is a judgement nobody asked for. */
+      sfx('coin');
       /* ITEM 14 · LAUNCHED BEFORE THE STATE MOVES, so the coins are aimed
          at the row as it looks on the tap — after egPaint() the row may
          have grown a number and shifted under them. It returns false when
@@ -9190,6 +9228,12 @@ async function egBeat4() {
    and the map is the thing you come back to with it. */
 function startRound(issueId) {
   applyDev();
+  /* SOUND · THE DECK MEETS THE TABLE. On startRound() and not on
+     .sc-round.is-entering: openTopic() adds that class at the map's door
+     (proto.js:7561) but beat 5's לסוגיה הבאה calls startRound() directly
+     (proto.js:5436) and adds nothing, so half of all round starts would
+     have been silent. This is the one place both doors pass through. */
+  sfx('deck');
   /* the other door. Coming here from beat 5's לסוגיה הבאה, or back into a
      topic from the map, has to start on the same empty stage the map's
      door leaves behind — re-entering a topic must not inherit anything
