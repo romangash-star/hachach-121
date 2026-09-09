@@ -263,7 +263,8 @@ let issue, topic, S;
    stage follows the chrome collapsing instead of assuming 844px.
    --card-scale shrinks the 620px card assembly to whatever height the
    round actually has, so a short phone never needs a scrollbar to see a
-   whole card. Nothing in the app scrolls except .scrolls.
+   whole card. Nothing in the app scrolls except .scrolls — the map, the
+   character grid and the end-game allocation list.
    --------------------------------------------------------------------- */
 /* THE STACK IS THE CARD AND NOTHING ELSE. The axis strip is inside the
    card now and the stamp paints on top of it, so there is no box below
@@ -439,8 +440,16 @@ addEventListener('scroll', () => {
 addEventListener('focusin', () => setTimeout(kbSync, 50));
 /* activeElement is body again only AFTER focusout has run */
 addEventListener('focusout', () => setTimeout(kbSync, 0));
-/* belt and braces against rubber-band: the body never pans. The two
-   surfaces that may (map, character) carry .scrolls and opt back in. */
+/* belt and braces against rubber-band: the body never pans. The three
+   surfaces that may (map, character, the end-game allocation list) carry
+   .scrolls and opt back in.
+   THE ALLOCATION LIST WAS THE THIRD AND WAS MISSING. It is worth stating
+   why that was invisible for so long: this handler does not fail loudly.
+   A surface that forgets the class keeps its overflow, keeps its
+   scrollbar geometry, scrolls perfectly from script — and simply ignores
+   the finger. There is nothing to see in the DOM and nothing in the
+   console. Anything that grows a scroll container from here on has to be
+   given this class in the same commit. */
 addEventListener('touchmove', e => {
   if (!e.target.closest || !e.target.closest('.scrolls')) e.preventDefault();
 }, { passive: false });
@@ -6692,7 +6701,14 @@ async function egBeat3() {
       esc('חילקו את המטבעות שצברתם בין הנושאים ששיחקתם.') +            /* TAMAR */
     '</p>' +
     '<p class="eg-left" id="egLeft"></p>' +
-    '<div class="eg-chips" id="egChips"></div>' +
+    /* .scrolls IS NOT DECORATION HERE. The list is a scroll container —
+       overflow-y:auto and min-height:0 in .eg-chips — but the app cancels
+       every touchmove outside .scrolls and pins touch-action to none on
+       the body, so it was a scroller no finger could move. At 360x640 the
+       last row goes under the clip line the moment the first tap adds the
+       reset link, and there was no way to bring it back. One class opts
+       into both policies at once; nothing else was needed. */
+    '<div class="eg-chips scrolls" id="egChips"></div>' +
     '<div class="eg-acts" id="egActs"></div>';
 
   const chips = $('#egChips', c);
@@ -6770,6 +6786,11 @@ async function egBeat3() {
     if (!field.hidden) return;
     field.hidden = false;
     field.focus();
+    /* the field is 46px of new content inside the scroller, and focus()
+       may or may not move the scroll to reach it. The scroll listener
+       covers the case where it does; this covers the case where it does
+       not, and running twice is free because egFade() only measures. */
+    egFade();
   };
 
   const acts = $('#egActs', c);
@@ -6790,12 +6811,54 @@ async function egBeat3() {
   pressable(go).addEventListener('click', () => egBeat4());
   acts.append(clear, go);
 
+  /* passive: this listener only reads and toggles a class, and marking it
+     so keeps it off the critical path of a scroll it never cancels. */
+  chips.addEventListener('scroll', egFade, { passive: true });
+
   egPaint();
   requestAnimationFrame(() => {
     $('.eg-lede', c).classList.add('is-in');
     chips.classList.add('is-in');
     acts.classList.add('is-in');
   });
+}
+
+/* =====================================================================
+   THE FADE · SECOND CALL SITE OF THE REVEAL PANEL'S, NOT A NEW IDEA.
+   Same two classes and the same test as the MK card's explanation block:
+   .has-more only while the block ACTUALLY overflows, .is-atend clearing
+   it at the bottom of the scroll, so a fully-scrolled list and a list
+   with nothing hidden both end on a hard edge rather than on a permanent
+   decorative shadow. The mask itself is in proto.css beside .eg-chips.
+
+   WHY IT IS A FUNCTION AND NOT A CLOSURE INSIDE egBeat3(). The reveal
+   panel is built once and never changes size, so its sync can run at
+   build and on scroll and be done. This list changes size AFTER it is
+   built, twice: the reset link appears on the first tap and takes 41px
+   off the list, and the free-text row grows the content again. Both go
+   through egPaint(), which is already the one place that runs on every
+   change to this screen, so the test lives where it can be called from
+   there rather than being reachable only from the builder's scope.
+
+   IT MEASURES, IT DOES NOT REMEMBER. Reading clientHeight straight after
+   egPaint() toggles the reset link forces the layout that toggle just
+   invalidated, which is exactly what is wanted: the answer is about the
+   list as it is now, not as it was before the link arrived. */
+function egFade() {
+  const c = $('#egChips');
+  if (!c) return;
+  const over = c.scrollHeight - c.clientHeight > 1;
+  c.classList.toggle('has-more', over);
+  c.classList.toggle('is-atend',
+    over && c.scrollTop + c.clientHeight >= c.scrollHeight - 2);
+  /* THE MIRROR, AND IT IS THE HALF THAT ACTUALLY STRANDS ROWS. A bottom
+     fade answers "there is more below", which is states 1 and 2. State 3
+     is the opposite shape: tapping אחר opens its field, the browser
+     scrolls the list to bring the field into view, and the list arrives
+     at the END of its own range with two topics above the cut and
+     is-atend suppressing the only signal there was. Same tolerance as
+     the line above, same `over` gate, read in the other direction. */
+  c.classList.toggle('is-atstart', over && c.scrollTop <= 2);
 }
 
 /* one painter for the whole screen, so the left-to-place line and every
@@ -6835,6 +6898,11 @@ function egPaint() {
   });
   const clear = $('.eg-clear');
   if (clear) clear.hidden = egPlaced() === 0;
+  /* LAST, because the line above is what changes the list's height: the
+     reset link appearing on the first tap is the single event that turns
+     a 15px overflow into a 56px one. Testing before it would answer for
+     the layout the player has already left. */
+  egFade();
 }
 
 /* =====================================================================
