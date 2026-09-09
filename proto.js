@@ -4052,6 +4052,35 @@ function fitPreReveal(b) {
   chair.style.height = target.toFixed(2) + 'px';
 }
 
+/* =====================================================================
+   T19 · THE PROGRESS PILL JOINS THE COIN PILL, AND IT IS MOVED FROM HERE
+   RATHER THAN FROM THE MARKUP. index.html is Roman's and puts
+   #hudProgress inside .hud-mid, the centred slot it shares with the
+   round's topic title. One appendChild at boot takes it out of that slot
+   and puts it beside .hud-coins instead; nothing else about the HUD moves
+   and the markup keeps working if this never runs.
+
+   BEFORE THE COIN PILL, NOT AFTER. The HUD is RTL, so DOM order runs
+   right to left and inserting after would put the progress pill at the
+   far edge with the coins inboard of it — the coin chip would move. The
+   coin chip has been at that edge since the first build and is what the
+   award animation flies to; inserting before leaves it exactly where it
+   is and brings the progress pill in beside it.
+
+   IT IS THE MAP'S PILL ONLY, which is worth stating because this is a
+   shared HUD. #hudProgress is hidden on the round — the topic title has
+   the middle there — so on that screen this function moves a hidden node
+   and changes nothing. Verified in the report at both widths.
+
+   WHAT IT LEAVES: an empty centre on the map. See the report; it is
+   deliberate as far as this change goes and nothing was invented to
+   fill it. */
+function pairHudProgress() {
+  const hud = $('.hud'), pr = $('#hudProgress'), coins = $('.hud-coins');
+  if (!hud || !pr || !coins) return;
+  hud.insertBefore(pr, coins);
+}
+
 function seenPreHow() {
   if (DEV.preHow !== null) return !DEV.preHow;
   return PRE_HOW_SEEN;
@@ -5977,7 +6006,11 @@ function nodeHTML(t, i, h, cur) {
       '</button>' +
     '</span>' +
     '<span class="node-name">' + esc(t.sub || t.label) + '</span>' +
-    '<span class="node-status">' + statusLine(t.id) + '</span>' +
+    /* T19 · the span is only built when there is a line for it. An empty
+       one still takes its own line box — 13px of it — which is the whole
+       height this change is trying not to spend on an untouched node. */
+    (statusLine(t.id)
+      ? '<span class="node-status">' + statusLine(t.id) + '</span>' : '') +
   '</div>';
 }
 
@@ -5987,6 +6020,13 @@ function nodeHTML(t, i, h, cur) {
 function statusLine(id) {
   const s = segsDone(id), n = SEGS(id);
   if (topicDone(id)) return '✓ הושלם';
+  /* T19 · NOTHING AT ALL ON AN UNTOUCHED NODE. 0/2 is not progress, it is
+     the absence of it, and printing it under every unplayed topic gave
+     eight nodes a line that says the same nothing eight times. The ring is
+     already empty and the node already has no check; a player reading
+     "0 מתוך 2" is being told what the whole node has just told them.
+     The line comes back the moment there is something to report. */
+  if (s <= 0) return '';
   /* the shipped app's own string, app.js:274 — and the fraction goes
      through .num like every other numeral in the prototype (§7), so it
      stays an LTR run inside the RTL line instead of relying on the bidi
@@ -7656,6 +7696,10 @@ function boot() {
      door to 2b on the map and the end — the round swaps it for the ✕ and
      the intro hides the HUD, so there is nothing to wire for those. */
   if (!PROFILE.avatarId && presets()[0]) PROFILE.avatarId = presets()[0].id;
+  /* T19 · once, before the first screen. It is a DOM move, not a paint,
+     so it belongs with the other things boot() settles before anything
+     is drawn rather than with the per-screen HUD sync. */
+  pairHudProgress();
   paintHudAvatar();
   pressable($('#hudAvatar')).addEventListener('click', () => {
     /* T13 · SPENT BEFORE THE GUARD, NOT AFTER. The double-tap that lands
