@@ -84,6 +84,14 @@
   --t-exit:        180ms;  /* the spent card leaving                     */
   --t-ov-in:       260ms;  /* beat-2 overlay, blur ramps with it         */
   --t-ov-collapse: 220ms;  /* beat-3 dismiss, INTO the card beneath      */
+  /* P2 · THE STICKER'S OWN HEIGHT, AND IT IS ONE NUMBER FOR EVERY MOVE.
+     The box is a FRAME, not an object: what plays inside it is a 180ms
+     check pop and a 200ms preset lift no matter how far the frame
+     travelled, so scaling the duration by distance would put the biggest
+     swap — the invite's +374 — behind its own contents. 200 nominal;
+     --e-settle lands it within a pixel of target well before that, which
+     is the figure that actually matters and is measured in the report. */
+  --t-swap:        200ms;  /* a sticker resizing between two contents    */
   --t-snapback:    160ms;  /* release below the drag threshold           */
   --t-resolve:     450ms;  /* the pinned claim resolving. A moment.      */
   --t-coin:        400ms;  /* one coin award counting up                 */
@@ -3984,6 +3992,29 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   transition:transform var(--t-flip) var(--e-land);
 }
 .stmodal.is-in .stmodal__box{ transform:rotate(-1.4deg) scale(1); }
+/* P2 · THE HEIGHT MOVE, ARMED ONLY WHILE ONE IS RUNNING.
+   It is a CLASS and not a permanent line on the rule above for one
+   reason: that rule is the ENTRANCE. `height` added there would animate
+   the box's height on arrival alongside the --t-flip scale — a second,
+   unwanted motion on every modal in the app, not just the two that swap.
+   stickerSwap() adds this for the duration of one move and takes it off
+   again, so first paint never has a height transition to fire.
+
+   THE TWO overflow LINES ARE THE OTHER HALF OF THE FIX, and they are
+   temporary for the same reason. .stmodal__box ships no overflow at all,
+   so a growing box spills its new content past the 5px border and the
+   18px radius mid-move; and .prof's overflow-y:auto — a safety net that
+   never engages at rest, measured false in all three contents at both
+   stages — WOULD engage transiently while the frame is smaller than what
+   is now inside it, flashing a scroll state that is not real. Permanent
+   overflow:hidden on the box is not an option: .stmodal__x is absolute
+   at top:2px and sits OVER the content by design. */
+.stmodal__box.is-hswap{
+  transition:transform var(--t-flip) var(--e-land),
+             height var(--t-swap) var(--e-settle);
+  overflow:hidden;
+}
+.stmodal__box.is-hswap .prof{ overflow:hidden; }
 /* the ✕ sits over the scrolling content, not inside it, so a long
    bill_summary cannot scroll the way out off the top of the box */
 /* flex-start in an RTL column is the PHYSICAL RIGHT, which is where the

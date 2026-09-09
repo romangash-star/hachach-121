@@ -2961,6 +2961,102 @@ const PROF_COPY = {
   rsCoin: 'מטבעות',                     /* TAMAR · cost chip unit */
 };
 
+/* ===== P2 · ONE HEIGHT TRANSITION FOR EVERY STICKER CONTENT SWAP =======
+   stickerSwap(m, paint) — the ONLY way a .stmodal should change what is
+   inside it. Not a profile helper: it takes the modal and a function that
+   rewrites the content, and it eases .stmodal__box between the height it
+   had and the height that function produces. 2b/2a/2c go through it, the
+   invitation's החליפו goes through it, and T34's glossary swap inside
+   moreModal() goes through it too — that is what the name is for. Write a
+   second one and the two will drift.
+
+   WHY MEASURED PIXELS AND NOT grid-template-rows:0fr->1fr. That technique
+   expands a track from NOTHING. None of these moves start at nothing —
+   524->376, 183->557 — so expressing one with it means collapsing the old
+   content to zero and growing the new from zero: two animations, double
+   the time, and a frame in the middle where the sticker has no body. It
+   also needs the box converted from flex to grid, which costs
+   .bsheet{flex:1 1 auto} — and that flex is the only reason builder axes
+   5, 6 and 7 hold at one height across 3, 5 and 6 options. The technique
+   would introduce height changes while trying to smooth them.
+
+   ONE DURATION FOR EVERY MOVE, --t-swap, not scaled by distance. See the
+   token. The four early returns below are each a real failure that was
+   measured, not defensive noise; the comments say which. */
+function stickerSwap(m, paint) {
+  if (typeof paint !== 'function') return;
+  const box = m && $('.stmodal__box', m);
+  if (!box) { paint(); return; }
+
+  /* REDUCED MOTION IS AN INSTANT SWAP — TODAY'S BEHAVIOUR, KEPT.
+     The global reduce rule flattens transition-duration to 1ms, which is
+     NOT the same thing: a 1ms transition still starts, still lands on a
+     later frame and still fires transitionend, so the box would hold an
+     inline height across a frame boundary for no visible gain. Taking the
+     paint-only path means no class, no inline height and no event at all.
+     Read live, not cached: the OS setting can change under a session. */
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    paint(); return;
+  }
+
+  /* THE KEYBOARD OWNS THE HEIGHT WHILE IT IS UP. .kb-open caps the box at
+     calc(var(--kb-vis) - 2*var(--sp-4)); an inline height would fight a
+     max-height that --kb-h is still moving. The name field is in 2b and
+     every door out of 2b is reachable with it focused, so this is
+     reachable, not theoretical. */
+  if (document.documentElement.classList.contains('kb-open')) { paint(); return; }
+
+  /* AN IN-FLIGHT MOVE HANDS OVER ITS CURRENT HEIGHT, NOT ITS TARGET.
+     offsetHeight during a transition is the interpolated value, so
+     reading it first and only then tearing the old move down means a
+     swap that interrupts another one continues from where the box
+     actually is. Snapping to the old target first would read as a stutter
+     at exactly the moment the player is moving fastest. */
+  const from = box.offsetHeight;
+  const live = box._hswap;
+  if (live) live.stop();
+
+  box.style.height = '';
+  paint();
+  const to = box.offsetHeight;
+
+  /* OLD === NEW: WRITE NOTHING, FIRE NOTHING, CLEAR NOTHING.
+     Builder axes 5, 6 and 7 are all one height — .bsheet absorbs the
+     option count — so this branch is reached by a player simply stepping
+     through the builder. Setting an equal height fires no transition, so
+     transitionend never arrives, so the inline height is never cleared,
+     so the NEXT swap measures a pinned box and does not move. The bug
+     surfaces one interaction after the one that caused it. */
+  if (to === from) { box.classList.remove('is-hswap'); return; }
+
+  box.style.height = from + 'px';
+  box.classList.add('is-hswap');
+  void box.offsetHeight;                 /* flush, so `to` is a real change */
+  box.style.height = to + 'px';
+
+  const rec = {};
+  const onEnd = e => {
+    /* the box's own height and nothing else: this listener sits on an
+       element whose descendants animate transform and translate, and both
+       bubble */
+    if (e.target !== box || e.propertyName !== 'height') return;
+    rec.stop(); rec.clear();
+  };
+  rec.stop = () => {
+    box.removeEventListener('transitionend', onEnd);
+    clearTimeout(rec.t);
+    if (box._hswap === rec) box._hswap = null;
+  };
+  rec.clear = () => { box.style.height = ''; box.classList.remove('is-hswap'); };
+  box.addEventListener('transitionend', onEnd);
+  /* the belt to transitionend's braces. A transition that is interrupted
+     by something outside this function — a resize that re-lays the box
+     out mid-move — fires no end event, and a pinned height is worse than
+     an unanimated one. */
+  rec.t = setTimeout(() => { rec.stop(); rec.clear(); }, ms('--t-swap') + 90);
+  box._hswap = rec;
+}
+
 function profileModal() {
   const m = stickerModal({ hero: false, extra: '<div class="prof" data-prof></div>' });
   m.dataset.profile = '';
@@ -3037,8 +3133,11 @@ function renderProfile(m) {
     setProfile({ gender: c.dataset.g === PROFILE.gender ? null : c.dataset.g });
     paint();
   }));
-  if (has) pressable($('[data-swap]', box)).addEventListener('click', () => renderSheet(m));
-  pressable($('[data-build]', box)).addEventListener('click', () => renderBuilder(m));
+  /* P2 · both doors out of 2b resize the sticker — 524->376 and 524->542 */
+  if (has) pressable($('[data-swap]', box)).addEventListener('click',
+    () => stickerSwap(m, () => renderSheet(m)));
+  pressable($('[data-build]', box)).addEventListener('click',
+    () => stickerSwap(m, () => renderBuilder(m)));
   const rs = $('[data-reset]', box);
   if (rs) pressable(rs).addEventListener('click', () => resetConfirm());
   pressable($('[data-close]', box)).addEventListener('click', () => $('.stmodal__x', m).click());
@@ -3110,8 +3209,11 @@ function renderSheet(m) {
     const ck = $('.avp-check', b);
     ck.classList.remove('is-pop'); void ck.offsetWidth; ck.classList.add('is-pop');
     if (leaving) return;
-    leaving = setTimeout(() => { if (m.isConnected && $('[data-prof]', m) === box) renderProfile(m); },
-                         SHEET_RETURN_MS);
+    /* P2 · the +148 back up. The guard compares NODE IDENTITY, not size,
+       so a height move still in flight cannot make it miss. */
+    leaving = setTimeout(() => {
+      if (m.isConnected && $('[data-prof]', m) === box) stickerSwap(m, () => renderProfile(m));
+    }, SHEET_RETURN_MS);
   }));
 }
 
@@ -3255,7 +3357,11 @@ function renderBuilder(m) {
         '<button type="button" class="bnav bnav--next' + (last ? ' bnav--last' : '') + '" data-next>' +
           esc(last ? PROF_COPY.finish : PROF_COPY.next) + CHEV_L + '</button>' +
       '</div>';
-    const go = a => { cur = a; paintHero(); paintSheet(); };
+    /* P2 · THE AXIS STEP IS THE old === new CASE. 5, 6 and 7 are all one
+       height; 1 -> 5 is +17. It goes through the utility precisely so the
+       guard is the thing deciding, rather than a caller guessing which
+       steps move and which do not. */
+    const go = a => { cur = a; stickerSwap(m, () => { paintHero(); paintSheet(); }); };
     $$('[data-opt]', sheet).forEach(b => pressable(b).addEventListener('click', () => {
       if (voice) {
         /* gender ONLY — not cfg. לא משנה picks one of the two bodies at
@@ -3276,7 +3382,7 @@ function renderBuilder(m) {
       if (ck) { ck.classList.remove('is-pop'); void ck.offsetWidth; ck.classList.add('is-pop'); }
       /* the hide rule may have changed the step list (קרח, or back from
          it): only the count line and the chevrons need to know */
-      if (cur === 'hair') paintSheet();
+      if (cur === 'hair') stickerSwap(m, paintSheet);
     }));
     const sh = $('[data-shuffle]', sheet);
     if (sh) pressable(sh).addEventListener('click', () => {
@@ -3284,13 +3390,13 @@ function renderBuilder(m) {
       commit();
       /* the axis under the thumb may have been removed by the roll */
       if (steps().indexOf(cur) < 0) cur = 'hair';
-      paintHero(); paintSheet();
+      stickerSwap(m, () => { paintHero(); paintSheet(); });
     });
     pressable($('[data-prev]', sheet)).addEventListener('click', () => {
-      if (first) renderProfile(m); else go(st[i - 1]);
+      if (first) stickerSwap(m, () => renderProfile(m)); else go(st[i - 1]);
     });
     pressable($('[data-next]', sheet)).addEventListener('click', () => {
-      if (last) renderProfile(m); else go(st[i + 1]);
+      if (last) stickerSwap(m, () => renderProfile(m)); else go(st[i + 1]);
     });
   };
   paintHero();
@@ -7611,7 +7717,10 @@ function inviteModal() {
      was wired to the first of those and should always have been the
      second. */
   const sw = $('[data-swap]', box);
-  if (sw) pressable(sw).addEventListener('click', () => renderBuilder(m));
+  /* P2 · the largest move in the app, 183 -> 557, on the same 200ms as
+     the 148 in 2b. The frame does not get a longer duration for being
+     asked to travel further; see --t-swap. */
+  if (sw) pressable(sw).addEventListener('click', () => stickerSwap(m, () => renderBuilder(m)));
   return m;
 }
 
