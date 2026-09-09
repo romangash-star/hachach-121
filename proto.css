@@ -382,10 +382,11 @@
    The app is a fixed stage, not a document. html and body are pinned to
    the visual viewport and cannot scroll, rubber-band or overscroll; the
    stage is sized in DYNAMIC viewport units so it follows Safari's chrome
-   collapsing instead of assuming a height. Exactly three surfaces in the
-   whole app may scroll — the path map, character personalisation and the
-   end-game allocation list — and they opt in with .scrolls, which is also
-   the only place touch-action is handed back.
+   collapsing instead of assuming a height. Exactly four surfaces in the
+   whole app may scroll — the path map, character personalisation, the
+   end-game allocation list and the claim card's explanation panel — and
+   they opt in with .scrolls, which is also the only place touch-action is
+   handed back.
    THE ALLOCATION LIST JOINED ON 09 SEP and had been a scroll container
    without the class since it was written: overflow-y:auto, real overflow
    at 360x640, and every touch gesture on it cancelled by the handler in
@@ -408,9 +409,48 @@ body{
   -webkit-font-smoothing:antialiased;
   display:flex; justify-content:center;
 }
-/* the only three surfaces that may ever scroll */
+/* the only four surfaces that may ever scroll */
 .scrolls{ overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch; }
+
+/* =====================================================================
+   .edgefade · THE ONE EDGE FADE, AND IT LIVES HERE BECAUSE IT BELONGS TO
+   THE SAME POLICY AS .scrolls. A block that scrolls has to say so at
+   rest, and the two rules are always wanted together: .scrolls hands the
+   gesture back and this says there is somewhere to take it.
+
+   IT WAS TWO IMPLEMENTATIONS UNTIL 09 SEP. The MK reveal panel had a
+   bottom-only mask driven from its PARENT, the allocation list had a
+   both-ends mask driven from the element; same two class names, two
+   selectors, two syncs. This is that one mechanism, and the second one
+   is gone rather than left as a precedent.
+
+   WHY ONE GRADIENT AND NOT TWO RULES, which is the trap:
+     · two rules of equal specificity do not compose. The later
+       mask-image REPLACES the earlier, so mid-scroll — the one moment
+       both ends are wanted — only one would draw, silently.
+     · comma-separated mask LAYERS composite with `add`, the union of two
+       mostly-opaque masks, which is no fade at all.
+   So each end owns a custom property and both feed a single gradient.
+   The end that is not wanted sits at 0, where the two stops collapse onto
+   one position, the ramp has no width, and the result is the ordinary
+   hard edge drawn by the same declaration.
+
+   --fade-cut IS PER SURFACE and defaults to 26px, which is half the
+   allocation list's row-and-gap unit. The reveal panel overrides it to
+   the 34px its own board decided against 15.5px/1.5 body copy — that
+   number is not mine to retune while porting the mechanism under it. */
+.edgefade{ --fade-top:0px; --fade-bot:0px; }
+.edgefade.has-more:not(.is-atstart){ --fade-top:var(--fade-cut, 26px); }
+.edgefade.has-more:not(.is-atend)  { --fade-bot:var(--fade-cut, 26px); }
+.edgefade.has-more{
+  -webkit-mask-image:linear-gradient(to bottom,
+    transparent 0, #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bot)), transparent 100%);
+          mask-image:linear-gradient(to bottom,
+    transparent 0, #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bot)), transparent 100%);
+}
 
 .defs{ position:absolute; width:0; height:0; }
 
@@ -3200,10 +3240,18 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    .has-more is set only when the block actually overflows and .is-atend
    clears it at the bottom of the scroll, so a fully-read block and a
    short one both end on a hard edge. */
-.creveal__exp.has-more:not(.is-atend) .creveal__scroll{
-  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 34px),transparent 100%);
-          mask-image:linear-gradient(to bottom,#000 calc(100% - 34px),transparent 100%);
-}
+/* T21 · THE MASK MOVED TO .edgefade AND THE CLASSES MOVED WITH IT, from
+   .creveal__exp onto the scroller itself. They were on the parent because
+   the mask needed a descendant selector to reach the child; the shared
+   rule reads them off the element it masks, so the panel no longer
+   carries state that is not about the panel.
+   IT GAINS A TOP FADE, which is not scope creep: this block only became
+   scrollable in practice today — the finger was cancelled before — and a
+   block a player can now scroll DOWN needs to say when there is something
+   above. Same reason the allocation list has one.
+   34px IS KEPT. The board fixed it against 15.5px/1.5 body copy and I am
+   porting the mechanism under it, not retuning it. */
+.creveal__scroll{ --fade-cut:34px; }
 /* 24 · THE LARGEST BLOCK OF BODY COPY IN THE APP, ONTO THE BODY FACE.
    It inherited --font-ui from body and named no family, so it was still
    system-ui 700 after item 21 switched the other seven. Same token and the
@@ -5023,29 +5071,11 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
    .is-atend clears the mask at the bottom of the scroll so a list the
    player has read to the end stops on a hard edge, exactly as a list with
    nothing hidden does. */
-/* BOTH ENDS, AND IT HAS TO BE ONE MASK. The obvious mirror — a second
-   rule setting its own mask-image for the top — does not work and fails
-   quietly: two rules of equal specificity on the same element do not
-   compose, the later one simply wins, so mid-scroll, the one moment both
-   fades are wanted, only one would draw. Multiple mask LAYERS do not
-   help either; they composite with `add` by default, which is the union
-   of two mostly-opaque masks and therefore no fade at all.
-   So the two ends are two custom properties feeding ONE gradient. Each
-   class sets its own end's cut and the other end is left at 0, where the
-   two stops collapse onto the same position and the ramp has no width —
-   an opaque edge, drawn by the same declaration that draws the soft one.
-   Nothing can fight because there is only ever one mask. */
-.eg-chips{ --eg-cut-top:0px; --eg-cut-bot:0px; }
-.eg-chips.has-more:not(.is-atstart){ --eg-cut-top:26px; }
-.eg-chips.has-more:not(.is-atend)  { --eg-cut-bot:26px; }
-.eg-chips.has-more{
-  -webkit-mask-image:linear-gradient(to bottom,
-    transparent 0, #000 var(--eg-cut-top),
-    #000 calc(100% - var(--eg-cut-bot)), transparent 100%);
-          mask-image:linear-gradient(to bottom,
-    transparent 0, #000 var(--eg-cut-top),
-    #000 calc(100% - var(--eg-cut-bot)), transparent 100%);
-}
+/* THE FADE IS .edgefade NOW, declared once beside .scrolls. This rule
+   was where the both-ends mechanism was written and it is the same
+   declarations up there, verbatim, with the cut behind a variable. The
+   list takes the 26px default and carries the class in the markup —
+   see egBeat3(). */
 /* KEY RIGHT, VALUE LEFT — the phone-sweep rule. The topic reads from the
    right edge and its number anchors left, like every other key/value row
    in the app. */
