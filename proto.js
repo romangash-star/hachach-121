@@ -101,6 +101,8 @@ const T = {
   seatCross: ms('--t-seat-cross'),
   markGap:   ms('--t-mark-gap'),
   panelGap:  ms('--t-panel-gap'),
+  cmarkLand: ms('--t-cmark-land'),   /* the pill's own landing, read not guessed */
+  claimHold: ms('--t-claim-hold'),   /* T18 · verdict -> the card reacting */
   peel:      ms('--t-peel'),
   peelOut:   ms('--t-peel-out'),
   cardFlip:  ms('--t-card-flip'),
@@ -1923,39 +1925,58 @@ async function commitClaim(ans, card, dir) {
      140ms after this settles, so it never reads mid-transition.
      The art is included for completeness and in practice does not move
      (224.5 -> 224.5): only the claim does. */
-  const flip = ['.b1art', '.b1claim']
-    .map(sel => $(sel, card))
-    .filter(Boolean)
-    .map(n => ({ n, y: n.getBoundingClientRect().top }));
-  card.classList.add('is-revealing');
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const moved = flip.filter(f => {
-      f.dy = f.y - f.n.getBoundingClientRect().top;
-      return Math.abs(f.dy) > 0.5;
-    });
-    if (moved.length) {
-      moved.forEach(f => {
-        f.n.style.transition = 'none';
-        f.n.style.transform  = 'translateY(' + f.dy.toFixed(1) + 'px)';
-      });
-      void card.offsetHeight;                    /* commit the inverse */
-      moved.forEach(f => {
-        f.n.style.transition = 'transform ' + T.claimLift + 'ms ' + CLAIM_LIFT_EASE;
-        f.n.style.transform  = '';
-      });
-      /* the inline styles come off once it has landed, so nothing on this
-         card carries a stale transition into the exit throw */
-      setTimeout(() => moved.forEach(f => {
-        f.n.style.transition = ''; f.n.style.transform = '';
-      }), T.claimLift + 40);
-    }
-  }
+  /* T18 · THE LIFT USED TO RUN HERE AND NO LONGER DOES. It is called from
+     claimReveal(), after the verdict has landed — see claimLift() and the
+     order note there. What is left on this path is the beat, unchanged. */
 
   /* §1.1 step 2 · the beat. The answer is registered and NOTHING moves:
      no stamp yet, no panel, no exit. --t-claim-beat is ~400ms. */
   await wait(T.claimBeat);
   await claimReveal(ans, card);
   beat2();
+}
+
+/* =====================================================================
+   T18 · THE CARD'S REARRANGEMENT, LIFTED OUT SO IT CAN BE SEQUENCED.
+   Same FLIP it always was, moved into a function of its own and nothing
+   else. ITEM 2's note still applies word for word: .is-revealing hides
+   the two answer buttons and frees the claim's flex, so the claim's box
+   lands 163.6px higher on the very next frame and there is no from-value
+   for CSS to interpolate against. The positions are read before the
+   class, re-read after it, and the difference is applied as an inverse
+   transform that is then released — layout is final the whole time and
+   only the paint moves.
+   IT RESOLVES WHEN IT HAS LANDED. The caller needs to know, because the
+   panel's max-height is measured off .b1claim's rect and that read must
+   happen after this settles rather than during it. Returning the wait is
+   what makes that a fact rather than a comment. */
+function claimLift(card) {
+  const flip = ['.b1art', '.b1claim']
+    .map(sel => $(sel, card))
+    .filter(Boolean)
+    .map(n => ({ n, y: n.getBoundingClientRect().top }));
+  card.classList.add('is-revealing');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+  const moved = flip.filter(f => {
+    f.dy = f.y - f.n.getBoundingClientRect().top;
+    return Math.abs(f.dy) > 0.5;
+  });
+  if (!moved.length) return Promise.resolve();
+  moved.forEach(f => {
+    f.n.style.transition = 'none';
+    f.n.style.transform  = 'translateY(' + f.dy.toFixed(1) + 'px)';
+  });
+  void card.offsetHeight;                    /* commit the inverse */
+  moved.forEach(f => {
+    f.n.style.transition = 'transform ' + T.claimLift + 'ms ' + CLAIM_LIFT_EASE;
+    f.n.style.transform  = '';
+  });
+  /* the inline styles come off once it has landed, so nothing on this
+     card carries a stale transition into the exit throw */
+  setTimeout(() => moved.forEach(f => {
+    f.n.style.transition = ''; f.n.style.transform = '';
+  }), T.claimLift + 40);
+  return wait(T.claimLift);
 }
 
 /* ===== A6 · THE CLAIM RESOLVES IMMEDIATELY =========================
@@ -2116,7 +2137,38 @@ async function claimReveal(ans, card) {
   await wait(reducedSeq ? 0 : T.stampLand);
   await wait(reducedSeq ? 0 : T.markGap);
   requestAnimationFrame(() => chip.classList.add('is-in'));
-  await wait(T.flip + T.panelGap);
+
+  /* =================================================================
+     T18 · THE ORDER, AND WHY IT IS THIS ONE.
+     It used to be: the card rearranged, then the stamp fell onto the
+     rearranged card, then the panel. The card moved before the player
+     had been shown anything, so the movement ANTICIPATED the verdict
+     instead of reacting to it — the one thing a reveal must not do.
+
+     Now the stamp lands on the card AS IT STANDS. Everything above this
+     point is untouched: --t-stamp-land's fall, ITEM 47B's --t-mark-gap
+     held beat, and the pill arriving on the stamp after it. That whole
+     run is one statement — the verdict — and item 50's pill is part of
+     it, not a separate event to sequence around.
+
+     THEN NOTHING MOVES FOR --t-claim-hold, AND THAT IS THE POINT. The
+     jolt is the cue: d2-jolt-claim runs 120ms from --t-stamp-drop-mk and
+     is finished at 320ms, well inside the 360ms landing, so by the time
+     the pill has settled the card has been still for a while. The hold
+     is what separates the verdict from the card's reaction to it. Under
+     it the two motions read as one gesture and the cause-and-effect this
+     reorder exists for is lost.
+
+     THE PANEL COMES AFTER THE RISE, NOT WITH IT. With it and the card is
+     doing two things at once again, which is what was wrong before.
+     Before it is not available: the panel takes the room the rise
+     creates. After, separated by --t-panel-gap, which is the token that
+     already named this exact gap.
+     ================================================================= */
+  await wait(reducedSeq ? 0 : T.cmarkLand);
+  await wait(reducedSeq ? 0 : T.claimHold);
+  await claimLift(card);
+  await wait(reducedSeq ? 0 : T.panelGap);
 
   /* ---- 4 · THE EXPLANATION PANEL RISES OVER THE CARD'S LOWER PORTION
      IT SCROLLS, and that is a requirement rather than a nicety: e3's

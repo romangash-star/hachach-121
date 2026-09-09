@@ -234,6 +234,17 @@
      whether the player called it, and the gap is what makes it cause then
      consequence rather than one compound arrival. */
   --t-mark-gap:  140ms;
+  /* T18 · THE HOLD BETWEEN THE VERDICT AND THE CARD REACTING TO IT.
+     200 rather than re-using --t-mark-gap's 140: the two holds are doing
+     different jobs and must not read as the same pause repeated. 140
+     sits INSIDE the verdict, between the stamp landing and its own pill;
+     this one sits BETWEEN the verdict and the card's reaction, and it is
+     the longer of the two because that is what makes the rise read as
+     caused by the stamp rather than as the next item on a list.
+     Not longer than 200: past roughly a quarter second a hold on a beat
+     that fires sixteen times stops being a pause and starts being a
+     wait. */
+  --t-claim-hold: 200ms;
   --t-panel-gap: 160ms;
   /* ITEM 50 · THE VERDICT PILL'S OWN LANDING, and it is deliberately NOT
      --t-stamp-land. The stamp falls for 360ms and the pill for 160: the
