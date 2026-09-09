@@ -4395,6 +4395,26 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   border:0; padding:0; background:none; cursor:pointer;
   -webkit-tap-highlight-color:transparent;
 }
+/* T29b · THE HIT AREA GROWS, THE BOX DOES NOT. .pcov rendered 39.7x17.9
+   at 360 — the smallest deliberate target in the app, and the one the
+   tape wiggle spends a motion cue advertising. A wiggle that draws a tap
+   the target then misses is worse than no wiggle.
+   IT IS A PSEUDO-ELEMENT AND NOT PADDING, deliberately. Growing .pcov
+   itself would move three things that are measured against its box: the
+   curl travels from right:0 to right:100% OF THIS ELEMENT, peel-drop
+   rotates about its centre, and the nudge wiggles it. A transparent
+   ::after extends what the finger can reach and leaves every one of
+   those byte-identical — .pcov__face, which is the art, is not touched
+   at all and does not move by a pixel.
+   THE NUMBERS ARE UNSCALED CARD SPACE. .stack is scaled to fit the
+   shortest phone (0.7177 at 360x640), so the inset is written to clear
+   44px RENDERED at the smallest scale and is larger than it needs to be
+   at 390, which costs nothing: nothing interactive sits above or below
+   the party chip on this card. */
+.pcov::after{
+  content:""; position:absolute; inset:-19px -5px;
+  /* no fill — it catches taps and paints nothing */
+}
 /* THE FLAT SHEET. Paper, not a panel: the same cream the stickers are cut
    from, a hard keyline and a flat 2px extrusion — the construction every
    other sticker in the app uses. clip-path is what the peel animates, so
@@ -6676,7 +6696,16 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 .sh-scale{ position:absolute; left:0; top:0; transform-origin:0 0; }
 
 /* the dots: the active one is a PILL, not a colour change */
-.sh-dots{ display:flex; gap:7px; justify-content:center; margin-top:14px; flex:none; }
+/* T29b · THE GAP IS THE FIX, NOT THE DOT. Three 7px dots at a 7px gap put
+   their centres 14px apart, which means all three sat inside one another's
+   44px targets and a miss changed which card ships. 37px is the gap that
+   takes the 7-to-7 centre distance to exactly 44; 38 leaves a pixel in
+   hand. The ACTIVE pill is 20px wide, so its centre distance to a
+   neighbour is gap+13.5 — larger again, and never the binding case.
+   THE DOTS THEMSELVES ARE UNCHANGED. 7x7, the pill for active, and the
+   tap that reaches card D without a swipe. A miss is now a miss — it
+   lands on nothing and nothing happens — rather than a different card. */
+.sh-dots{ display:flex; gap:38px; justify-content:center; margin-top:14px; flex:none; }
 .sh-dot{ width:7px; height:7px; border-radius:50%; background:var(--paper); opacity:.3;
          border:0; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent;
          transition:width var(--t-press) linear, opacity var(--t-press) linear; }
