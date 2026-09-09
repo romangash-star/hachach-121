@@ -2024,16 +2024,49 @@ body.no-ph .ph{ display:none !important; }
   border-inline-start:2px solid rgba(255,214,10,.5); padding-inline-start:10px; margin:0;
 }
 
-.gt{ background:rgba(55,196,255,.22); border-bottom:2px dotted #9FD9F2;
-  color:#EFECE4; padding:0 3px; font-weight:900; cursor:pointer; }
-/* T12 · THE SAME MARKER ON PAPER. .gt was written for the dark board and
-   its near-white ink is invisible on --paper; the terms now live inside
-   the sticker, so the marker needs the light-ground half it never had.
-   Same hue, same dotted underline, ink flipped — it stays recognisably
-   the one marker rather than becoming a second convention. */
-.stmodal__body .gt{
-  color:var(--ink); background:rgba(55,196,255,.30);
-  border-bottom-color:#3EA6D8;
+/* =====================================================================
+   T23 · THE TERM TAKES ITS INK FROM THE GROUND IT IS ON.
+
+   THE BUG. .gt was written for the dark reveal panel, where near-white on
+   charcoal is right. T12 then added a light half for the sticker — but as
+   a DESCENDANT RULE, `.stmodal__body .gt`, which is a list of surfaces
+   that happen to be light rather than a statement about light grounds.
+   The claim card was not on that list, so a term inside the sentence the
+   player is deciding about rendered at 1.49:1 on kraft: unreadable, and
+   the first word of the sentence on g1.
+
+   THE FIX IS THREE PROPERTIES, NOT A FOURTH RULE. The marker's ink, wash
+   and rule are named, the dark half is the var() FALLBACK, and a light
+   surface flips all three with one declaration. The fallback has to live
+   in the var() rather than on .gt itself: a custom property declared on
+   the element beats the same property inherited from its parent, so
+   `--gt-ink:#EFECE4` written here would have made every light surface's
+   override do nothing.
+
+   THE AFFORDANCE IS IDENTICAL ON BOTH, which is the point. Same 2px
+   dotted rule, same wash, same 900 — one marker in two inks, not two
+   conventions. Only the hue's value changes, because a rule that reads
+   on charcoal disappears on kraft and the reverse.
+   ===================================================================== */
+.gt{
+  background:var(--gt-wash, rgba(55,196,255,.22));
+  border-bottom:2px dotted var(--gt-rule, #9FD9F2);
+  color:var(--gt-ink, #EFECE4);
+  padding:0 3px; font-weight:900; cursor:pointer;
+}
+/* THE LIGHT GROUNDS, AND THE LIST IS COMPLETE as of T23: markGlossary()
+   has five call sites and these are the two whose surface is paper or
+   kraft. The other three — the reveal panel's explanation, beat 2's
+   question and the bill sticker's body when it is on the dark board — are
+   the fallback above and are untouched.
+   Set on the SURFACE rather than on the term, so a light surface that
+   grows a glossary term later opts in by naming itself here once instead
+   of by someone remembering to write a fourth .gt rule. */
+.stmodal__body,
+.b1claim{
+  --gt-ink:var(--ink);
+  --gt-wash:rgba(55,196,255,.30);
+  --gt-rule:#3EA6D8;
 }
 /* §3.1 .gdef IS GONE. Tapping a term opened a plain white panel inline,
    under the term, inside the paragraph — so the sentence the player was
