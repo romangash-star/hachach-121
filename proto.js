@@ -2165,6 +2165,7 @@ async function claimReveal(ans, card) {
               : issue.tf_answer === 'false' ? 'שקר' : 'חלקית';
   const ok = issue.tf_answer === 'partial' || ans === issue.tf_answer;
   S.claimCorrect = ok;
+  if (window.HAC) HAC('beat1_answer', { issue_id: issue.id, correct: ok, answer: ans, time_ms: HAC.beatMs() });
 
   const wrap = $('.cardwrap');
 
@@ -3304,6 +3305,7 @@ function beat2() {
    the affordance appears. No flight, no callout, no assembly. */
 function tachlesTransition(btn, ov) {
   const vote = btn.dataset.vote;
+  if (window.HAC) HAC('beat2_vote', { issue_id: issue.id, vote: vote });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const armNext = () => {
@@ -4949,6 +4951,7 @@ async function beat5() {
   const segsWas   = segsDone(issue.topic);
   const topicsWas = topicsDone();
   PROGRESS[issue.id] = true;
+  if (window.HAC) HAC('issue_complete', { issue_id: issue.id, score: wallet, claim_correct: S.claimCorrect === true, position: S.position || null, mk_hits: roundHits(), mk_total: S.dealt.length, time_ms: HAC.beatMs() });
   /* THE ROUND'S RECORD IS WRITTEN HERE AND NOWHERE ELSE. Every value it
      keeps was already deposited on S by the beat that owns it —
      claimCorrect by claimReveal(), position by the tachles chips,
@@ -6054,6 +6057,7 @@ function exitRound() {
   const onKey = e => { if (e.key === 'Escape') close(); };
   addEventListener('keydown', onKey);
   pressable($('[data-go]', sh)).addEventListener('click', () => {
+    if (window.HAC) HAC('round_exit', { beat: S ? S.beat : 0, issue_id: issue ? issue.id : '', score: wallet });
     removeEventListener('keydown', onKey); sh.remove(); goMap({ quiet: true });
   });
   pressable($('[data-stay]', sh)).addEventListener('click', close);
@@ -6432,6 +6436,7 @@ const PADB = () => parseFloat(CSVAR('--node-pad-bot'));
 const nodeY = (i, h) => h - PADB() - i * GAP();
 
 function renderMap() {
+  if (window.HAC) HAC('map_view', { issues_done: Object.keys(PROGRESS).length, score: wallet });
   const r = $('#scMap');
   const h = pathHeight();
   const cur = currentIdx();
@@ -7185,6 +7190,7 @@ let ALLOC_OTHER_NAME = '';            /* NEVER leaves this screen */
    would be the second scrolling surface in an app that has exactly one.
    ===================================================================== */
 async function endGame() {
+  if (window.HAC) HAC('game_complete', { score: wallet, issues_done: Object.keys(PROGRESS).length });
   ALLOC = {};
   /* ITEM 19 · the label goes with the coins. Replaying must not leave a
      previous run's word sitting on an empty row. */
@@ -8703,6 +8709,7 @@ function startRound(issueId) {
   const c = $('#chyron');
   c.innerHTML = ''; c.classList.add('is-empty'); c.setAttribute('aria-hidden', 'true');
   newRound(issueId);
+  if (window.HAC) { HAC.beatStart(); HAC('issue_start', { issue_id: issue.id, topic_id: issue.topic || '', score: wallet }); }
   /* §B the topic the issue belongs to, from data.js, centred in the HUD
      and present on every beat — the round is one issue inside one topic
      and the HUD is the only thing on screen that can say which.
