@@ -356,7 +356,23 @@
      that 45px of ribbon shows clear of the top node's ring before the
      edge; the bottom already had 132. */
   --node-pad-top:  110px;
-  --node-pad-bot:  132px;   /* the name and status under the last node    */
+  /* T23 · 132 -> 196. THE LABEL WAS OFF THE BOTTOM OF THE MAP, not merely
+     tight: node 1's name ends 137px below its own centre, and at 132 the
+     pad was 5px short of that, so on first load the last line of the
+     first topic's name sat 1-5px past the end of the scrollable content
+     and its descenders were clipped. First load is the one frame every
+     player sees, and it opens scrolled hard to the bottom.
+     WHY 196 AND NOT 137. 137 is where the clipping stops, which is a
+     floor and not a margin. 196 leaves 59px of clear ground under the
+     deepest label at 390 and 63px at 360 — deliberately more than the
+     45px of clear ribbon --node-pad-top reserves above the top node,
+     because the two ends are not the same job: the top is scrolled past
+     on the way up and the bottom is where the eye lands and stays.
+     IT IS NODE 1's CENTRE FROM THE FOOT OF THE PATH, so it also feeds
+     pathHeight() — the content grows by the same 64px it lifts the node,
+     which is what puts the ground under the label rather than just moving
+     the node up into the map. */
+  --node-pad-bot:  196px;   /* the name and status under the last node    */
 
   /* ---- motion the map and the award add ----------------------------- */
   --t-node-press:  80ms;    /* board: transform+box-shadow, linear        */
@@ -2138,6 +2154,16 @@ body.no-ph .ph{ display:none !important; }
 /* the HUD's centre slot. Exactly one of the two children is ever in it,
    and the slot holds the same box either way so the row never jumps. */
 .hud-mid{ flex:1; min-width:0; display:flex; justify-content:center; align-items:center; }
+/* T19 · THE PAIR. pairHudProgress() moves #hudProgress out of .hud-mid
+   and in beside .hud-coins, so the two pills are siblings on the HUD's
+   own row. .hud's gap is --sp-2 and reads as "these are separate
+   things"; the pair wants to read as one group, so it takes a tighter
+   gap of its own and nothing else on the row changes.
+   THE COIN PILL DOES NOT MOVE. The progress pill is inserted BEFORE it,
+   which in this RTL row puts it inboard — see pairHudProgress() for why
+   that is the direction that leaves the coin chip where the award
+   animation expects to find it. */
+.hud > .hud-progress{ margin-inline-end:calc(var(--sp-2) * -1 + 6px); }
 .hud-progress[hidden], .hud-topic[hidden]{ display:none; }
 
 /* §3 THE COIN CHIP GOES BACK TO A FULL PILL — deliberately, and it is now
