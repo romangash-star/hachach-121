@@ -3314,6 +3314,7 @@ const SHUFFLE_GLYPH =
    read as a page load.                                                */
 function beat2() {
   S.beat = 2;
+  syncSndToggle('round');                                      /* T26 */
   /* NOTHING IS RE-RENDERED HERE. The deck is already on screen and the
      claim card has left it; what shows through the blur is the deck's
      own top card, face down, at full card size in its own position. */
@@ -4199,6 +4200,7 @@ function qbarDemo() {
    the one that is already there. Dismiss COLLAPSES INTO the card. */
 async function beat3(ov) {
   S.beat = 3;
+  syncSndToggle('round');            /* T26 · beat 2 had it hidden */
   const vote = $('.ovpane--vote', ov), bill = $('.ovpane--bill', ov);
   /* the swap. Both panes move on the same tick and the same duration, so
      the eye reads one surface whose content travelled rather than two
@@ -7421,9 +7423,29 @@ function buildSndToggle() {
   paintSndToggle();
 }
 
+/* T26 · NOT ON BEAT 2, and this is a collision rather than a preference.
+   At 360x640 the toggle's 44px target sits at [12,582] and beat 2's נגד
+   button at [16,543,97x60] — they overlap by 40x21px, and hit-testing
+   that region returns the TOGGLE. A player aiming at the bottom-left of
+   נגד mutes the game instead of voting against the bill. At 390x844 the
+   two clear each other by 24px, so it is a short-screen bug, but the
+   control is removed from the beat at every width: a mute button that
+   overlaps a vote button on some phones and not others is worse than one
+   that is simply not on this screen.
+   BEAT 2 IS ALSO THE ONE BEAT THAT OWES THE PLAYER NOTHING. buzz()
+   already refuses here — "the player's own opinion is never scored" —
+   and the toggle is the only chrome on the screen that is not part of
+   the question being asked.
+   IT IS NOT STRANDED. The same control is on the map and on beats 1, 3,
+   4 and 5, which is every other surface that has it. */
+function sndToggleShown(screen) {
+  if (screen !== 'map' && screen !== 'round') return false;
+  return !(S && S.beat === 2);
+}
+
 function syncSndToggle(screen) {
   const b = $('#sndToggle'); if (!b) return;
-  const show = (screen === 'map' || screen === 'round');
+  const show = sndToggleShown(screen);
   b.hidden = !show;
   if (show && screen === 'map' && !SND_ARRIVED) {
     SND_ARRIVED = true;
