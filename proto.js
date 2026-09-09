@@ -228,6 +228,11 @@ const DEV = {
      the whole run, which is not a thing to ask of anyone in a meeting.
      Like ?intro, an override never writes the flag. */
   mapIntro: qPick('mapintro', { on:true, off:false }, null),
+  /* T13 · and the same switch again, for the same reason twice stated
+     above it: the avatar's beacon is a once-ever thing and a once-ever
+     thing cannot otherwise be looked at twice. on/off force the beacon
+     WITHOUT writing the flag. */
+  beacon: qPick('beacon', { on:true, off:false }, null),
   /* §3 · the title's sticker edge. `solid` is the shipped white and the
      default; `keyline-multi` adds a coloured outer stroke per glyph from
      the topic palette; `keyline-one` adds the same in a single accent.
@@ -358,6 +363,15 @@ addEventListener('resize', placeChyron);
 /* the map's connector is drawn in device pixels, so it has to be redrawn
    when the window changes size. Cheap, and a no-op on the other screens. */
 addEventListener('resize', () => { if ($('#mapline')) redrawPath(); });
+/* v26f · the same shape as the line above it: line 1 is re-measured only
+   when a .b2q__tab is on screen, so this is a no-op on every screen but
+   beat 2. No ResizeObserver — the resize event is what the stage already
+   listens to. */
+addEventListener('resize', () => {
+  if (!$('.b2q__tab')) return;
+  fitBeat2();          /* the budget moves with the viewport */
+  placeQTab();         /* and line 1 moved with the chair */
+});
 addEventListener('orientationchange', () => setTimeout(sizeStage, 250));
 if (window.visualViewport) visualViewport.addEventListener('resize', sizeStage);
 
@@ -1484,9 +1498,16 @@ function markIntroSeen() {
    Israeli society and politics, and the Knesset is where the response to
    them gets voted on. The replacement drops the false object entirely
    rather than swapping one noun for another. */
+/* T15 · THE TITLE DROPS ITS FIRST LINE AND THE EM DASH. "טענה —" is gone
+   and the heading is the question alone, which is also the string the
+   claim sticker carries — so the two agree again, as the note below
+   .b1intro__t always said they should. The body is Tamar's rewrite: it
+   asks about "המשפט הבא" rather than "הטענה", and it puts the reveal on
+   the player ("תגלו") rather than on the game ("נגלה").
+   THE CTA IS UNTOUCHED. She did not change it. */
 const INTRO_B1 = {
-  title: 'טענה — אמת או שקר?',                                   /* TAMAR */
-  body:  'נחשו אם הטענה נכונה. אחר כך נגלה מה באמת קרה.',        /* TAMAR */
+  title: 'אמת או שקר?',                                          /* TAMAR · T15 */
+  body:  'נחשו אם המשפט הבא נכון, אחר כך תגלו את התשובה',        /* TAMAR · T15 */
   cta:   'הבנתי',                                                 /* TAMAR */
 };
 
@@ -1500,7 +1521,21 @@ function firstRunIntro(done) {
       '<h2 class="b1intro__t">' + esc(INTRO_B1.title) + '</h2>' +
       /* esc(), not ph(): this is a written sentence pending Tamar's
          approval, not a description of one that has not been written. */
-      '<p class="b1intro__b">' + esc(INTRO_B1.body) + '</p>' +
+      /* T17 · THE BREAK IS PUT IN AT RENDER, AFTER THE COMMA.
+         Tamar's sentence has one, and it is where the sense divides:
+         "נחשו אם המשפט הבא נכון," / "אחר כך תגלו את התשובה". Left to the
+         measure the line broke wherever it ran out of room, which was
+         mid-clause.
+         A <br> INSERTED HERE, NOT A NEWLINE IN THE STRING. The string
+         stays a plain sentence in INTRO_B1 for Tamar to rewrite at will;
+         nothing in it encodes layout. And it degrades the right way: the
+         replace only fires when a comma is present, so a comma-less
+         rewrite falls straight through to normal wrapping rather than to
+         one unbreakable line — which is what a nowrap span would have
+         given. Escaped FIRST, then the tag is added, so the string can
+         never inject markup. */
+      '<p class="b1intro__b">' +
+        esc(INTRO_B1.body).replace(/,\s*/, ',<br>') + '</p>' +
       '<button type="button" class="p-c b1intro__go">' + esc(INTRO_B1.cta) + '</button>' +
     '</div>';
   $('#stage').appendChild(o);
@@ -1916,13 +1951,46 @@ async function commitClaim(ans, card, dir) {
    inlined so the JS-driven move is as findable as the CSS ones. */
 const CLAIM_LIFT_EASE = 'cubic-bezier(.2,.8,.2,1)';
 
-/* ITEM 3 · both marks gain the exclamation. הופתעתם is the surprise the
-   locked rule asks for — something that happened TO the player — and the
-   mark is what keeps it an event rather than a label. */
+/* ITEM 3 · both marks carry the exclamation, and that part has not moved.
+   T6c · THE PILL GOES SINGULAR, AND IT NOW SAYS WHAT THE DISC SAYS.
+   LION'S DECISION, 09 SEP, TAKEN OVER A STOP I RAISED — recorded that way
+   on purpose. The locked list named the MK disc as the ONLY surface
+   allowed "טעית", so this was flagged rather than applied; Lion widened
+   the exception to TWO SURFACES. It is his call, not a reading of the
+   old rule, and not something a later editor may extend a third time.
+
+   WAS: 'צדקתם!' / 'הופתעתם!' — plural, and "surprised" where the disc
+   said "wrong". Two voices four seconds apart in one round.
+
+   THE PLURAL WAS NOT AN ACCIDENT, WHICH IS WHY THIS NEEDS SAYING OUT
+   LOUD: t() treats the PLURAL as the gender-neutral voice, not as a
+   fallback — PROFILE.gender === null resolves to the `p` slot, and that
+   is the state of every player who skips or un-picks the voice step.
+   Some two dozen second-person strings speak אתם there.
+   >>> THAT RULE IS UNCHANGED AND APP-WIDE. Lion confirmed it on 09 Sep.
+   >>> THIS PILL IS A DELIBERATE EXCEPTION TO IT, NOT DRIFT AWAY FROM IT,
+   >>> AND NOT A PRECEDENT. If you are reading this while making some
+   >>> other string singular: don't. Nothing here licenses that.
+
+   WHAT THE SINGULAR COSTS TAMAR: nothing. צדקת and טעית are spelled
+   identically in the masculine and feminine second-person past —
+   צָדַקְתָּ/צָדַקְתְּ and טָעִיתָ/טָעִית differ only in pointing, which
+   this build does not set — so neither adds a slot to the gendered set.
+   It also RETIRES a debt: 'צדקתם'/'הופתעתם' are masculine plural, the
+   feminine plural צדקתן/הופתעתן had no slot anywhere, and that address
+   was therefore wrong-gendered rather than merely unwritten. */
 const CLAIM_MARK = {                      /* TAMAR */
-  ok:  'צדקתם!',
-  bad: 'הופתעתם!',
+  ok:  'צדקת!',                           /* TAMAR · T6c, 09 Sep */
+  bad: 'טעית!',                           /* TAMAR · T6c, 09 Sep */
 };
+
+/* ITEM 50 · THE PILL'S RESTING ANGLE, READ FROM THE SHEET SO THERE IS ONE
+   SOURCE FOR IT. The sheet needs it at five keyframes and at rest; the
+   throw on הלאה needs to ADD the exit rotation to it rather than replace
+   it. Two literals would drift the first time the tilt is retuned, and
+   the failure would be silent — the pill would simply snap level as it
+   left. ms() parses the leading float, which is all a deg needs. */
+const CM_REST = ms('--cm-rest');          /* -6deg · v25 P5 used -1.6 */
 
 async function claimReveal(ans, card) {
   const truth = issue.tf_answer === 'true' ? 'אמת'
@@ -1959,19 +2027,30 @@ async function claimReveal(ans, card) {
      in the HUD and pinned in this very slot two beats later — so the
      colour attaches to a face and the sentence reads "you were right",
      not "this is right".
-     §4c · AND IT LEAVES THE BAND BEHIND. .is-mark strips the chyron's
-     band — the fill, the neon and the full width — so what is on screen
-     is the chip alone rather than a chip in 250px of empty grey. The 44px
-     box is still RESERVED, because that is what keeps the card the same
-     size before and after the answer. */
+     §4c · AND IT LEAVES THE BAND BEHIND. .is-mark stripped the chyron's
+     band so the chip was not sitting in 250px of empty grey.
+
+     ITEM 50 · THE PILL COMES OFF THE CHYRON AND ONTO THE STAMP. v25's P5:
+     banner-style across the disc's LOWER EDGE, 4px higher than the board.
+     Two consequences worth writing down, because both are easy to undo by
+     accident:
+       · IT IS PARENTED TO .cardwrap, NOT TO THE CARD, for the same two
+         reasons the stamp is — .mf-b clips, and the card is a 3D flipper
+         that would mirror anything inside it. The pill overhangs the
+         card's start edge and must be allowed to.
+       · IT THEREFORE HAS TO LEAVE WITH THE CARD. Under the chyron it was
+         removed on הלאה; on .cardwrap it would be left hanging in mid-air
+         while the card and the stamp fly out. See the exit below.
+     THE CHYRON SLOT IS UNAFFECTED. The reserved 44px box is .chyron-slot,
+     a separate element that stays in .sc-round's FLOW on every beat;
+     .chyron is the absolutely-positioned banner that was placed over it.
+     So the pill vacating the banner collapses nothing and shifts nothing
+     below it — .chyron simply stays .is-empty through the reveal, exactly
+     as it is on beat 1 before the answer, until beat 2 pins the vote. */
   const chip = el('div', 'bnr cmark ' + (ok ? 'cmark--ok' : 'cmark--sur'),
     '<span class="cmark__av as-d" aria-hidden="true">' + avatarSvg() + '</span>' +
     '<span>' + esc(ok ? CLAIM_MARK.ok : CLAIM_MARK.bad) + '</span>');
-  const chy = $('#chyron');
-  placeChyron();
-  chy.classList.remove('is-empty'); chy.classList.add('is-mark');
-  chy.removeAttribute('aria-hidden');
-  chy.innerHTML = ''; chy.appendChild(chip);
+  wrap.appendChild(chip);
 
   const table = COIN_TABLES[DEV.coins];
   if (table.claimNeedsCorrect && ok) setTimeout(() => award(table.claim, mark), T.stamp);
@@ -2023,7 +2102,7 @@ async function claimReveal(ans, card) {
     '<div class="creveal__scroll"><p class="creveal__text">' +
       markGlossary(issue.tf_explain || '') + '</p></div>' +
     '<button type="button" class="p-c creveal__go">' +
-      esc('הלאה') + ' <i aria-hidden="true">›</i></button>';
+      esc('לשלב הבא') + ' <i aria-hidden="true">›</i></button>';   /* TAMAR · T14 */
   wrap.appendChild(panel);
   const go = $('.creveal__go', panel);
 
@@ -2098,13 +2177,21 @@ async function claimReveal(ans, card) {
       mark.classList.add('is-leaving');
       mark.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25) + 'deg)';
       mark.style.opacity = .2;
+      /* ITEM 50 · THE PILL RIDES OUT WITH THEM. It is on .cardwrap now, so
+         nothing else takes it off screen.
+         THE RESTING ANGLE IS CARRIED INTO THE EXIT ROTATION rather than
+         replaced by it: the stamp rests at 0deg and can simply be given
+         dir*25, but the pill rests at CM_REST and setting a bare rotate()
+         would snap it level on the first frame of the throw.
+         translate:-50% -50% IS A SEPARATE PROPERTY from transform — that
+         is why the pill is centred with `translate` in the sheet — so the
+         throw can own transform outright without losing the centring. */
+      chip.style.animation = 'none';
+      chip.classList.add('is-leaving');
+      chip.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25 + CM_REST) + 'deg)';
+      chip.style.opacity = .2;
       await wait(T.cardExit);
-      card.remove(); mark.remove(); panel.remove();
-      /* the chip hands the chyron back — beat 2 pins the player's own
-         vote into the same slot and the two must never share it */
-      chip.remove();
-      chy.classList.remove('is-mark');
-      chy.classList.add('is-empty'); chy.setAttribute('aria-hidden', 'true');
+      card.remove(); mark.remove(); panel.remove(); chip.remove();
       res();
     }, { once:true });
   });
@@ -2164,7 +2251,16 @@ function stickerModal(o) {
       (o.meta ? '<p class="stmodal__meta">' +
         (o.metaLabel ? '<span class="stmodal__metalab">' + esc(o.metaLabel) + '</span>' : '') +
         esc(o.meta) + '</p>' : '') +
-      (o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
+      /* T12 · bodyHtml IS THE SAME SLOT WITH THE ESCAPING ALREADY DONE.
+         The explanation moved in here carries glossary <span class="gt">
+         markers from markGlossary(), and esc() would print the tags. It
+         is a SECOND field rather than a flag on the first so that no
+         existing caller can reach the unescaped path by accident: every
+         one of them passes `body` and is still escaped exactly as
+         before. Callers that pass bodyHtml own their own escaping —
+         markGlossary() esc()s the text before it marks it. */
+      (o.bodyHtml ? '<p class="stmodal__body">' + o.bodyHtml + '</p>'
+                  : o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
       /* the ONE field this component grew, so beat 5's disclosure could
          reuse it instead of getting a second modal shape of its own. It
          is markup rather than text — chips and links, escaped by their
@@ -2776,11 +2872,10 @@ function beat2() {
            NOTHING IS SUBSTITUTED — bill_summary is the modal's content and
            never this line. */
         (issue.tachles_prompt
-          ? '<p class="b2q">' + esc(issue.tachles_prompt) + '</p>'
+          ? qBlock(issue.tachles_prompt)
           : DEV.ph
-            ? '<p class="b2q pr-ph">' + esc('[טקסט — תמר: תכלס]') + '</p>'
-            : '<p class="b2q">' +
-                esc('כח״כ ה-121 — מה אתה היית מצביע?') + '</p>') +  /* TAMAR */
+            ? qBlock('[טקסט — תמר: תכלס]', 'pr-ph')
+            : qBlock('כח״כ ה-121 — מה אתה היית מצביע?')) +          /* TAMAR */
         '<div class="v-a-row b2votes">' +
           /* the label is its own span so the transition can hide THIS
              copy of the word the instant the flying one leaves — two of
@@ -2815,6 +2910,13 @@ function beat2() {
   $('#stage').appendChild(ov);
 
   /* NO INSTRUCTION LINE. Three vote chips are the instruction. */
+
+  /* v27 · the chair yields BEFORE the tab is placed: resizing it moves
+     line 1, and placeQTab() reads line 1's rect. */
+  fitBeat2();
+  /* v26f · placed in the same tick the pane is appended, before a frame
+     is painted, so the tab never shows at an unplaced position */
+  placeQTab();
 
   const law = $('[data-law]', ov);
   if (law) pressable(law).addEventListener('click', e => { e.stopPropagation(); lawModal(); });
@@ -2971,6 +3073,210 @@ function tapAffordance(ov) {
     '<span class="tctap__c" aria-hidden="true">›</span>');
   ov.appendChild(hint);
   requestAnimationFrame(() => requestAnimationFrame(() => hint.classList.add('is-in')));
+}
+
+/* ===== v26 · THE תכלס TAB AND THE PROMPT'S TAIL =====================
+   Both decided on explorations/v26/tachles-tab.html in ~/dev/hachach-121;
+   the numbers below are that board's, measured, not estimated.
+
+   THE SPLIT MATCHES THE SUFFIX STRING, NOT THE DASH. Every one of the
+   sixteen tachles_prompt values ends with the exact run
+   "מה ההצבעה שלך?" and every one is preceded by the identical separator
+   "- " (U+002D U+0020) — verified across the whole set. The dash is NOT
+   matched on, because dashes occur inside the claims themselves (v2's
+   חד-פעמיים, a1's ה 7/10, r1's nothing at all): matching the tail's own
+   words is the only rule that cannot cut a claim in half.
+
+   THE DASH STAYS. Everything before the suffix is the claim, dash
+   included, so the claim reads "…עבור החרדים-" and the CMS text is
+   reproduced character for character. Only trailing WHITESPACE is
+   trimmed, and only because a space before a display:block sibling is a
+   space at the end of a rendered line. Nothing in data.js changes.
+
+   NO SUFFIX, NO SPLIT. A prompt without the run renders exactly as it
+   does today, one line, no tail element — which is the branch the
+   fallback string takes, since "מה אתה היית מצביע?" is not the same
+   words. That branch is live, not theoretical.
+
+   THE TAIL IS ALWAYS ITS OWN LINE, never inline at any width, which is
+   what display:block on .b2q__tail buys. Board measurement: pulling the
+   tail out drops the claim a whole 33px line on every prompt long enough
+   to have been wrapping, so the block gets SHORTER on three of the four
+   cases measured (s1 at both widths, g1 at 360) and taller only where
+   the claim was already down to two lines. */
+const Q_TAIL = 'מה ההצבעה שלך?';                                       /* TAMAR */
+
+/* v26g · THE TAB IS CENTRED ON THE FIRST WORD OF LINE 1.
+   v26f anchored to a fraction of line 1 — 20% along from the start end.
+   That guaranteed contact on all sixteen and was still wrong: 20% of a
+   340px line is 68px in, past the end of any first word, so fifteen of
+   the sixteen landed MID-WORD. g1 covered the middle three letters of
+   לאפשר with a letter showing either side, which reads as crossing the
+   word out rather than tagging it. Only r1, whose line is the shortest,
+   happened to cover a whole word.
+   The first word's own box is the only anchor that says "this word".
+
+   WIDER THAN THE WORD IS FINE; HALF OF TWO WORDS IS NOT. When the word
+   measures less than the tab the tab overhangs it symmetrically rather
+   than shrinking or falling back — a tag wider than the thing it tags
+   still reads as a tag. The one clamp is the line's own start end: the
+   tab never pushes past it, because a tag hanging off the end of the
+   line reads as belonging to nothing.
+
+   ONE EXTRA RANGE, NOT A SECOND LAYOUT PASS. The line-1 rects are still
+   read exactly as v26f read them — they are what the clamp needs — and
+   the word's box comes from one more Range over the same text node,
+   measured in the same batch. Still no ResizeObserver: this hangs off
+   the resize stack sizeStage/placeChyron/redrawPath already share, and
+   is a no-op on every screen with no .b2q__tab, exactly as redrawPath
+   is a no-op with no #mapline. */
+
+/* ===== v27 · BEAT 2 FITS, AND THE CHAIR IS WHAT YIELDS ==============
+   THE BUG THIS CLOSES. Beat 2 overflowed 360x640 on fourteen of the
+   sixteen issues — g2 by 128px, and on s1 the three vote buttons were
+   ENTIRELY off the stage, so the player could not vote. .ov--stage is
+   place-items:center inside a stage with overflow:hidden, so the excess
+   split top and bottom and was clipped in silence: nothing looked
+   broken, the buttons were simply not there.
+
+   A BUDGET, NOT A SCALE. The bottom stack is the interaction and never
+   moves: the vote row keeps its 60px and its gap, the question keeps
+   whatever height its own text needs, and the padding — safe-area
+   included — is identical at every viewport. What is left over is the
+   chair, which is decoration. It is measured as a remainder rather than
+   re-derived term by term, because the terms are spread across four
+   rules and a flex gap and a re-derivation would drift the first time
+   one of them moved; the remainder is the same number and cannot.
+
+   ONE PASS IS ENOUGH. The chair's height does not change the column
+   width, so the question's line breaks — and therefore the non-chair
+   remainder — are identical before and after the resize. There is no
+   second reflow to chase.
+
+   THE FLOOR IS 150px. Below that the chair stops being the thing the
+   question is about and becomes an icon beside it — which is the exact
+   failure ITEM 36's predecessor is on record for at clamp(96px,...).
+   At 150 the chair is 129px wide and still reads as a chair: arms,
+   cushion and pedestal all survive. If the floor is hit and the screen
+   still overflows the chair does NOT squash further — that is a
+   content-length problem and it is reported as one. */
+const CHAIR_MAX = 330;
+const CHAIR_MIN = 150;
+
+function fitBeat2() {
+  const ov = $('.ov--stage'); if (!ov) return;
+  const pane = $('.ovpane--vote', ov); if (!pane) return;
+  const inner = $('.ov-inner', pane); if (!inner) return;
+  const chair = $('.b2chair', pane); if (!chair) return;
+
+  const cs = getComputedStyle(ov);
+  const avail = ov.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const chairH = chair.getBoundingClientRect().height;
+  /* everything that is not the chair: the seat's 61px reserve for the
+     tape, the column gaps, the headline, the question block and the
+     vote row. Measured, so a change to any of them is picked up. */
+  const rest = inner.getBoundingClientRect().height - chairH;
+
+  let target = avail - rest;
+  if (target > CHAIR_MAX) target = CHAIR_MAX;
+  if (target < CHAIR_MIN) target = CHAIR_MIN;
+  chair.style.height = target.toFixed(2) + 'px';
+}
+
+function placeQTab() {
+  const q = $('.b2q'); if (!q) return;
+  const tab = $('.b2q__tab', q); if (!tab) return;
+  /* the CLAIM's own text nodes — not the tail, which is its own line,
+     and not the tab, which is what we are placing */
+  const tn = [].filter.call(q.childNodes, n => n.nodeType === 3 && n.textContent.trim());
+  if (!tn.length) return;
+  const node = tn[0], txt = node.textContent;
+
+  /* ---- line 1, for the clamp. getClientRects returns one rect per BIDI
+     RUN, not per line: a digit or a Latin word splits its line into
+     several. Merge by rounded top or a prompt with a number in it
+     measures a fragment. */
+  const rg = document.createRange();
+  rg.setStart(tn[0], 0);
+  rg.setEnd(tn[tn.length - 1], tn[tn.length - 1].textContent.length);
+  const rects = [].filter.call(rg.getClientRects(), r => r.height > 4);
+  if (!rects.length) return;
+  let key = Infinity;
+  rects.forEach(r => { key = Math.min(key, Math.round(r.top)); });
+  let lineL = Infinity, lineR = -Infinity;
+  rects.forEach(r => { if (Math.round(r.top) === key) {
+    lineL = Math.min(lineL, r.left); lineR = Math.max(lineR, r.right); } });
+
+  /* ---- the first word: first token to the first whitespace. Line 1
+     begins the claim, so the claim's first word IS line 1's. */
+  let end = txt.search(/\s/);
+  if (end <= 0) end = txt.length;
+  const wr = document.createRange();
+  wr.setStart(node, 0); wr.setEnd(node, end);
+  const wrects = [].filter.call(wr.getClientRects(), r => r.height > 4);
+  let wl = Infinity, wR = -Infinity;
+  wrects.forEach(r => { if (Math.round(r.top) === key) {
+    wl = Math.min(wl, r.left); wR = Math.max(wR, r.right); } });
+  /* a first word that somehow did not land on line 1 leaves the tab
+     where it is rather than placing it somewhere invented */
+  if (!(wR > wl)) return;
+
+  const qb = q.getBoundingClientRect();
+  /* if an ancestor is ever scaled, rects are in scaled px and `left` is
+     not — divide it back out rather than silently drifting */
+  const k = (q.offsetWidth ? qb.width / q.offsetWidth : 1) || 1;
+
+  /* THE CLAMP HAS TO USE THE PAINTED EDGE, NOT THE BORDER BOX, and the
+     first build of it did not: a +4deg rotation about the bottom-right
+     corner throws the top-right corner a further offsetHeight*sin(4) to
+     the right — 2.47px here — so clamping on offsetWidth/2 left the tab
+     poking up to 2.4px past the line on every narrow-word issue.
+     `ext` is that painted half-extent, derived rather than hard-coded so
+     it stays right if the angle or the size ever moves: the distance
+     from the tab's untransformed centre to its painted right edge, read
+     once, before anything is written. Both reads are in the same batch
+     as the Ranges above — no second layout pass. */
+  const tb  = tab.getBoundingClientRect();
+  /* translateX(-50%) makes the painted box centre on `left`, so `left` IS
+     the centre and the extent is simply the painted right edge minus it.
+     offsetLeft is the wrong reference here — it reports the box BEFORE
+     the transform, which is half a tab away, and using it under-clamped
+     by exactly that half. */
+  const cur = parseFloat(getComputedStyle(tab).left) || 0;
+  const ext = (tb.right - qb.left) / k - cur;
+
+  /* v26h · START EDGE TO START EDGE. Centring was the wrong operation
+     and לאפשר proved it: the word is 91.8px and the tab 58.4, so a
+     centred tag sat INSIDE the word with a letter showing at each end —
+     a redaction, not a tag. Anchored start-to-start the tag clips onto
+     the front of the word and the rest of the word runs out from under
+     it, which is what a tab on a thing looks like.
+     wR is the word's start edge — its RIGHT edge, in RTL — and `ext` is
+     the painted half-extent, so this puts the tab's painted start edge
+     exactly on the word's. */
+  let c = (wR - qb.left) / k - ext;
+  /* CLAMP AT THE LINE'S START END, which in RTL is its right edge. The
+     first word begins the line, so wR is lineR and this is now a no-op
+     on every issue in data.js — kept because a first word that did not
+     start the line would need it, and because it costs one comparison. */
+  const startEnd = (lineR - qb.left) / k;
+  if (c + ext > startEnd) c = startEnd - ext;
+
+  tab.style.left = c.toFixed(2) + 'px';
+}
+
+function qBlock(text, extra) {
+  const cls = 'b2q' + (extra ? ' ' + extra : '');
+  const t   = String(text || '');
+  const i   = t.indexOf(Q_TAIL);
+  /* the tab is drawn in every branch: it labels the question, not the
+     string, and a placeholder question is still the question */
+  const tab = '<span class="b2q__tab">' + esc('תכלס') + '</span>';     /* TAMAR */
+  if (i < 0 || i + Q_TAIL.length !== t.length)
+    return '<p class="' + cls + '">' + tab + esc(t) + '</p>';
+  const claim = t.slice(0, i).replace(/\s+$/, '');
+  return '<p class="' + cls + '">' + tab + esc(claim) +
+         '<span class="b2q__tail">' + esc(Q_TAIL) + '</span></p>';
 }
 
 /* ===================== BEAT 3 · THE BILL ============================ */
@@ -3382,15 +3688,47 @@ async function runAxis(g, guess, vote) {
    PLACEHOLDER COPY, AWAITING THE CLIENT'S SIGN-OFF. These strings and no
    others; do not author alternatives.
 
-   HARD RULE, from the locked guardrails: THE PLAYER NEVER FAILS. Never
-   "טעית", never "לא נכון", never any string that puts the player in the
-   subject position of an error. "הופתעת" is something that happened TO
-   the player, which is the whole point.
+   THE RULE, AND THE ONE HOLE PUNCHED IN IT. The locked guardrail is that
+   THE PLAYER NEVER FAILS: no "לא נכון", no string that puts the player in
+   the subject position of an error, because being wrong here is the
+   Knesset surprising you. "הופתעת" said exactly that — it is something
+   that happened TO the player.
+   T6 · TAMAR OVERRODE IT ON 08 SEP, FOR THIS DISC AND NOTHING ELSE. The
+   surprise stamp now reads "טעית!". The exception is deliberately narrow
+   and the narrowness is load-bearing, so here is the exact blast radius,
+   because the next person to edit this constant will need it:
+     · stamp(ok) with no override is called from TWO places, and both are
+       the SAME OBJECT — the disc on an MK card. cascade verdict() and the
+       inverted round's invResolve(). That is the sanctioned surface.
+     · the claim reveal calls stamp(ok, truth) and passes אמת / שקר /
+       חלקית, so this constant never reaches the claim card.
+     · the verdict PILL is CLAIM_MARK, a different constant on a different
+       object. T6c · IT NOW CARRIES THE IDENTICAL PAIR — Lion's decision
+       of 09 Sep, which widened the exception from one surface to two.
+       The two constants are still SEPARATE, and deliberately: they are
+       different objects on different planes, and one of them can be
+       retuned without the other. If the pair is ever changed, change it
+       in BOTH or the round speaks in two voices again — which is the
+       thing T6c existed to fix.
+     · the finale, the record and the share card are NOT included. The
+       surprise framing is intact on all three and they were never fed by
+       either constant.
+   DO NOT GENERALISE THIS. Two surfaces is where Lion stopped it. A third
+   is a new decision by him, not an extension of this one.
+   THE PAIR MATCHES. The first pass of T6 left "צדקת" bare against a
+   "טעית!" that had just gained a mark, which read as one of the two
+   having been edited and the other forgotten — an exclamation is a
+   loudness, and only one side was loud. Tamar closed it on 09 Sep.
+   BOTH SIDES OR NEITHER, if this is ever retuned: these two strings are
+   the same object in two states and the mark is part of the register,
+   not part of the verdict. T6c · AND THE PILL IS NOW A THIRD AND FOURTH
+   COPY OF THE SAME TWO WORDS, so "both sides" means all four — see
+   CLAIM_MARK, which carries the identical pair and says why.
 
    `ring` is retired with the ring text and is not read anywhere. */
 const D2_COPY_PLACEHOLDER = {
-  correct:  'צדקת',
-  surprise: 'הופתעת'
+  correct:  'צדקת!',                             /* TAMAR · 09 Sep */
+  surprise: 'טעית!'                              /* TAMAR · T6, 08 Sep */
 };
 
 /* `override` is the A6 claim reveal passing the TRUE answer — אמת / שקר /
@@ -3863,27 +4201,47 @@ async function beat5() {
     }
   }
 
-  /* THE FIRST SENTENCE ONLY, and the rest goes behind one tap. That is
-     what fixes the old lower section: seven items competed in the bottom
-     third and the part players skip was the part taking the room. The
-     beat still explains itself with no tap; the tap is for the rest. */
-  const ex = explainSplit(issue.tf_explain);
+  /* T12 · THE SENTENCE LEAVES THE BOARD ENTIRELY AND THE BLOCK BECOMES
+     ONE LINE. The first sentence used to sit here with the rest behind a
+     tap, which split one explanation across two surfaces and still spent
+     the bottom third of the beat on the part players skip. The whole
+     explanation is behind the tap now and the board carries the door.
+
+     WHAT GOES IN IS ex.first + ex.rest, IN THAT ORDER — not the raw
+     tf_explain. The two differ by exactly one thing: explainSplit()
+     strips the "זה נכון" / "זה לא נכון" opener, which the claim
+     resolution has already said on this same screen. Passing the raw
+     field would restate the verdict inside its own explanation, so
+     "whole" means every sentence the board and the modal were showing
+     between them, in order, and nothing that was already deliberately
+     removed. Flagged in the report. */
+  const ex    = explainSplit(issue.tf_explain);
+  const full  = [ex.first, ex.rest].filter(Boolean).join(' ');
   const terms = issue.glossary_terms || [];
   const links = (issue.further_links || []).slice();
   if (issue.knesset_url) links.push({ label:'ההצבעה באתר הכנסת', url:issue.knesset_url }); /* TAMAR */
-  const hasMore = !!(ex.rest || terms.length || links.length);
+  const hasMore = !!(full || terms.length || links.length);
 
-  if (ex.first || hasMore) {
+  /* THE LINE CANNOT PROMISE WHAT THE MODAL HAS NOT GOT. v2 and s2 carry
+     no further_links and no knesset_url — links is empty on both, and on
+     those two the modal is the explanation and nothing else. A line
+     reading לסרטונים there offers a video that does not exist, so the
+     no-links case keeps the wording the button already shipped with:
+     approved copy, no new promise, INTERIM until Tamar rules. The
+     three-way split by what the issue actually has — video vs article vs
+     Knesset page — is hers to make and is NOT made here; only 3 of the
+     16 issues carry a video at all. See the report. */
+  if (hasMore) {
     const read = el('div', 'f5read f5surf b5stage f5late');
     read.innerHTML =
-      (ex.first ? '<p class="f5exp">' + markGlossary(ex.first) + '</p>' : '') +
-      (hasMore ? '<button type="button" class="f5more">' +
-                   esc('עוד על ההצבעה ›') + '</button>' : '');       /* TAMAR */
+      '<button type="button" class="f5more">' +
+        esc(links.length ? 'לסרטונים ועוד מידע על הנושא'   /* TAMAR */
+                         : 'עוד על ההצבעה') +                    /* TAMAR */
+      '</button>';
     b.appendChild(read);
     late.push(read);
-    const more = $('.f5more', read);
-    if (more) pressable(more).addEventListener('click',
-      () => moreModal(ex.rest, terms, links));
+    pressable($('.f5more', read)).addEventListener('click',
+      () => moreModal(full, terms, links));
   }
 
   /* ---- the way out. Unchanged: if the topic has another unplayed
@@ -4399,7 +4757,10 @@ async function coinMoment(b, topicsWas) {
    — `extra`, appended inside the same box under the body — rather than a
    variant of itself. lawModal() and glossModal() pass no `extra` and
    render byte-identically to before. */
-function moreModal(rest, terms, links) {
+/* T12 · IT TAKES THE WHOLE EXPLANATION NOW, not the remainder. The
+   parameter is renamed with it: `rest` was true when the board kept the
+   first sentence and is a lie now that it does not. */
+function moreModal(text, terms, links) {
   const extra =
     (terms.length ? '<div class="f5chips">' + terms.map(x =>
       '<button type="button" class="f5chip" data-term="' + esc(x) + '">' +
@@ -4415,16 +4776,26 @@ function moreModal(rest, terms, links) {
 
   const m = stickerModal({
     title: issue.title || issue.bill_title || '',
-    body:  rest || '',
+    /* THE TERMS COME IN WITH THE TEXT. They were marked on the board and
+       the board no longer has the sentence, so marking here is what
+       keeps them from being lost with it — and it now covers the WHOLE
+       explanation rather than only its first sentence, which is a gain:
+       a term that happened to fall in the remainder was never marked at
+       all, because stickerModal escaped `body`. */
+    bodyHtml: text ? markGlossary(text) : '',
     extra: extra
   });
   /* a chip opens its definition on the SAME component, which is exactly
      what glossModal() already is — one surface opened twice, rather than
-     a definition panel nested inside a dialog. */
+     a definition panel nested inside a dialog. An inline .gt marker in
+     the body is the same door by another route, so it is the same
+     handler: one listener, two selectors, one glossModal(). */
   m.addEventListener('click', e => {
-    const c = e.target.closest('.f5chip'); if (!c) return;
+    const c = e.target.closest('.f5chip');
+    const g = c ? null : e.target.closest('.gt');
+    if (!c && !g) return;
     e.stopPropagation();
-    glossModal(c.dataset.term);
+    glossModal(c ? c.dataset.term : g.dataset.gt);
   });
   return m;
 }
@@ -4582,6 +4953,17 @@ let EG_CONFETTI_SPENT = false;
    sticker once. */
 let MAP_INTRO_SEEN = false;
 
+/* T13 · THE MAP AVATAR'S BEACON, ONCE EVER. Same reasoning as `mi`
+   directly above: it goes in the save rather than in a key of its own, so
+   ?reset clears the beacon with progress, profile and the first-arrival
+   sticker in one place. Additive and optional — no SAVE_VER bump, and a
+   save written before this has no `ab`, restores clean, and beacons once.
+   SPENT MEANS TAPPED, NOT SEEN. The flag is written by the tap on the
+   avatar and by nothing else: arriving on the map, looking at it and
+   leaving does not spend it, because the beacon's whole job is to get
+   that tap and it has not got it yet. */
+let AV_BEACON_SPENT = false;
+
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
    playable, so every access is wrapped and every failure is "no save". */
@@ -4595,6 +4977,7 @@ function saveState() {
       v: SAVE_VER, wallet, progress: PROGRESS, record: RECORD,
       cf: EG_CONFETTI_SPENT,
       mi: MAP_INTRO_SEEN,
+      ab: AV_BEACON_SPENT,                                       /* T13 */
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -4640,6 +5023,7 @@ function restoreSave() {
   /* ITEM 43 · coerced, never validated, for the reason above: a malformed
      `mi` shows one sticker again and must not cost a run. */
   MAP_INTRO_SEEN = s.mi === true;
+  AV_BEACON_SPENT = s.ab === true;                               /* T13 */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
@@ -4750,6 +5134,7 @@ function showScreen(name) {
   const av = $('#hudAvatar'), x = $('#hudX');
   if (av) av.hidden = (name === 'round');
   if (x)  x.hidden  = (name !== 'round');
+  syncAvBeacon(name);                                            /* T13 */
   /* the banner is no longer inside #scRound, so hiding the round no
      longer hides it — that is the whole point of the promotion, and it
      is also the one thing the promotion has to pay for. */
@@ -4962,7 +5347,17 @@ function renderIntro() {
     '<p class="i-sub">' + esc(INTRO_COPY.line) + '</p>' +                /* TAMAR */
     '<div class="i-stage" aria-hidden="true">' +
       '<img class="i-build" src="' + ROOT + (M.props.building['1170'] || M.props.building['390']) + '" alt=""></div>' +
-    '<button type="button" class="p-c i-cta">' + esc(INTRO_COPY.cta) + '</button>';
+    '<button type="button" class="p-c i-cta">' + esc(INTRO_COPY.cta) + '</button>' +
+    /* v28d · THE HAMIGDALOR LOCKUP, placement D. Out of flow, so it adds
+       nothing to the composed group and moves none of it — measured ±0px
+       on every element of the intro, before and after.
+       THE PATH IS A LITERAL and that is deliberate: the chair and the
+       building come from M.props.*, which make_manifest.py generates and
+       which is not ours to add to. If the manifest ever carries the logo
+       this becomes M.props.logo['600'] and nothing else changes.
+       NO FILTER — see .i-logo in proto.css. */
+    '<img class="i-logo" src="' + ROOT + 'assets/mk/hamigdalor_logo_600.webp" ' +
+      'alt="" aria-hidden="true">';
 
   /* ONE PRIMARY ACTION AND IT GOES TO THE MAP. Not to a character step:
      §4.1 kills creation-as-first-step, the default avatar is already in
@@ -5589,10 +5984,22 @@ function onMapSettled(m, fn) {
    treatment and, unlike every other ph() marker, does NOT hide them in
    the default build: a first-run sticker with three blank slots is worse
    than one that says out loud what it is waiting for. */
+/* T2 · TAMAR'S LINE, AND IT IS ONE SENTENCE. The three placeholders were
+   a title/body/button split standing in for copy nobody had written; what
+   came back is a single instruction, so the title slot has no string to
+   hold and is not rendered rather than being filled with half the
+   sentence. The button still has no copy and keeps its marked
+   placeholder — it is the one thing here still waiting.
+   IT RUNS THREE LINES, NOT TWO, and the box does not grow: dropping the
+   title takes 44.5px out and the third line puts 18.2 back, so the
+   sticker is 26.3px SHORTER than the placeholder build. Measured, see
+   the report — including that the "77-character two-line budget" the item
+   quotes is the placeholder's own length and was never a budget: 77
+   characters run four lines in this 244px column and two lines hold 68. */
 const MAP_INTRO_COPY = {                                              /* TAMAR */
-  title: '[תמר: מה זה המסך הזה]',
-  body:  '[תמר: אתם הח״כ ה-121 · בחרו כל נושא · אין סדר ואין תשובה נכונה לגבי מה לבחור]',
-  go:    '[תמר: כפתור פתיחה]',
+  title: 'אז איך זה עובד?',                                          /* TAMAR · T16 */
+  line: 'היכנסו לנושא במפת הנושאים, ענו על השאלות, המשיכו להתקדם במשחק לאורך מפת הנושאים ולצבור מטבעות',
+  go:   'מתחילים',
 };
 function seenMapIntro() {
   if (DEV.mapIntro !== null) return !DEV.mapIntro;
@@ -5604,6 +6011,35 @@ function markMapIntroSeen() {
   MAP_INTRO_SEEN = true;
   saveState();
 }
+/* T13 · ARMED FROM ONE PLACE, AND IT IS THE ROUTER. showScreen() is the
+   only code that knows which screen is up, and it is already what shows
+   and hides this button. Arming here rather than in goMap() is what makes
+   "never left breathing on any other screen" a property of the code
+   instead of a promise: the round and the intro hide the avatar outright,
+   and the end-game keeps the map's HUD but is not the map, so it does not
+   get the class. Leaving the map removes it on the same call that swaps
+   the button for the ✕.
+   THE STROKE IS NOT TOUCHED HERE. It is permanent and unconditional and
+   lives entirely in .hud-you's own rule; only the pulse is state. */
+function avBeaconOn() {
+  if (DEV.beacon !== null) return DEV.beacon;
+  return !AV_BEACON_SPENT;
+}
+function syncAvBeacon(screen) {
+  const av = $('#hudAvatar'); if (!av) return;
+  av.classList.toggle('is-beacon', screen === 'map' && avBeaconOn());
+}
+function spendAvBeacon() {
+  /* an override never spends the real flag — same contract as
+     markMapIntroSeen() and markIntroSeen() */
+  if (DEV.beacon === null) {
+    if (AV_BEACON_SPENT) return;
+    AV_BEACON_SPENT = true;
+    saveState();
+  }
+  const av = $('#hudAvatar'); if (av) av.classList.remove('is-beacon');
+}
+
 function maybeMapIntro() {
   if (seenMapIntro()) return false;
   if ($('#stage').dataset.screen !== 'map') return false;
@@ -5615,8 +6051,11 @@ function maybeMapIntro() {
 }
 function mapIntroModal() {
   const m = stickerModal({
+    /* T16 · the title slot has a string again. It was left out in T2
+       because the copy was one sentence; the :empty rule that collapsed
+       the slot is untouched and simply stops matching now. */
     title: MAP_INTRO_COPY.title,
-    body:  MAP_INTRO_COPY.body,
+    body:  MAP_INTRO_COPY.line,
     /* ITEM 9's hero, with nothing in it yet: the "?" fallback is what the
        slot draws until this screen has art of its own. heroKey marks the
        hook so the graphic can be dropped in without touching this call. */
@@ -5833,12 +6272,19 @@ let ALLOC = {};
    counts them without a special case, and every lookup BY TOPIC misses
    them without a special case either. That second half is the whole
    safety property; see cardTopics().
-   Its NAME lives here, alone, in a variable no card and no share code
-   references. It is not in ALLOC, not in PROFILE and not in the save, so
-   it cannot be reached by anything that walks those.
+   Its NAME lives here, alone. It is not in ALLOC, not in PROFILE and not
+   in the save, so it cannot be reached by anything that walks those. The
+   ONE reader outside this screen is cardTopics(), since 09 Sep — see the
+   dated note there; that is a decision, not drift.
    ===================================================================== */
 const OTHER_KEY = '__other';
-const OTHER_MAX = 24;                 /* the hard cap on what can be typed */
+/* 11, NOT 24 — AND NOT 12. The player's own pill is never the widest thing
+   in the block, in either script: 12 Hebrew characters is safe but 12
+   Latin measures 332px at card scale, wider than the widest system pill
+   (312px). The rule is absolute, so the cap is 11. Lowered together with
+   the gate in cardTopics() opening — one without the other does nothing,
+   or ships a 466px pill. v29h, 09 Sep. */
+const OTHER_MAX = 11;                 /* the hard cap on what can be typed */
 let ALLOC_OTHER_NAME = '';            /* NEVER leaves this screen */
 
 /* =====================================================================
@@ -5853,6 +6299,13 @@ async function endGame() {
      previous run's word sitting on an empty row. */
   ALLOC_OTHER_NAME = '';
   showScreen('end');
+  /* v29h · NON-NEGOTIABLE 3 · the share card's assets are fetched and
+     base64'd NOW, while beats 1–3 play, so beat 4's first export is the
+     warm ~150ms and not the cold 1.3s measured on the phone. This is the
+     ONLY call site: endGame() is reached from the finale's last door and
+     from ?screen=end, and from nowhere on load or on the map — a player
+     who never finishes never pays for it. */
+  shWarm();
   /* THE HUD HAS TO BE REPAINTED HERE. Its count and coin chip were only
      ever written by renderMap(), because the map was the only screen
      that showed them; the end-game shows the same two and would
@@ -6190,25 +6643,27 @@ const EG_OTHER_PH    = 'ומה עוד חשוב לכם?';                        
 const OTHER_GLYPH    = '<span class="eg-other__g" aria-hidden="true">✎</span>';
 
 /* =====================================================================
-   ITEM 19 + 20B · THE ONE GATE THE FREE TEXT CANNOT PASS
+   ITEM 19 + 20B · THE ONE GATE — AND IT IS OPEN.
    Every topic name the card or the share string is allowed to say comes
-   from here and from nowhere else. THE ENFORCEMENT IS THE FIRST LINE:
-   it walks TOPICS() — data.js's own eight — and looks each id up in
-   ALLOC. The free-text row's coins are under OTHER_KEY, which is not any
-   topic's id, so they are not reachable by this walk; the player's text
-   is in ALLOC_OTHER_NAME, which this function does not mention and could
-   not return if it did, because what it returns are `t` objects taken
-   from DATA.topics.
-   THAT IS ALSO THE FALLBACK ITEM 20B ASKS FOR, for free and without a
-   branch: if אחר holds the most coins it is simply not in the list, so
-   the highest FIXED topic is what comes back — and if no fixed topic has
-   any, the list is empty and the caller omits the line. There is no
-   "if top is other" test anywhere, because there is no code path on
-   which `other` could have been top.
+   from here and from nowhere else; that part is unchanged. What changed:
+
+   TAMAR'S DECISION, 09 SEP 2026: THE FREE TEXT GOES ON THE CARD.
+   Until this date the walk below covered TOPICS() only — data.js's own
+   eight — and the free-text row, whose coins sit under OTHER_KEY and
+   whose words sit in ALLOC_OTHER_NAME, could not reach a card by
+   construction. Tamar asked for the player's own words on the card, so
+   the row is appended to the walk as a ninth entry, marked `free` so the
+   card can dress it as authored (kraft, ✎) rather than as a topic. This
+   is NOT a bug and NOT drift; the next reader should not "fix" it. It is
+   paired with OTHER_MAX dropping to 11 — see the note there — because
+   the words now have to fit a pill.
+   An unnamed row with coins on it shows as אחר.
    ===================================================================== */
 function cardTopics(n) {
-  return TOPICS()
-    .map(t => ({ t, v: ALLOC[t.id] || 0 }))
+  const list = TOPICS().map(t => ({ t, v: ALLOC[t.id] || 0 }));
+  const ov = ALLOC[OTHER_KEY] || 0;
+  if (ov > 0) list.push({ t: { id: OTHER_KEY, label: ALLOC_OTHER_NAME || EG_OTHER_LABEL, free: true }, v: ov });
+  return list
     .filter(x => x.v > 0)
     .sort((a, b) => b.v - a.v)
     .slice(0, n || 1);
@@ -6292,7 +6747,7 @@ async function egBeat3() {
   otherWrap.appendChild(otherBtn);
   const field = el('input', 'eg-other__in');
   field.type = 'text';
-  field.maxLength = OTHER_MAX;                 /* the hard cap, 24 */
+  field.maxLength = OTHER_MAX;                 /* the hard cap, 11 */
   field.placeholder = EG_OTHER_PH;                                     /* TAMAR */
   field.setAttribute('dir', 'auto');
   field.setAttribute('autocomplete', 'off');
@@ -6383,235 +6838,432 @@ function egPaint() {
 }
 
 /* =====================================================================
-   BEATS 4 AND 5 · THE CARD, THEN THE WAY OUT.
+   v29h · BEAT 4 · THE SHARE SCREEN
 
-   THE HEADLINE IS THE SURPRISE COUNT AND IT IS NOT NEGOTIABLE (§5.3).
-   A card that leads with the prediction record self-selects twice over:
-   players who did badly quietly do not share it, and the ones who do
-   share it learn that doing badly is the shameful outcome — which
-   contradicts the §1.3 framing the entire round is built on. The
-   surprise count is HIGH when the player did badly, so the shame
-   inverts and the metric is on-thesis: the game is about the Knesset
-   being surprising, not about the player being right.
+   Three cards in a carousel, one toggle, two buttons, and nothing is
+   ever laid over the card — if the player screenshots the picker instead
+   of sharing, no control lands in the shot.
 
-   SECONDARY: the top topic, NAMED FROM data.js. Never the full split —
-   how you divide between topics maps loosely onto political camps and
-   the sheet holds that back for an opt-in variant that does not exist
-   yet. Never the free text either: unvalidated user text next to the
-   NGO's hashtag is §0.4-8, and the reason the אחר field does not ride
-   here even once it exists in-game.
+   C IS THE DEFAULT and it is re-asserted on every arrival, for the same
+   reason the old beat re-asserted its own: most players never swipe, so
+   the card that opens is the card that ships, and a module variable would
+   quietly make the last pick the default for the rest of the session.
 
-   THE PREDICTION RECORD IS PRESENT AND DEMOTED — one quiet line under
-   the rule, which is what "secondary line, not the headline" means.
+   THE CARD IS DRAWN ONCE, AT 1080px, AND SCALED. The preview in the
+   track is the same DOM the export serialises — a 1080×1920 card under a
+   transform — so what the player sees and what goes out cannot drift.
+   The card's stylesheet lives in proto.css between the @ec-start /
+   @ec-end markers and is read from there at export time, so it is
+   written once and the export cannot fall behind the screen.
 
-   NO SHARE ACTION IS WIRED. The card is the artifact; actually
-   publishing it raises the opt-in and hashtag questions §5.3 leaves
-   open, and those are Tamar/NGO decisions rather than build ones.
+   THE EXPORT ROUTE is SVG <foreignObject> → <img> → canvas → PNG. No
+   library. Four things were measured on real hardware on 09 Sep and are
+   not negotiable — each is marked NON-NEGOTIABLE where it is honoured:
+     1 · the SVG is a data: URL. A blob: URL taints the canvas.
+     2 · fonts and images are base64-inlined into the SVG.
+     3 · the inlining is warmed when the end-game mounts (shWarm(), called
+         from endGame() and nowhere else).
+     4 · the SVG image is drawn twice, 50ms apart, before toBlob.
    ===================================================================== */
-/* §C THE NAME STAYS OFF THE CARD BY DEFAULT. The card is the artifact a
-   player may put in front of other people, and a name on it is the
-   opt-in question §5.3 leaves open — so it is a switch, off, rather than
-   a behaviour. The avatar is on the card regardless: it is the player's
-   token, not their identity. */
-const SHARE_NAME = false;
-
-/* =====================================================================
-   ITEM 20B · THREE CARDS, ONE DEFAULT, AND THE DEFAULT IS NOT OURS
-   A leads with the surprise count and is UNCHANGED — same strings, same
-   order, same markup as it shipped. B leads with the topic and states no
-   number at all. C is the prediction record alone.
-   'a' IS RE-ASSERTED ON EVERY ARRIVAL, not just declared here. A module
-   variable would keep whatever the player last picked and quietly make
-   that the default for the rest of the session; decision table #8 says
-   the default is A and is Tamar's and the NGO's to move, so the card
-   opens on A every time it is opened.
-   THE FULL SPLIT IS NEVER ON ANY OF THEM. cardTopics() is asked for one
-   topic, never for the list.
-   ===================================================================== */
-const SHARE_VARIANTS = ['a', 'b', 'c'];
-let SHARE_VARIANT = 'a';
-const SHARE_TAB = {                                                    /* TAMAR */
-  a: 'הפתעות',
-  b: 'נושא',
-  c: 'ניחושים',
+const SH_KINDS   = ['C', 'D', 'E'];
+const SH_ASPECTS = { '916': [1080, 1920], '45': [1080, 1350] };
+const SH_LINK    = 'hac121.org';
+const SH_FILE    = 'hac121-card.png';
+const SH_COPY = {
+  title:    'בחרו כרטיס לשיתוף',                            /* TAMAR */
+  tag:      'הח״כ ה-121',                                   /* TAMAR */
+  claim:    'תפסתי את<br>הכיסא ה-121',          /* C's title; the break is the design's */ /* TAMAR */
+  claimTxt: 'תפסתי את הכיסא ה-121',            /* the same words, for the text fallback */ /* TAMAR */
+  kicker:   'הח״כ ה-121 · דוח אישי',                        /* TAMAR */
+  meta:     'סוגיות שנוחשו · עונה 1',                       /* TAMAR */
+  guessed:  'ניחשתי נכון',                                  /* TAMAR */
+  outOf:    'מתוך',                                         /* TAMAR */
+  surprised:'פעמים שהכנסת הפתיעה אותי',                     /* TAMAR */
+  most:     'הכי הרבה הקצאתי ל',                            /* TAMAR */
+  more:     'עוד',                              /* "עוד N" — in words, never "+N" */ /* TAMAR */
+  share:    'שיתוף',                                        /* TAMAR */
+  save:     'שמירה לגלריה',                                 /* TAMAR */
+  sharing:  'מכינים את הכרטיס…',                            /* TAMAR */
+  saving:   'שומרים…',                                      /* TAMAR */
+  copied:   'הועתק',                                        /* TAMAR */
+  back:     'חזרה למפה',                                    /* TAMAR */
+  card:     'כרטיס',                                        /* TAMAR */
+  a916:     '9:16',
+  a45:      '4:5',
 };
-const SHARE_ACT  = 'שיתוף';                                            /* TAMAR */
-const SHARE_DONE = 'הועתק';                                            /* TAMAR */
-
-/* the card's own strings, named once so the three variants and the share
-   TEXT read the identical words. Every one of them is a string that was
-   already on the card; nothing here is new copy. */
-const CARD_COPY = {
-  tag:       'הח״כ ה-121',                                             /* TAMAR · shipped */
-  surprises: 'פעמים שהכנסת הפתיעה אותי',                                /* TAMAR · shipped */
-  topic:     'הכי הרבה הקצאתי ל',                                      /* TAMAR · shipped */
-  guessed:   'ניחשתי נכון ',                                           /* TAMAR · shipped */
-  outOf:     ' מתוך ',                                                 /* TAMAR · shipped */
+/* S2 plane and D1 tray, as picked on the v29f board. Trailing — last in
+   the DOM, so RTL puts them at the physical left edge. */
+const SH_ICON = {
+  share: '<svg class="sh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 3.2 10.3 13.7"/><path d="M20.8 3.2 14.2 20.8l-3.9-7.1-7.1-3.9z"/></svg>',
+  save:  '<svg class="sh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.4v10.9"/><path d="M7.8 10.1 12 14.3l4.2-4.2"/><path d="M4.2 16.6v2.1c0 1 .8 1.8 1.8 1.8h12c1 0 1.8-.8 1.8-1.8v-2.1"/></svg>',
+  spin:  '<span class="sh-spin" aria-hidden="true"></span>',
+};
+const SH_SRC = {
+  chair:   'assets/mk/knesset_chair_300_shadow.webp',  /* the BAKED shadow — see the note at .ec-c-chair */
+  logo:    'assets/share/logo-mono-900.png',
+  logoInk: 'assets/share/logo-mono-900-ink.png',       /* pre-inked for kraft; no filter */
+  black:   'fonts/SimplerPro_HLAR-Black.woff2',
+  regular: 'fonts/SimplerPro_HLAR-Regular.woff2',
 };
 
-/* ITEM 20B · the three bodies. `tops` is whatever cardTopics() allowed —
-   see the gate. None of these functions can reach ALLOC_OTHER_NAME, and
-   none of them takes a topic from anywhere but this argument. */
-function shareCardBody(v, s, tops) {
-  const topicLine = tops.length
-    ? '<p class="eg-share__topic">' +
-        '<span class="eg-share__ico">' + topicFace(tops[0].t, 22) + '</span>' +
-        esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</p>'
-    : '';
-  const record =
-    '<p class="eg-share__second">' + esc(CARD_COPY.guessed) + N(s.correct) +
-      esc(CARD_COPY.outOf) + N(s.asked) + '</p>';
-  if (v === 'b') {
-    /* THE TOPIC LEADS AND THERE IS NO NUMBER ON THE CARD. Not the record,
-       not the surprise count, not the coins — "no numbers" is the whole
-       variant, so the record line is absent rather than demoted. */
-    return tops.length
-      ? '<p class="eg-share__blead">' +
-          '<span class="eg-share__bico">' + topicFace(tops[0].t, 34) + '</span>' +
-          '<span>' + esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</span></p>'
-      : '';
-  }
-  if (v === 'c') {
-    /* THE RECORD ALONE, at the lead's size. No topic line at all — that
-       is what "no topics" means, and it is also why C is the one variant
-       that is always available. */
-    return '<p class="eg-share__lead eg-share__lead--c">' +
-             '<span>' + esc(CARD_COPY.guessed.trim()) + '</span>' +
-             '<b class="eg-num eg-share__n">' + N(s.correct) + '</b>' +
-             '<span class="eg-share__of">' + esc(CARD_COPY.outOf) + N(s.asked) + '</span></p>';
-  }
-  /* A · unchanged */
-  return '<p class="eg-share__lead">' +
-           '<span>' + esc(CARD_COPY.surprises) + '</span>' +
-           '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
-         topicLine +
-         '<hr class="eg-share__rule">' +
-         record;
+let SH_KIND = 'C', SH_ASPECT = '916';
+let SH_BUSY = false;
+
+/* ---- the pills: what the card is allowed to say ---------------------
+   cardTopics() is the gate (see it). Ordered by allocation, highest
+   first; the free-text row rides along since 09 Sep. Three pills, then
+   "עוד N" IN WORDS — a leading "+" is a bidi neutral and renders as "5+",
+   which reads as "5 or more". */
+const SH_PILL_CAP = 3;
+function shPills() {
+  const all = cardTopics(99);
+  const shown = all.slice(0, SH_PILL_CAP);
+  return { shown, more: all.length - shown.length, total: all.length };
+}
+/* the pill block's scale steps down as it grows — the v29e tiers, which
+   with the cap only ever reach b on 9:16 and c on 4:5 */
+function shTier(n, aspect) {
+  if (aspect === '45') return n <= 1 ? 'a' : n <= 3 ? 'b' : n <= 5 ? 'c' : 'd';
+  return n <= 2 ? 'a' : n <= 4 ? 'b' : n <= 6 ? 'c' : 'd';
+}
+const shNum = v => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function shPillsHTML(aspect) {
+  const p = shPills();
+  const n = p.shown.length + (p.more ? 1 : 0);
+  if (!n) return '';
+  let h = '<div class="ec-pills" data-t="' + shTier(n, aspect) + '">';
+  p.shown.forEach(x => {
+    h += '<span class="ec-pill' + (x.t.free ? ' ec-pill--free' : '') + '">' +
+           (x.t.free ? '<span class="ec-pill__g" aria-hidden="true">✎</span>' : '') +
+           '<span class="ec-pill__n">' + esc(x.t.label) + '</span>' +
+           '<span class="ec-pill__r"></span>' +
+           '<span class="ec-pill__c">' + shNum(x.v) +
+             /* THE COIN IS .coin-t, THE REAL TOKEN, restated in em so the
+                2/19 keyline and offset hold at every tier — proto.css:4760:
+                "a second coin drawn a second way would be a second currency" */
+             '<i class="coin-t ec-pill__coin" aria-hidden="true"></i></span>' +
+         '</span>';
+  });
+  if (p.more) h += '<span class="ec-pill ec-pill--more">' + esc(SH_COPY.more) + ' ' + p.more + '</span>';
+  return h + '</div>';
 }
 
-/* ITEM 20A · the string that actually gets shared, built from the same
-   two sources the card is: endStats() and cardTopics(). It cannot carry
-   the free text for the same structural reason the card cannot. */
-function shareText(v) {
-  const s = endStats(), tops = cardTopics(1);
-  const L = [CARD_COPY.tag];
-  if (v === 'b') {
-    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
-  } else if (v === 'c') {
-    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+/* ---- the three cards, as markup ------------------------------------ */
+function shAvatar() { return '<span class="ec-ava">' + avatarSvg() + '</span>'; }
+function shCardHTML(kind, aspect) {
+  const s = endStats(), pills = shPillsHTML(aspect), top = shPills().shown[0];
+  const cls = 'ec ec--' + aspect + (kind === 'D' ? '' : ' ec--dots');
+  let body = '';
+  if (kind === 'C') {
+    body =
+      '<div class="ec-plaza"></div>' +
+      '<div class="ec-pad">' +
+        '<div class="ec-c-head"><span class="ec-tag">' + esc(SH_COPY.tag) + '</span>' + shAvatar() + '</div>' +
+        '<div class="ec-c-chair"><img src="' + SH_SRC.chair + '" alt=""></div>' +
+        '<p class="ec-c-title">' + SH_COPY.claim + '</p>' +
+        pills +
+        '<div class="ec-c-foot"><img class="ec-logo" src="' + SH_SRC.logo + '" alt="">' +
+          '<span class="ec-link">' + SH_LINK + '</span></div>' +
+      '</div>';
+  } else if (kind === 'D') {
+    body =
+      '<div class="ec-d-doc ec-kraft ec-diecut"></div>' +
+      '<div class="ec-d-doc ec-d-in">' +
+        '<div class="ec-d-hd"><div><p class="ec-d-kicker">' + esc(SH_COPY.kicker) + '</p>' +
+          '<p class="ec-d-meta">' + esc(SH_COPY.meta) + '</p></div>' +
+          '<img class="ec-logo" src="' + SH_SRC.logoInk + '" alt=""></div>' +
+        '<div class="ec-d-body">' +
+          '<div class="ec-d-hero"><p class="ec-d-lab">' + esc(SH_COPY.guessed) + '</p>' +
+            '<p class="ec-d-big"><span>' + s.correct + '</span><span class="ec-d-u">' + esc(SH_COPY.outOf) +
+              '</span><span>' + s.asked + '</span></p>' +
+            '<p class="ec-d-second"><b>' + s.surprises + '</b> ' + esc(SH_COPY.surprised) + '</p></div>' +
+          (pills
+            ? '<div class="ec-d-rule"></div><p class="ec-eyebrow ec-eyebrow--ink">' + esc(SH_COPY.most) + '</p>' + pills
+            : '') +
+        '</div>' +
+        '<div class="ec-d-foot">' + shAvatar() +
+          '<span class="ec-link ec-link--ink">' + SH_LINK + '</span></div>' +
+      '</div>';
   } else {
-    L.push(CARD_COPY.surprises + ': ' + s.surprises);
-    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
-    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+    body =
+      '<div class="ec-e-wrap">' +
+        '<div class="ec-top"><span class="ec-tag">' + esc(SH_COPY.tag) + '</span>' + shAvatar() + '</div>' +
+        '<div class="ec-e-mid"><div class="ec-e-rule"></div>' +
+          (top
+            ? '<p class="ec-e-lead">' + esc(SH_COPY.most) + '</p>' +
+              '<p class="ec-e-topic">' + esc(top.t.label) + '</p>' + pills
+            /* nothing allocated: the record is the only true sentence left */
+            : '<p class="ec-e-rec">' + esc(SH_COPY.guessed) + ' <b>' + s.correct + '</b> ' +
+              esc(SH_COPY.outOf) + ' ' + s.asked + '</p>') +
+          '<div class="ec-e-rule ec-e-rule--end"></div></div>' +
+        '<div class="ec-foot"><img class="ec-logo" src="' + SH_SRC.logo + '" alt="">' +
+          '<span class="ec-link">' + SH_LINK + '</span></div>' +
+      '</div>';
   }
-  return L.join('\n');
+  return '<div class="' + cls + '" data-k="' + kind + '">' + body + '</div>';
 }
 
-/* ITEM 20A · THE OS SHEET IS THE TARGET AND THERE IS NO CUSTOM ONE.
-   navigator.share first; where it does not exist, or refuses, the text
-   goes to the clipboard instead. TEXT ONLY — see the feasibility report
-   for why no image is built: an SVG-in-<img> rasterisation cannot load
-   the webfont or the topic art, and html2canvas would be a dependency.
-   A CANCEL IS NOT A FAILURE. AbortError is the player closing the sheet
-   and must not fall through to copying something they chose not to send. */
-async function shareCard(btn) {
-  const text = shareText(SHARE_VARIANT);
+/* ---- the export ------------------------------------------------------
+   NON-NEGOTIABLE 2 + 3 · everything the SVG needs, base64, fetched ONCE
+   and only for a player who is in the end-game. On the real iPhone this
+   fetch-and-encode was 1.1s of a 1.3s first export; warmed, the export
+   is ~150–190ms. shWarm() is called from endGame() and from nowhere
+   else — it is not on load and not on the map, so a player who never
+   finishes never pays for it. */
+let SH_WARM = null;
+const shB64 = async url => {
+  const b = await (await fetch(url)).blob();
+  return new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+};
+function shWarm() {
+  if (SH_WARM) return SH_WARM;
+  SH_WARM = (async () => {
+    const [black, regular, chair, logo, logoInk, cssText] = await Promise.all([
+      shB64(SH_SRC.black), shB64(SH_SRC.regular),
+      shB64(SH_SRC.chair), shB64(SH_SRC.logo), shB64(SH_SRC.logoInk),
+      fetch('proto.css').then(r => r.text()),
+    ]);
+    /* the card's own rules, cut from proto.css between the markers */
+    const m = cssText.match(/\/\*\s*@ec-start\s*\*\/([\s\S]*?)\/\*\s*@ec-end\s*\*\//);
+    const css =
+      "@font-face{font-family:'SimplerPro';src:url(" + black + ") format('woff2');font-weight:900}" +
+      "@font-face{font-family:'SimplerPro';src:url(" + regular + ") format('woff2');font-weight:400}" +
+      (m ? m[1] : '');
+    return { css, img: { [SH_SRC.chair]: chair, [SH_SRC.logo]: logo, [SH_SRC.logoInk]: logoInk } };
+  })();
+  SH_WARM.catch(() => { SH_WARM = null; });      /* a failed warm is retried by the next call */
+  return SH_WARM;
+}
+
+async function shExport(kind, aspect) {
+  const W = SH_ASPECTS[aspect][0], H = SH_ASPECTS[aspect][1];
+  const A = await shWarm();
+  await Promise.all([document.fonts.load('900 40px SimplerPro'), document.fonts.load('400 40px SimplerPro')]);
+  /* a fresh card, not the preview: the preview is under a transform and
+     inside the stage's stacking, and the export wants neither */
+  const host = el('div', '', shCardHTML(kind, aspect));
+  $$('img', host).forEach(i => { const d = A.img[i.getAttribute('src')]; if (d) i.setAttribute('src', d); });
+  const xhtml = new XMLSerializer().serializeToString(host.firstChild);
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+      '<foreignObject width="100%" height="100%">' +
+        '<div xmlns="http://www.w3.org/1999/xhtml"><style>' + A.css + '</style>' + xhtml + '</div>' +
+      '</foreignObject></svg>';
+  /* NON-NEGOTIABLE 1 · a data: URL. blob: taints the canvas and toBlob
+     throws SecurityError — Chrome, Playwright WebKit and real iOS Safari. */
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('svg')); img.src = url; });
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  /* NON-NEGOTIABLE 4 · drawn twice. WebKit paints the first draw of a new
+     SVG document before its inlined fonts and images have decoded — a
+     blank ground with one pill. img.decode() does not help. 50ms and a
+     second draw does; it is done on every engine because it costs 50ms
+     and a UA sniff would be the only thing that could get it wrong. */
+  await wait(50);
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(img, 0, 0);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('png')), 'image/png'));
+}
+
+/* ---- share and save --------------------------------------------------
+   שיתוף → navigator.share({ files }). Confirmed on real iOS Safari 26 over
+   HTTPS: canShare({files}) true, share() resolved. It does not EXIST on an
+   http origin, so this feature-detects and falls back to text + link, and
+   from there to the clipboard. A CANCEL IS NOT A FAILURE: AbortError is
+   the player closing the sheet and must not fall through to a copy they
+   chose not to send. */
+function shText() {
+  const top = shPills().shown[0];
+  return [SH_COPY.tag, SH_COPY.claimTxt]
+    .concat(top ? [SH_COPY.most + top.t.label] : [])
+    .concat(['https://' + SH_LINK]).join('\n');
+}
+async function shShare() {
+  const blob = await shExport(SH_KIND, SH_ASPECT);
+  const file = new File([blob], SH_FILE, { type: 'image/png' });
   if (typeof navigator.share === 'function') {
-    try { await navigator.share({ text }); return 'shared'; }
+    const data = navigator.canShare && navigator.canShare({ files: [file] })
+      ? { files: [file], title: SH_COPY.tag }
+      : { text: shText() };
+    try { await navigator.share(data); return 'shared'; }
     catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
   }
-  try {
-    await navigator.clipboard.writeText(text);
-    if (btn) { btn.classList.add('is-copied'); btn.textContent = SHARE_DONE;   /* TAMAR */
-      setTimeout(() => { btn.classList.remove('is-copied'); btn.textContent = SHARE_ACT; }, 1600); }
-    return 'copied';
-  } catch (e) { return 'failed'; }
+  try { await navigator.clipboard.writeText(shText()); return 'copied'; }
+  catch (e) { return 'failed'; }
+}
+/* שמירה לגלריה → the PNG, downloaded. The aspect is whatever the toggle
+   says — 4:5 is offered here, at save time, not as a second screen. */
+async function shSave() {
+  const blob = await shExport(SH_KIND, SH_ASPECT);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = SH_FILE;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  return 'saved';
 }
 
+/* THE WORKING STATE LIVES INSIDE THE PRESSED BUTTON: the label swaps, the
+   icon slot becomes a 21px spinner, the box does not move. THE OTHER
+   BUTTON IS DISABLED WHILE ONE RUNS — two rasterise passes at once on a
+   mid-range Android is what produces a janked card. */
+async function shRun(btn, other, busyLabel, fn) {
+  if (SH_BUSY) return;
+  SH_BUSY = true;
+  const lab = $('.sh-bl', btn), ico = $('.sh-ico', btn);
+  const label0 = lab.textContent, ico0 = ico.innerHTML;
+  btn.classList.add('is-busy'); btn.setAttribute('aria-busy', 'true');
+  lab.textContent = busyLabel; ico.innerHTML = SH_ICON.spin;
+  other.disabled = true;
+  let r = 'failed';
+  try { r = await fn(); } catch (e) { r = 'failed'; }
+  btn.classList.remove('is-busy'); btn.removeAttribute('aria-busy');
+  ico.innerHTML = ico0;
+  other.disabled = false;
+  SH_BUSY = false;
+  /* the clipboard fallback is the one outcome the player cannot see
+     happen, so it says so, briefly, in the button it came from */
+  if (r === 'copied') { lab.textContent = SH_COPY.copied; setTimeout(() => { lab.textContent = label0; }, 1600); }
+  else lab.textContent = label0;
+}
+
+/* ---- the screen ----------------------------------------------------- */
 async function egBeat4() {
   const c = egStage();
-  const s = endStats();
-  const top = egTopTopic();
-  SHARE_VARIANT = 'a';                 /* the default, on every arrival */
+  SH_KIND = 'C'; SH_ASPECT = '916';          /* the defaults, on every arrival */
+  SH_BUSY = false;
 
-  c.innerHTML = '<h2 class="eg-h2">' + esc('הכרטיס שלכם') + '</h2>';   /* TAMAR */
-  requestAnimationFrame(() => $('.eg-h2', c).classList.add('is-in'));
-  await egStep(T.f5In);
+  c.innerHTML =
+    '<h2 class="eg-h2 sh-title">' + esc(SH_COPY.title) + '</h2>' +
+    '<div class="sh-track" id="shTrack"><div class="sh-rail" id="shRail"></div></div>' +
+    '<div class="sh-dots" id="shDots" role="tablist"></div>' +
+    '<div class="sh-tg" id="shTg" role="radiogroup"></div>' +
+    '<div class="sh-acts" id="shActs"></div>';
+  const track = $('#shTrack', c), rail = $('#shRail', c), dots = $('#shDots', c), tg = $('#shTg', c), acts = $('#shActs', c);
 
-  const tops = cardTopics(1);
-  const card = el('div', 'eg-share');
-  const head =
-    '<div class="eg-share__head">' +
-      '<span class="as-d eg-share__av" aria-hidden="true">' + avatarSvg() + '</span>' +
-      '<p class="eg-share__tag">' + esc(CARD_COPY.tag) + '</p>' +
-      (SHARE_NAME && PROFILE.name
-        ? '<p class="eg-share__name">' + esc(PROFILE.name) + '</p>' : '') +
-    '</div>';
-  const paintCard = () => {
-    card.dataset.v = SHARE_VARIANT;
-    card.innerHTML = head + shareCardBody(SHARE_VARIANT, s, tops);
-  };
-  paintCard();
-  c.appendChild(card);
-  requestAnimationFrame(() => card.classList.add('is-in'));
-
-  /* ITEM 20B · the switcher. B is offered only when there is a fixed
-     topic for it to lead with: with none, its body is empty by the rule
-     above, and a variant that renders a blank card is not a choice. A and
-     C are always available. */
-  const sw = el('div', 'eg-vars', '');
-  sw.setAttribute('role', 'group');
-  SHARE_VARIANTS.forEach(v => {
-    const b = el('button', 'eg-var' + (v === SHARE_VARIANT ? ' is-on' : ''), esc(SHARE_TAB[v]));
-    b.type = 'button'; b.dataset.v = v;
-    b.setAttribute('aria-pressed', v === SHARE_VARIANT);
-    if (v === 'b' && !tops.length) b.disabled = true;
-    pressable(b).addEventListener('click', () => {
-      if (b.disabled) return;
-      SHARE_VARIANT = v;
-      paintCard();
-      $$('.eg-var', sw).forEach(x => {
-        x.classList.toggle('is-on', x.dataset.v === v);
-        x.setAttribute('aria-pressed', x.dataset.v === v);
-      });
-    });
-    sw.appendChild(b);
+  /* ---- the carousel: three slots, absolutely placed, one transform ----
+     The rail is LTR on purpose: slot i sits at -i·step, so the RTL order
+     (C on the right, then D, then E to its left) is arithmetic rather
+     than a bidi question, and the swipe direction falls out with it. */
+  let step = 0, k = 1, drag = null;
+  const slots = SH_KINDS.map(kind => {
+    const s = el('div', 'sh-slot'); s.dataset.k = kind;
+    s.innerHTML = '<div class="sh-hold"><div class="sh-scale"></div></div>';
+    rail.appendChild(s);
+    return s;
   });
-  c.appendChild(sw);
-  requestAnimationFrame(() => sw.classList.add('is-in'));
-
-  /* BEAT 5 · the buttons arrive last and stay. Nothing is appended after
-     them, so this is the end of the screen and of the game. */
-  await egStep(T.f5CoinHold);
-  const acts = el('div', 'eg-acts eg-acts--exit');
-  /* TWO DOORS AND NOTHING AFTER THEM. The map is the primary — it is
-     where every topic can be reopened, and openTopic()'s existing
-     fallback already replays a finished one. The secondary names ONE
-     topic rather than saying "replay a topic" abstractly, and the one it
-     names is the player's own top allocation: the only non-arbitrary
-     choice available, and a callback to the decision they just made. It
-     is absent when nothing was allocated, because there is then no
-     topic this screen has any business naming. */
-  if (top) {
-    const again = el('button', 'eg-clear',
-      'לשחק שוב: ' + top.t.label);                                    /* TAMAR */
-    again.type = 'button';
-    pressable(again).addEventListener('click', () => {
-      showScreen('map'); openTopic(top.t.id);
+  const paintCards = () => slots.forEach(s => { $('.sh-scale', s).innerHTML = shCardHTML(s.dataset.k, SH_ASPECT); });
+  const place = () => {
+    const [W, H] = SH_ASPECTS[SH_ASPECT];
+    const tw = track.clientWidth, th = track.clientHeight;
+    if (!tw || !th) return;
+    /* the card takes the track's height, and its width follows; the width
+       is capped so a sibling's peek stays on screen at 360 */
+    const h = Math.min(th, (tw * 0.78) * H / W);
+    const w = h * W / H;
+    k = w / W; step = w + 14;
+    slots.forEach((s, i) => {
+      s.style.width = w + 'px'; s.style.height = h + 'px';
+      s.style.left = (-w / 2 - i * step) + 'px';
+      s.style.top  = ((th - h) / 2) + 'px';
+      $('.sh-scale', s).style.transform = 'scale(' + k + ')';
     });
-    acts.appendChild(again);
-  }
-  /* ITEM 20A · the share action. It sits above the two doors because it
-     is what this screen is for; the doors are the way off it. */
-  const share = el('button', 'r-b eg-shareb', esc(SHARE_ACT));         /* TAMAR */
-  share.type = 'button';
-  pressable(share).addEventListener('click', () => shareCard(share));
-  acts.insertBefore(share, acts.firstChild);
-  const back = el('button', 'p-c eg-go', 'חזרה למפה ›');               /* TAMAR */
+    go(SH_KINDS.indexOf(SH_KIND), true);
+  };
+  const go = (i, silent) => {
+    i = Math.max(0, Math.min(SH_KINDS.length - 1, i));
+    SH_KIND = SH_KINDS[i];
+    rail.style.transform = 'translateX(' + (i * step) + 'px)';
+    slots.forEach((s, j) => s.classList.toggle('is-cur', j === i));
+    $$('.sh-dot', dots).forEach((d, j) => {
+      d.classList.toggle('is-on', j === i);
+      d.setAttribute('aria-selected', j === i);
+    });
+    if (!silent) buzz(10);
+  };
+  /* the swipe. pointer events, one finger, a 40px threshold; the rail
+     follows the finger and snaps on release. touch-action:pan-y in CSS
+     keeps a vertical gesture the browser's. */
+  track.addEventListener('pointerdown', e => {
+    if (SH_BUSY) return;
+    drag = { x: e.clientX, i: SH_KINDS.indexOf(SH_KIND), moved: false };
+    rail.classList.add('is-drag');
+    track.setPointerCapture(e.pointerId);
+  });
+  track.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 4) drag.moved = true;
+    rail.style.transform = 'translateX(' + (drag.i * step + dx) + 'px)';
+  });
+  const drop = e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    rail.classList.remove('is-drag');
+    /* finger moves LEFT → the next card, which sits to the left */
+    go(drag.i + (dx < -40 ? 1 : dx > 40 ? -1 : 0));
+    drag = null;
+  };
+  track.addEventListener('pointerup', drop);
+  track.addEventListener('pointercancel', drop);
+
+  /* the dots: a pill for the active one, not a colour change */
+  SH_KINDS.forEach((kind, i) => {
+    const d = el('button', 'sh-dot'); d.type = 'button'; d.setAttribute('role', 'tab');
+    d.setAttribute('aria-label', SH_COPY.card + ' ' + (i + 1));              /* TAMAR */
+    pressable(d).addEventListener('click', () => go(i));
+    dots.appendChild(d);
+  });
+
+  /* the toggle: ONE control divided in two. The container carries the
+     keyline, the radius and the lift; the halves are flush at 0px and
+     the active fill is clipped to the rounded ends by overflow:hidden. */
+  [['916', SH_COPY.a916], ['45', SH_COPY.a45]].forEach(([a, label]) => {
+    const h = el('button', 'sh-tgh' + (a === SH_ASPECT ? ' is-on' : ''));
+    h.type = 'button'; h.dataset.a = a; h.setAttribute('role', 'radio');
+    h.innerHTML = '<i class="sh-tgm sh-tgm--' + a + '" aria-hidden="true"></i>' + label;
+    h.setAttribute('aria-checked', a === SH_ASPECT);
+    pressable(h).addEventListener('click', () => {
+      if (SH_BUSY || a === SH_ASPECT) return;
+      SH_ASPECT = a;
+      $$('.sh-tgh', tg).forEach(x => {
+        x.classList.toggle('is-on', x.dataset.a === a);
+        x.setAttribute('aria-checked', x.dataset.a === a);
+      });
+      paintCards(); place();
+    });
+    tg.appendChild(h);
+  });
+
+  /* the two buttons: equal 49px boxes, both rings painted OUTSIDE the box */
+  const mkBtn = (cls, label, icon) => {
+    const b = el('button', cls); b.type = 'button';
+    b.innerHTML = '<span class="sh-bl">' + esc(label) + '</span><span class="sh-ico">' + icon + '</span>';
+    return b;
+  };
+  const share = mkBtn('p-c sh-b sh-b--share', SH_COPY.share, SH_ICON.share);
+  const save  = mkBtn('r-b sh-b sh-b--save',  SH_COPY.save,  SH_ICON.save);
+  pressable(share).addEventListener('click', () => shRun(share, save, SH_COPY.sharing, shShare));
+  pressable(save ).addEventListener('click', () => shRun(save,  share, SH_COPY.saving,  shSave));
+  acts.append(share, save);
+  /* the way off the screen, quiet: the map is where every topic reopens */
+  const back = el('button', 'eg-clear sh-back', esc(SH_COPY.back));
+  back.type = 'button';
   pressable(back).addEventListener('click', () => goMap());
   acts.appendChild(back);
-  c.appendChild(acts);
-  requestAnimationFrame(() => acts.classList.add('is-in'));
+
+  paintCards();
+  place();
+  if (window.ResizeObserver) new ResizeObserver(place).observe(track);
+  else addEventListener('resize', place);
+  requestAnimationFrame(() => {
+    $('.eg-h2', c).classList.add('is-in');
+    place();
+    c.classList.add('is-in');
+  });
 }
 
 /* ===================== boot ========================================= */
@@ -6675,6 +7327,10 @@ function boot() {
   if (!PROFILE.avatarId && presets()[0]) PROFILE.avatarId = presets()[0].id;
   paintHudAvatar();
   pressable($('#hudAvatar')).addEventListener('click', () => {
+    /* T13 · SPENT BEFORE THE GUARD, NOT AFTER. The double-tap that lands
+       while 2b is already open is still a tap on the avatar, and a beacon
+       that survived it would be pulsing behind an open sheet. */
+    spendAvBeacon();                                             /* T13 */
     if ($('.stmodal[data-profile]')) return;
     profileModal();
   });

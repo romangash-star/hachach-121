@@ -235,6 +235,14 @@
      consequence rather than one compound arrival. */
   --t-mark-gap:  140ms;
   --t-panel-gap: 160ms;
+  /* ITEM 50 · THE VERDICT PILL'S OWN LANDING, and it is deliberately NOT
+     --t-stamp-land. The stamp falls for 360ms and the pill for 160: the
+     second beat has to read as smaller than the first, or the two become
+     one arrival again and item 47B's hold is spent for nothing.
+     --cm-rest IS READ BY proto.js TOO (CM_REST) — the throw on הלאה adds
+     the exit rotation to it. Retune it here and both follow. */
+  --t-cmark-land: 160ms;
+  --cm-rest:      -6deg;
   /* A-1 · THE PEEL. Three phases, all CSS.
      --t-peel      the sheet lifting and curling off the party line. 620ms
                    is slow enough to read as a physical action and short
@@ -516,7 +524,61 @@ body{
 .hud-coins .num{ direction:ltr; unicode-bidi:isolate; }
 .hud-coins.is-awarding{ animation:coin-bump var(--t-coin) var(--e-out); }
 @keyframes coin-bump{ 0%,100%{transform:none} 35%{transform:translateY(-3px) scale(1.04)} }
-.hud-you{ width:40px; height:40px; }
+/* ---- T13 · THE MAP AVATAR: A PERMANENT STROKE AND A ONE-SHOT BEACON.
+   THE GOLD IS --f5-gold, and it is the token the item asks for: the
+   finale board's 121st-vote marker paints .f5av's ring out of it and
+   .f5n.is-mine's numeral to match. It is declared once, at :root, in the
+   §5 block — aliased there rather than pointed at --primary precisely so
+   that "the marker gold" is addressable as one name, which is what makes
+   this reuse a reference and not a coincidence. On this branch its value
+   is #FFD60A.
+   THE RING IS .f5av's RING, at its small size: 2.5px of gold and 4px of
+   keyline, the same two numbers the strip and the plate use. The avatar
+   is now the same object in both places — it is the player, and the
+   player is marked the same way on the map as on the board.
+   border-radius is set because the ring is a box-shadow and the SVG's
+   own round shell does not give the BUTTON a shape to spread from. */
+.hud-you{
+  width:40px; height:40px; border-radius:50%;
+  box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5);
+}
+/* THE BEACON IS THE GOLD, NOT THE FINALE'S CREAM. --f5-glow is
+   245,227,170 — a warm yellow-cream — and it is reserved for the S-1
+   board; this is 255,214,10, the marker gold decomposed to a triple
+   because a spread shadow needs alpha and the token is a hex. The two are
+   not interchangeable and are not meant to look alike: one is a soft
+   warm wash on a dark board, this is a hard saturated ring on a 40px
+   sticker, and it stops.
+   IT PULSES OUT OF THE STROKE IT WILL LEAVE BEHIND. The animation's
+   floor IS the resting box-shadow above, so when the class comes off
+   nothing jumps: the beacon stops on the frame it is already on and the
+   ring is simply what remains.
+   THE CLASS IS ONLY EVER ON THE MAP — showScreen() puts it there and
+   takes it off — and the selector says so a second time, so a beacon can
+   never be left running on a screen this rule did not intend. */
+:root{ --av-beacon:255,214,10; }
+@keyframes av-beacon{
+  0%,100%{ box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5),
+                      0 0 10px 1px rgba(var(--av-beacon),.30),
+                      0 0 22px 4px rgba(var(--av-beacon),.13); }
+  50%    { box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5),
+                      0 0 16px 3px rgba(var(--av-beacon),.62),
+                      0 0 34px 9px rgba(var(--av-beacon),.28); }
+}
+.stage[data-screen="map"] .hud-you.is-beacon{
+  animation:av-beacon 2000ms ease-in-out infinite;
+}
+/* the same contract §5's board keeps: no motion, and it holds at the
+   midpoint rather than at the floor, so the beacon is still legible as a
+   beacon to somebody who has switched motion off. */
+@media (prefers-reduced-motion: reduce){
+  .stage[data-screen="map"] .hud-you.is-beacon{
+    animation:none;
+    box-shadow:0 0 0 2.5px var(--f5-gold), 0 0 0 4px rgba(0,0,0,.5),
+               0 0 16px 3px rgba(var(--av-beacon),.62),
+               0 0 34px 9px rgba(var(--av-beacon),.28);
+  }
+}
 /* A4 · the right slot holds whichever of the two is on this screen, and
    holds the SAME 40px box either way so the row never shifts when the
    avatar swaps for the ✕. */
@@ -1214,7 +1276,92 @@ body.no-ph .ph{ display:none !important; }
 .b2q{ font-family:var(--font-display); font-weight:900;
   font-size:30px; line-height:1.1; text-wrap:balance;
   color:#FBF7EE; text-align:center; margin:0;
-  margin-top:calc(26px - var(--ovgap)); max-width:100%; }
+  /* v26 · 26 -> 38. The 12px is room between the law-title link and the
+     question, and it is on the MARGIN rather than on padding for a
+     reason that is not cosmetic: .b2q is .b2q__tab's containing block,
+     and an absolutely positioned tab at bottom:100% anchors to the
+     PADDING box's top edge. padding-top:12px would leave the tab where
+     it is and push the text 12px out from under it, silently turning the
+     decided +11px descent into -1px. Measured on the board: the margin
+     moves the head-to-question gap 23.5 -> 35.5 and leaves the
+     question-to-buttons gap at 6.5, the line counts at 2/3 and the line
+     widths identical to the pixel. */
+  margin-top:calc(38px - var(--ovgap)); max-width:100%;
+  /* the tab's containing block. Changes no box. */
+  position:relative; }
+
+/* ---- v26 · THE תכלס TAB, ON THE QUESTION.
+   Decided on explorations/v26/tachles-tab.html; it replaces the tab that
+   was briefly built on the kraft tape, which is gone.
+   SHAPE GRAMMAR IS .ask-st__i's, THE MK CARD'S BLACK TAB — same #2E2A26
+   neutral ink, same white die-cut, same keyline outside it, same radius,
+   same display Black — with every dimension multiplied by 0.8 and
+   nothing rounded to a nicer number: 16.5 -> 13.2px type, 8/13/9 ->
+   6.4/10.4/7.2 padding, 3 -> 2.4 border, 2 -> 1.6 keyline, 12 -> 9.6
+   radius, 4 -> 3.2 extrusion. line-height stays 1.06, a ratio that
+   already scales. Rendered box 58.43 x 35.44.
+   +4deg, NOT -4. About the bottom-right corner the far end then rides UP
+   and the tab's lowest ink IS the anchor corner, which is what makes the
+   descent below a single number instead of a corner-dependent one. It
+   also lifts the tab off .b2head: at -4deg it dipped into the title's
+   band and eight of the sixteen titles collided with it.
+   THE +11px DESCENT IS THE WHOLE DECISION. Measured against the
+   question's real ink: SimplerPro Black's ל carries 21.72px of ascent at
+   30px and the tallest body letter beside it 16.95, so the ascender the
+   tab may rest on is 4.77px tall and nothing more. +11 puts the tab
+   1.72px into it with 3.05px still clear of the letter bodies. +8 never
+   reached the ascender; +14 cleared the bodies by 0.05px, which is a
+   rounding artefact and not a tolerance; +20 cut 5.95px into them.
+   translateY is 5.5 less than the descent because the glyph rect's top
+   sits 5.5px above .b2q's own border box.
+   THE HORIZONTAL IS NO LONGER A PROPERTY OF THE STRING. It was: anchored
+   to the column's start edge the tab hit 11-54px of the first word on
+   ten of the sixteen and nothing at all on six. It is now anchored to
+   line 1's own box — see placeQTab() in proto.js for why that needs a
+   runtime read and what it costs. */
+.b2q__tab{
+  /* v26f · left is written by placeQTab(), which puts it at line 1's
+     centre biased 30% of that line's width toward the start edge. The
+     0 here is a floor, not a position: it is overwritten in the same
+     tick the pane is appended, before a frame is painted.
+     translateX(-50%) is what makes `left` mean the tab's CENTRE, so the
+     placement never needs the tab's own width. It is listed BEFORE the
+     rotate, so it applies in the parent's frame after the rotation —
+     the rotate still pivots on transform-origin 100% 100% and the +11px
+     descent is untouched by the horizontal move. */
+  position:absolute; z-index:2; left:0; right:auto; bottom:100%;
+  transform:translateX(-50%) translateY(5.5px) rotate(4deg);
+  transform-origin:100% 100%;
+  display:block; white-space:nowrap; pointer-events:none;
+  background:#2E2A26; color:#F4F1E8;
+  font-family:var(--font-display); font-weight:900;
+  font-size:13.2px; line-height:1.06;
+  padding:6.4px 10.4px 7.2px; border-radius:9.6px;
+  border:2.4px solid var(--edge);
+  box-shadow:0 0 0 1.6px var(--keyline), 0 3.2px 0 rgba(0,0,0,.34);
+}
+/* ---- v26 · THE PROMPT'S TAIL, T-a.
+   display:block is the requirement, not a preference: the tail is its
+   own line at every width and must never run back inline. 21px Black
+   against the claim's 30px Black — the board drew a 22/400 and an 18/400
+   beside it and this is the one that stays in the display voice.
+   The 6px is the declared gap; measured ink to ink it reads as 12.0px
+   with the leading either side, baseline to baseline 31.0. */
+.b2q__tail{
+  /* v27 PART 1 · 6px -> 0. The tail is part of the question and has to
+     group with the claim, not float between the claim and the buttons.
+     It read as floating because the two gaps matched: 11.99px ink-to-ink
+     above it against 6.5px below. MEASURE INK, NOT BOXES — the 30px
+     claim's line box hangs ~5.5px of leading below its last glyph and
+     the 21px tail carries its own above, so more than half of that 12px
+     was leading and only 6 of it was the margin. Removing the margin
+     entirely lands the ink gap at the ~6px asked for, which is now
+     visibly tighter than the 6.5px below rather than double it.
+     Neither font size moved; both are decided. */
+  display:block; margin-top:0;
+  font-family:var(--font-display); font-weight:900;
+  font-size:21px; line-height:1.15;
+}
 /* ITEM 34c · .b2bill is retired — the bill name is no longer its own
    line; the tap target is the title inside .b2head. See .b2title-link. */
 /* §3.2 .b2consent IS GONE from the markup — "את התוצאה נגלה בסוף ›" was
@@ -1581,6 +1728,15 @@ body.no-ph .ph{ display:none !important; }
 
 .gt{ background:rgba(55,196,255,.22); border-bottom:2px dotted #9FD9F2;
   color:#EFECE4; padding:0 3px; font-weight:900; cursor:pointer; }
+/* T12 · THE SAME MARKER ON PAPER. .gt was written for the dark board and
+   its near-white ink is invisible on --paper; the terms now live inside
+   the sticker, so the marker needs the light-ground half it never had.
+   Same hue, same dotted underline, ink flipped — it stays recognisably
+   the one marker rather than becoming a second convention. */
+.stmodal__body .gt{
+  color:var(--ink); background:rgba(55,196,255,.30);
+  border-bottom-color:#3EA6D8;
+}
 /* §3.1 .gdef IS GONE. Tapping a term opened a plain white panel inline,
    under the term, inside the paragraph — so the sentence the player was
    reading reflowed around it as it opened and again as it shut. The term
@@ -1745,7 +1901,7 @@ body.no-ph .ph{ display:none !important; }
 /* the two states differ in FILL, in how they are set down, and in whether
    they carry the accent — see below. Same object, same edge. */
 .bnr--vote{ background:var(--paper); transform:rotate(1.2deg); }
-.cmark.bnr{ background:var(--cm); transform:rotate(-1.6deg); border-radius:999px; }
+.cmark.bnr{ background:var(--cm); transform:rotate(var(--cm-rest)); border-radius:999px; }
 
 /* THE GLOW IS THE PINNED VOTE'S, NOT THE CHIP'S, and that is a meaning
    distinction rather than a colour fix. The pinned vote persists for four
@@ -1877,6 +2033,53 @@ body.no-ph .ph{ display:none !important; }
   z-index:0; pointer-events:none;
   background:linear-gradient(to top,#6E6242 0%,#514A38 38%,rgba(64,62,58,0) 100%);
 }
+/* =====================================================================
+   v28d · THE HAMIGDALOR LOCKUP · placement D, size S2, no filter
+   D is the bottom END-EDGE corner — physically left, which in RTL is the
+   end. .screen is position:relative and .sc-intro carries no horizontal
+   padding, so inset 0 here IS the stage's shipped 16px/12px gutter line:
+   the same anchor the v28 board measured D at.
+
+   SIZED AGAINST THE STAGE, NOT AGAINST ITS OWN COLUMN. S2 is 28% of the
+   STAGE width applied to the INK box, and the ink box is now the file box
+   — the derivative was trimmed to the master's true alpha bounds
+   (5272x1312 of 5525x2125), so height:auto gives the ink aspect directly
+   and none of the board's negative-offset correction is needed.
+   T17 · S2 MINUS 20%: 28% -> 22.4% of the stage, Lion's call.
+   .sc-intro is the stage minus its 16px gutters, so 22.4% of the stage is
+   22.4% of this box plus 0.224 x 32 = 7.168px. Exact at every width in
+   portrait, where the horizontal safe-area insets are 0; a landscape
+   phone with side insets would need the 8.96 to grow with them, and this
+   app is portrait-only.
+
+   NO FILTER, AND THAT IS THE CORRECT IMPLEMENTATION OF "PURE WHITE".
+   The artwork is already #FFFFFF (wordmark + lamp) and #A6A6A6 (beam);
+   the white tint's channel multiply is the identity matrix, so applying
+   feColorMatrix would cost a filter pass to change nothing. Leaving it
+   off is also what best protects the two tones — mask-image plus a
+   background-color would flatten them into one flat fill and take the
+   beam with it, which is the thing this lockup is built not to do.
+   IF THE TINT EVER MOVES OFF WHITE, feColorMatrix is the mechanism and
+   the board's #tint-paper is the worked example. Not today.
+
+   pointer-events:none: it sits over the intro's lower third, where the
+   CTA is, and it is decoration, not a control.
+   ===================================================================== */
+/* T17b · THE INSETS ARE EQUAL NOW. left:0 is already the stage's 16px
+   gutter, because .sc-intro carries no horizontal padding of its own;
+   bottom:0 was the stage's 12px one, so the mark sat 16 from the side and
+   12 from the floor. At 28% that 4px was 15% of the mark's height and
+   invisible. At 22.4% the mark is 20.02px tall at 360 and the same 4px is
+   a fifth of it — the bottom read tighter than the side and the thing
+   looked like it had slipped rather than been placed.
+   4px HERE, NOT 16, because this is measured from .sc-intro's padding
+   box: 12 + 4 = 16 from the stage's edge, the same number as the side. */
+.i-logo{
+  position:absolute; z-index:7; left:0; bottom:4px;
+  width:calc(22.4% + 7.168px); height:auto;
+  display:block; pointer-events:none;
+}
+
 .i-tag{ flex:none; position:relative; z-index:5; margin:clamp(6px,1.5vh,16px) 0; }
 /* THE TITLE AND THE CHAIR ARE ONE COMPOSITE STICKER. The chair sits ON the
    letters and both carry the same white die-cut edge — the overlap of the
@@ -1973,8 +2176,14 @@ body.no-ph .ph{ display:none !important; }
    THE MEASURE AND THE LEADING COME WITH IT. At the question's size this is
    now a paragraph, not a label: 20ch keeps the line count honest at 360
    and 1.3 gives SimplerPro's tall em box somewhere to sit. */
+/* T1b · 400 -> 900. At 400 it was the only line on the screen and read
+   as a caption under the title rather than as the sentence the screen is
+   for. The family ships 400 and 900 and nothing between, so this is the
+   only step available. Size, the 20ch measure and the 1.3 line-height are
+   untouched — the measure is what holds it at three lines, and at 900 the
+   glyphs are wider, so dropping it would have re-broken the lines. */
 .i-sub{ margin:clamp(10px,2.4vh,20px) 0 0; font-size:clamp(21px,3.1vh,26px);
-  font-family:var(--font-body); font-weight:400; line-height:1.3;
+  font-family:var(--font-body); font-weight:900; line-height:1.3;
   max-width:20ch; text-wrap:balance;
   color:#EFECE4; position:relative; z-index:4; flex:none;
   text-shadow:0 1px 5px rgba(0,0,0,.82), 0 2px 16px rgba(0,0,0,.62); }
@@ -2057,7 +2266,14 @@ body.no-ph .ph{ display:none !important; }
    Adding 12 above and removing 12 below leaves the group exactly as tall
    as it was, so nothing above the CTA moves and the CTA moves the full
    12. Verified: title top unchanged, CTA top +12 at every width. */
-.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 clamp(0px,calc(2.4vh - 12px),8px);
+/* T17 · THE GROUP RISES 12px, AND IT IS PAID FOR BELOW THE CTA.
+   .sc-intro is justify-content:center, so the stack's position is a
+   function of its height: adding X below the last item pushes the
+   centred group UP by X/2 — measured at 0.5, which is why 24px buys 12.
+   IT IS ADDED, NOT TAKEN. Every margin above the CTA is untouched, so
+   nothing in the composed group gets tighter; the 24 goes on the one
+   margin that has nothing under it but the gutter the logo sits in. */
+.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 calc(24px + clamp(0px,calc(2.4vh - 12px),8px));
   width:280px; font-size:clamp(21px,3.1vh,26px);
   position:relative; z-index:6; flex:none; }
 
@@ -2730,54 +2946,91 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    beats later. It carries correctness by COLOUR and by the word, never
    by a tick — the map already uses ✓ for a completed topic and a tick
    here would be the same glyph meaning something else. */
-/* §4c · THE BAND COMES OFF FOR THE MARK. .chyron keeps its reserved 44px
-   box — that is what stops the card resizing across the answer — but
-   under .is-mark it drops the fill, the neon stroke and the padding, so
-   there is no empty container around the chip. */
-.chyron.is-mark{
-  background:none !important; box-shadow:none !important;
-  padding-inline:0 !important; justify-content:center;
-  backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
-}
+/* §4c's .chyron.is-mark IS GONE WITH ITEM 50. It existed to strip the
+   band from around the chip while the chip was IN the chyron; the chip is
+   on the card now and the class has no remaining setter. The reserved
+   box is .chyron-slot and was never this rule's business. */
 /* §4d · the avatar, so the mark is visibly the PLAYER's */
 .cmark__av{ width:26px; height:26px; flex:none; line-height:0; }
 .cmark__av svg{ width:100%; height:100%; display:block; }
 /* the correctness chip is now .bnr + this: the fill, the type and the
    entrance. Everything about its edge comes from .bnr. */
-/* ITEM 47B · THE PILL IS THE SECOND BEAT, AND IT ARRIVES ON ITS OWN.
-   It was a 380ms transition that started 120ms after a 340ms stamp; it is
-   now a 200ms animation 140ms after a 360ms one, so the two motions never
-   overlap and the pill reads as the consequence of the stamp rather than
-   as part of the same arrival.
-   SCALE ONLY, WITH A SMALL OVERSHOOT — .9 -> 1.04 -> 1 on the stamp's own
-   rebound curve. The old entrance also dropped 6px, which at this size
-   read as the pill falling in from somewhere; there is nowhere above it
-   for it to fall from.
-   rotate(-1.6deg) IS RESTATED AT EVERY FRAME because it is the pill's
-   resting angle from .cmark.bnr — drop it from one keyframe and the
-   animation interpolates the pill straight. */
+/* =====================================================================
+   ITEM 50 · THE PILL MOVES ONTO THE STAMP'S LOWER EDGE · v25 P5
+   Banner-style across the disc, 4px higher than the board's P5.
+
+   THE TWO NUMBERS ARE DERIVED, NOT COPIED, and are written as arithmetic
+   so the derivation survives. .d2--claim is top:20px left:-26px at 156px,
+   so its centre x is -26 + 78 = 52 and its lower edge is 20 + 156 = 176.
+   The pill is centred on that point and then lifted 4. If the stamp is
+   ever moved, these two lines are what has to move with it — which is
+   exactly why they name 20, -26 and 156 rather than 52 and 172.
+
+   translate, NOT transform, FOR THE CENTRING. They are separate
+   properties and compose in a fixed order (translate, then rotate, then
+   scale), so the tilt and the landing can own `transform` outright while
+   the centring is never at risk of being clobbered by a keyframe or by
+   the throw on הלאה. Doing this with transform:translate(-50%,-50%)
+   would mean restating it in six places.
+
+   z-index 13: ABOVE the disc's 12, BELOW the explanation panel's 14. The
+   panel rises over the card's LOWER portion 400ms later and never reaches
+   y=172, so the order only matters if the panel is ever grown. */
 .cmark{
   font-family:var(--font-display); font-weight:900; font-size:15px;
+  position:absolute; z-index:13;
+  left:calc(-26px + 156px / 2);        /* the disc's centre x  = 52  */
+  top:calc(20px + 156px - 4px);        /* its lower edge, -4px = 172 */
+  translate:-50% -50%;
   opacity:0;
 }
-.cmark:not(.is-in){ transform:rotate(-1.6deg) scale(.9); }
+/* ITEM 50 · A STAMP-LIKE DROP OF ITS OWN, 160ms, ON d2-land-mk's SHAPE.
+   Not a copy of the stamp's numbers — a smaller version of its gesture:
+   accelerate down from 1.6, hit 1.0 and snap the rotation on the SAME
+   frame the disc does (55%), rebound to 1.08, settle. Item 47B's 200ms
+   scale-only entrance is retired with it; the pill has somewhere to fall
+   from now, so it falls.
+   THE ROTATION STARTS 8deg OFF ITS REST and resolves to it — the same
+   relationship d2-land-mk has, where -6 resolves to 0. Here rest is
+   itself -6, so the pill enters at -14.
+   THE REST ANGLE IS RESTATED AT EVERY FRAME. Drop it from one and the
+   animation interpolates the pill straight, which is how the tilt was
+   lost the first time this block was written. */
+.cmark:not(.is-in){ transform:rotate(calc(var(--cm-rest) - 8deg)) scale(1.6); }
 .cmark.is-in{
   opacity:1;
-  animation:cmark-in 200ms cubic-bezier(.25,.9,.35,1) both;
+  animation:cmark-land var(--t-cmark-land) linear both;
 }
-@keyframes cmark-in{
-  0%   { transform:rotate(-1.6deg) scale(.90); opacity:0 }
-  55%  { transform:rotate(-1.6deg) scale(1.04); opacity:1 }
-  100% { transform:rotate(-1.6deg) scale(1); opacity:1 }
+@keyframes cmark-land{
+  0%   { transform:rotate(calc(var(--cm-rest) - 8deg)) scale(1.6); opacity:0;
+         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
+  6%   { opacity:1;
+         animation-timing-function:cubic-bezier(.5,0,.75,.2) }
+  55%  { transform:rotate(var(--cm-rest)) scale(1); opacity:1;
+         animation-timing-function:cubic-bezier(.25,.9,.35,1) }
+  75%  { transform:rotate(var(--cm-rest)) scale(1.08);
+         animation-timing-function:cubic-bezier(.35,0,.45,1) }
+  100% { transform:rotate(var(--cm-rest)) scale(1) }
+}
+/* ITEM 50 · IT LEAVES WITH THE CARD. claimReveal() writes the throw
+   inline, including the rest angle; this only supplies the clock. The
+   same curve and duration the card and the stamp exit on. */
+.cmark.is-leaving{
+  transition:transform var(--t-card-exit) var(--e-in), opacity 100ms linear 220ms;
 }
 /* ITEM 47 · BOTH IN THEIR FINAL STATE, NO MOTION AND NO STAGGER. The
    waits are skipped in claimReveal() too, so the two arrive together
    rather than 500ms apart with the motion stripped out. `animation:none`
    kills the NAME, which the global reduce rule's animation-duration
-   cannot override. */
+   cannot override.
+   ITEM 50 · AND THE PILL'S PRE-ROLL GOES WITH IT. .cmark:not(.is-in) now
+   carries scale(1.6) and an 8deg offset, which under `animation:none`
+   would otherwise be what a reduced-motion player SEES for the one frame
+   before .is-in is added — a pill 60% too big at the wrong angle. It is
+   pinned to the resting transform instead. */
 @media (prefers-reduced-motion: reduce){
   .d2--claim, .mf-b.b1card.is-stamped, .cmark.is-in{ animation:none; }
-  .cmark:not(.is-in){ transform:rotate(-1.6deg); }
+  .cmark:not(.is-in){ transform:rotate(var(--cm-rest)); }
 }
 .cmark--ok { --cm:var(--verdict-correct); }
 .cmark--sur{ --cm:var(--verdict-surprise); }
@@ -3107,38 +3360,67 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .stmodal__box:has(.sthero__q) .stmodal__title{ font-size:20px; }
 
 /* =====================================================================
-   ITEM 43 · THE FIRST-ARRIVAL STICKER, AND ITS THREE UNWRITTEN STRINGS
-   All three are Tamar's and none of them is written. They carry the
-   hazard treatment ph() uses so they read as placeholders at a glance and
-   cannot be mistaken for copy — but they are NOT hidden by body.no-ph,
-   which is the second time this file makes that exception (the first is
-   .pr-ph, the third beat 5's rejected verb). The reason is the same every
-   time: hiding a marker whose host is the only thing in the slot does not
-   leave a cosmetic gap, it leaves an empty screen. A first-run sticker
-   with a blank title, a blank body and a blank button is worse than one
-   that says out loud what it is waiting for.
-   THE BODY IS THE SLOT, NOT THE STRING. The item asks for two lines of
-   body maximum; that is a constraint on Tamar's sentence, and the brief
-   standing in for it is longer than the sentence will be. It is not
-   clamped here — clamping would hide the very text that says what is
-   missing. See the report for the measured line count at each width. */
-.stmodal[data-mapintro] .stmodal__title,
-.stmodal[data-mapintro] .stmodal__body{
-  background-color:var(--primary);
-  background-image:repeating-linear-gradient(45deg,#FFE03D 0 8px,var(--primary) 8px 16px);
-  color:var(--ink); border:2px dashed var(--ink); border-radius:6px;
-  padding:6px 10px 7px;
-}
-/* the button keeps P-C's own fill — it is already the one yellow in the
-   system — so the dash is what marks it, not a second yellow on top. */
-.stmodal[data-mapintro] .mi-go{
-  border:2px dashed var(--ink);
-  margin-top:4px;
-}
+   ITEM 43 · THE FIRST-ARRIVAL STICKER
+   ALL THREE STRINGS ARE WRITTEN NOW, so the hazard treatment is gone.
+   It was the dashed-yellow marker ph() uses, carried on the title, the
+   body and the button because none of them had copy and a first-run
+   sticker with three blank slots is worse than one that says out loud
+   what it is waiting for. T2 brought the sentence and T14 the button, so
+   the marker has nothing left to mark: real copy dressed as a
+   placeholder reads as an unfinished screen.
+   THE RULE ITSELF IS NOT TOUCHED. ph() and .pr-ph are untouched and go on
+   marking genuine placeholders everywhere else; what is removed is this
+   modal's own opt-in to them, which is where it always lived — these
+   selectors were scoped [data-mapintro] from the day they were written.
+   The body and the button now render in the shipped card language: the
+   sticker's own body type, and P-C's yellow with its die-cut and keyline.
+   ===================================================================== */
 /* the body is a scroller in the base component, for the law's long
-   summary. Here it holds two lines and must not grow its own scrollbar
-   around a placeholder. */
-.stmodal[data-mapintro] .stmodal__body{ overflow:visible; text-align:center; }
+   summary. Here it holds one sentence and must not grow its own scrollbar
+   around it. */
+/* T16 · THE BODY IS BIGGER, AND ONLY HERE. --fs-meta is 13px and it is
+   the right size for the law's long summary and a glossary definition —
+   reference text somebody has chosen to open. This modal is neither: it
+   is one instruction, shown once, unbidden, to somebody who has just
+   arrived. 15px is the step that makes it read as an instruction without
+   reaching --fs-body's 17, which would put it level with the law modal's
+   own heading.
+   SCOPED, NOT EDITED. .stmodal__body's 13px is shared with lawModal,
+   glossModal and moreModal (profileModal and inviteModal pass no body at
+   all), so the shared declaration is untouched and this overrides it for
+   [data-mapintro] alone. */
+.stmodal[data-mapintro] .stmodal__body{
+  overflow:visible; text-align:center; font-size:15px;
+}
+/* T16 · THE TITLE COMES BACK THROUGH THE :empty RULE, NOT AROUND IT.
+   T2 collapsed this slot because the copy was one sentence and there was
+   no string for a heading; the rule it used keys on :empty, so the slot
+   reappears on its own the moment mapIntroModal() passes a title. The
+   :empty rule below is unchanged and still earns its place — it is what
+   stops an empty <h2> taking the box's gap if the title is ever removed
+   again.
+   18px, BETWEEN THE TWO THINGS IT SITS BETWEEN. The body is now 15 and
+   this modal's heading would otherwise be 20: .stmodal__box:has(.sthero__q)
+   bumps a title on a "?"-hero sticker, and this modal is exactly that.
+   20 reads as the law modal's voice — a document announcing itself; 18
+   is a question being asked. The two selectors tie at (0,3,0), so this
+   one wins on source order, which is why it lives below that rule and
+   not above it. */
+.stmodal[data-mapintro] .stmodal__title{
+  font-size:18px;
+}
+/* T2 · the title slot has no string — the copy is one sentence and it
+   lives in the body. stickerModal() always emits the <h2>, so :empty is
+   what keeps an empty heading from taking the box's gap. Scoped here and
+   keyed on :empty, so the day a title string exists it simply appears. */
+.stmodal[data-mapintro] .stmodal__title:empty{ display:none; }
+/* the button keeps P-C's own geometry; only the 4px that separated it
+   from the body survives from the placeholder build. */
+/* T17 · +8px between the sentence and the button. Measured from the
+   body's last-line INK to the button's painted top edge, which is the
+   edge the eye reads on a filled object: 15.51 -> 23.51px. The 4px was
+   the only thing left from the placeholder build. */
+.stmodal[data-mapintro] .mi-go{ margin-top:12px; }
 
 /* =====================================================================
    B2-4 · THE ASK STICKER
@@ -3262,28 +3544,47 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   margin:0; font-family:var(--font-display); font-weight:900;
   font-size:34px; line-height:1.05; color:#EFECE4; text-wrap:balance;
 }
+/* T17 · THE MEASURE IS NARROWED TO THE BREAK, NOT FIGHTING IT.
+   renderIntro's <br> puts the break after the comma; left at the box's
+   320px the paragraph then had 120px of unused measure on the first line
+   and read as a sentence that had been cut rather than one that was set.
+   200px is the longer of the two lines (199.66) plus a third of a pixel:
+   the measure now describes the shape the copy actually takes.
+   IT IS A CEILING, NOT A FLOOR. If Tamar's rewrite loses its comma the
+   <br> is not inserted and the paragraph wraps normally inside 200px —
+   more lines, never one long one. */
 .b1intro__b{
   margin:0; font-size:var(--fs-body); font-weight:700; line-height:1.5;
-  color:#D8D2C4;
+  color:#D8D2C4; max-width:200px;
 }
-/* ITEM 27 · THE BUTTON COMES IN TO THE PARAGRAPH'S OWN MEASURE. The two
-   already shared a 320px BOX — .p-c is width:100% and the box is at its
-   max-width — but the paragraph's widest inked line is 292.7px while the
-   button paints a solid bar plus its 4.6px keyline on each side, so it
-   read 36.5px wider than the copy above it. 284px + the 9.2px of ring is
-   293.2px of visible width: the same column, to within half a pixel.
+/* ITEM 27 · THE BUTTON COMES IN TO THE PARAGRAPH'S OWN MEASURE. It is
+   matched to the paragraph's widest INKED line, not to the box: .p-c
+   paints a solid bar plus a 4.6px keyline on each side, so the button's
+   visible width is its max-width plus 9.2px, and that is the number that
+   has to equal the line.
+   T17 · THE BREAK MOVED THE LINE AGAIN, AND THIS FOLLOWS IT. renderIntro
+   now breaks the sentence after its comma, so the paragraph is two lines
+   of 199.66 and 190.30 rather than one of 297.3 and a short remainder.
+   The widest inked line is 199.66px. 190px + the 9.2px of ring is 199.2:
+   a match to within 0.46px, and the closest an integer gets — 191 lands
+   at 200.2, or +0.54.
+   The history, so the number is not re-derived from scratch next time:
+   284 matched 292.7 (T15's predecessor), 289 matched 297.3 (T15), 190
+   matches 199.66 (T17).
    Fixed rather than fluid because it is matching an inked line, and that
-   line is 292.7px at all three test widths — the paragraph wraps
-   identically at 390, 375 and 360.
-   ITEM 27 · AND THE GAP ABOVE IT OPENS. .b1intro__box's gap is 16px
-   between every child; margin-top adds 8 to this one pair only, so the
-   title-to-paragraph gap stays 16 and the paragraph-to-button gap becomes
-   24 — the 1.5x the brief asked for, applied where the eye needs the
-   break between reading and acting. */
+   line is the same at 390, 375 and 360 — the break is explicit now, so
+   the paragraph cannot wrap differently between them.
+   T17 · AND THE GAP OPENS FURTHER. .b1intro__box's gap is 16px between
+   every child; margin-top adds to this one pair only. ITEM 27 set it to
+   8, for 24 — 1.5x the title gap. At 8 the button read as attached to
+   the sentence once both had narrowed to the same 200px column. 20 gives
+   36px box to box, 2.25x the title gap, and 39.8px from the paragraph's
+   last ink to the button's painted edge: title and body group, and the
+   button is plainly the separate act. */
 .b1intro__go{
   min-width:170px;
-  max-width:284px;
-  margin-top:8px;
+  max-width:190px;
+  margin-top:20px;
 }
 
 /* A7 · the avatar inside the pinned own-vote band, at the leading edge */
@@ -3600,12 +3901,21 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    ===================================================================== */
 
 /* everything but the chair goes. The plaza gradient is part of the
-   building scene, so it leaves with it. */
+   building scene, so it leaves with it.
+   T16 · AND THE LOCKUP GOES WITH THEM. v28d added .i-logo to the intro
+   and the loading beat reuses #scIntro — it does not build a screen of
+   its own, it fades this one down to the chair — so the credit was
+   sitting on the loading screen, alone with the chair, which is the one
+   place it was never meant to be. It joins the list rather than getting
+   a display:none of its own: the beat's whole grammar is that everything
+   but the chair fades on the same clock, and a mark that vanished
+   instantly would be the only thing on the screen that cut. */
 .sc-intro.is-loading .i-title,
 .sc-intro.is-loading .i-sub,
 .sc-intro.is-loading .i-para,
 .sc-intro.is-loading .i-stage,
 .sc-intro.is-loading .i-cta,
+.sc-intro.is-loading .i-logo,
 .sc-intro.is-loading::before{
   opacity:0; pointer-events:none;
   transition:opacity var(--t-load-fade) linear;
@@ -3970,15 +4280,33 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 
 .f5shape{ margin:0; font-size:14px; font-weight:700; color:#E6E2D8; text-align:center; }
 
-/* ---- the reading. 15px, up from 12.5px. ---- */
+/* ---- the reading. T12 · THERE IS NO READING ON THE BOARD ANY MORE.
+   .f5exp is gone with the sentence it styled — the whole explanation is
+   in the modal now, where .stmodal__body carries it. Tombstone kept so
+   the next person searching for the class finds out where it went. ---- */
 .f5read{ margin:0; }
-.f5exp{ margin:0; font-size:15px; line-height:1.55; color:#F2EFE7; }
+
+/* T12 · .f5more IS A LINK NOW, NOT A PILL. It used to be a cream
+   capsule sitting under a paragraph, where it was plainly the smaller of
+   two things on the surface. Alone on the surface a capsule reads as the
+   beat's ACTION — and the beat's action is the yellow CTA directly
+   below it, so two filled controls in a row would compete for the same
+   press. Underlined display text is the same register as .f5back, which
+   is the other non-primary way off this screen, and it cannot be
+   mistaken for the CTA at any size.
+   THE BUTTON IS THE WHOLE PLATE. It keeps <button> — it opens a dialog
+   and navigates nowhere, so it is not an <a> — and takes the surface's
+   own padding as its own, so the entire lit block is the tap target and
+   there is no dead border around a 20px line. */
 .f5more{
-  display:inline-flex; align-items:center; gap:5px; margin-top:9px;
-  border:0; cursor:pointer; font-family:var(--font-display); font-weight:900;
-  font-size:14px; color:#131310; background:#D8D2C4; border-radius:999px;
-  padding:5px 13px 6px; box-shadow:0 2px 0 rgba(0,0,0,.4);
+  display:block; width:100%; border:0; background:none; cursor:pointer;
+  font-family:var(--font-display); font-weight:900; font-size:15px;
+  line-height:1.35; color:#E8E3D6; text-align:center;
+  text-decoration:underline; text-underline-offset:3px;
+  text-decoration-thickness:2px; text-decoration-color:rgba(232,227,214,.45);
+  padding:13px 14px 14px;
 }
+.f5more:active{ color:#FBF7EE; text-decoration-color:rgba(251,247,238,.8); }
 
 /* ---- the coin moment ---- */
 /* OUT OF FLOW, because it is a MOMENT and not a block. In the column it
@@ -4256,8 +4584,9 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
    footnote. */
 .f5outcome{ display:flex; flex-direction:column; gap:7px; }
 .f5outcome .f5res, .f5outcome .f5shape{ margin:0; }
-.f5read{ padding:12px 14px 13px; }
-.f5read .f5more{ margin-top:11px; }
+/* T12 · the padding moved INTO .f5more (see above), so the surface sets
+   none of its own and the plate has no untappable margin. */
+.f5read{ padding:0; }
 
 /* ---- PART 4 · THE GLOW ----------------------------------------------
    WARM YELLOW-CREAM, and it is neither of the two colours it could have
@@ -4867,6 +5196,36 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    fallback. */
 .prof-gender{ display:flex; gap:9px; margin-top:7px; width:100%; }
 .prof-gender > .gchip{ flex:1; justify-content:center; padding-inline:6px; white-space:nowrap; }
+/* T17 · THE TWO CHIPS GET A KEYLINE, AND ONLY THESE TWO.
+   White on cream is 1.07:1 — measured — so the unselected chips had no
+   edge at all and read as raised paper rather than as controls. Every
+   other control on this card has one: the name field at
+   inset 0 0 0 2px rgba(19,19,16,.28) and the tweak button at
+   inset 0 0 0 2.5px rgba(19,19,16,.38). THOSE TWO ARE NOT THE SAME, and
+   the field's is the one taken here — same size of object, same white
+   fill on the same paper.
+   IT DOES NOT ERASE THE SELECTED STATE. Selection is not "has an edge":
+   .gchip.on paints a cream gap and then a SOLID BLACK 2.5px ring
+   OUTSIDE the chip. A 28% grey line inside it is a different colour, a
+   different weight and on the other side of the border box. The two
+   remain unmistakable — see the report's before/after.
+   SCOPED TO .prof-gender. .gchip is also the invitation sheet's row
+   (.inv-row > .gchip) and the sticker sheet's "any" option
+   (.gchip.bopt-any); neither is touched. */
+.prof-gender > .gchip{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 3px 0 rgba(0,0,0,.3);
+}
+.prof-gender > .gchip.on{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28),
+             0 0 0 3px #FBF7EE, 0 0 0 5.5px #131310, 0 4px 0 rgba(0,0,0,.32);
+}
+.prof-gender > .gchip:active{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 1px 0 rgba(0,0,0,.3);
+}
+.prof-gender > .gchip.on:active{
+  box-shadow:inset 0 0 0 2px rgba(19,19,16,.28),
+             0 0 0 3px #FBF7EE, 0 0 0 5.5px #131310, 0 2px 0 rgba(0,0,0,.32);
+}
 /* the board's .gchip, as a button, on paper: white so it reads as a
    sticker on the cream, the board's hard 3px shadow, and the board's
    double ring when it is on. Never a colour — a voice is not a verdict. */
@@ -5112,6 +5471,16 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
   box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 3px 0 rgba(0,0,0,.2);
   text-align:start;
 }
+/* T17 · THE PLACEHOLDER WAS LEFT-ALIGNED AND THE VALUE WAS NOT.
+   The input carries dir="auto", which resolves from the field's own
+   content — and an empty field has none, so it fell back to ltr and
+   text-align:start resolved to LEFT. The moment a Hebrew character was
+   typed dir flipped to rtl and the text jumped to the right edge.
+   Measured: empty -> direction ltr, after "דנה" -> direction rtl.
+   text-align:right pins both to the RTL flow of every other label on the
+   card. dir="auto" is kept, so a Latin name still reads left-to-right
+   within the field; it is only the alignment that stops moving. */
+.prof-field{ text-align:right; }
 .prof-field::placeholder{ color:#6B6759; font-weight:700; }
 .prof-field:focus{ outline:0; box-shadow:inset 0 0 0 2.5px var(--ink), 0 3px 0 rgba(0,0,0,.2); }
 /* THE CEILING IS IN PX WHILE THE KEYBOARD IS OPEN. The box's normal
@@ -5125,3 +5494,284 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    `max-height:100%` (.stmodal[data-profile] .stmodal__box), which is what
    lets that sheet fill the stage when no keyboard is up */
 .kb-open .stmodal .stmodal__box{ max-height:calc(var(--kb-vis, 100vh) - 2 * var(--sp-4)); }
+
+
+/* =====================================================================
+   v29h · THE SHARE SCREEN — beat 4 of the end-game. See egBeat4().
+   The column: title, the carousel track (takes what is left), the dots,
+   the aspect toggle, the two buttons. Nothing is ever laid over the card.
+   ===================================================================== */
+.eg-col--sh{ gap:0; justify-content:flex-start; padding-inline:clamp(12px,5vw,20px); }
+.sh-title{ flex:none; }
+
+/* the track owns the gesture; touch-action keeps a vertical drag the
+   browser's. The rail is LTR and zero-width at the track's centre, and the
+   slots are placed off it in JS — see place() in egBeat4() for why. */
+.sh-track{ flex:1; min-height:0; position:relative; overflow:hidden; margin-top:14px;
+           touch-action:pan-y; cursor:grab; -webkit-user-select:none; user-select:none; }
+.sh-rail{ position:absolute; left:50%; top:0; bottom:0; width:0; direction:ltr;
+          transition:transform var(--t-flip) var(--e-settle); }
+.sh-rail.is-drag{ transition:none; }
+.sh-slot{ position:absolute; transform:scale(.9); opacity:.5;
+          transition:transform var(--t-flip) var(--e-settle), opacity var(--t-flip) linear; }
+.sh-slot.is-cur{ transform:none; opacity:1; z-index:2; }
+/* the preview's frame: the same white edge, keyline and hard drop every
+   card in the game carries, at screen scale */
+.sh-hold{ position:relative; width:100%; height:100%; overflow:hidden; border-radius:4px;
+          box-shadow:0 0 0 3px var(--paper), 0 0 0 5px var(--keyline), 0 6px 0 rgba(0,0,0,.42); }
+.sh-scale{ position:absolute; left:0; top:0; transform-origin:0 0; }
+
+/* the dots: the active one is a PILL, not a colour change */
+.sh-dots{ display:flex; gap:7px; justify-content:center; margin-top:14px; flex:none; }
+.sh-dot{ width:7px; height:7px; border-radius:50%; background:var(--paper); opacity:.3;
+         border:0; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent;
+         transition:width var(--t-press) linear, opacity var(--t-press) linear; }
+.sh-dot.is-on{ opacity:1; background:var(--primary); width:20px; border-radius:4px; }
+
+/* the aspect toggle: ONE CONTROL DIVIDED IN TWO. A single container
+   carries the keyline, the radius and the lift; the halves are flush at
+   0px with no radius of their own, and overflow:hidden clips the active
+   fill to the container's rounded ends. THE LIFT IS ON THE CONTAINER —
+   overflow:hidden would clip a half's shadow away entirely, and one
+   setting lifts as one object (v29g, measured: step 0.1/255 across the
+   shared edge). 36px tall; 48px with its margin. */
+.sh-tg{ margin-top:12px; height:36px; box-sizing:border-box; flex:none; display:flex;
+        border:2px solid var(--paper); border-radius:999px; overflow:hidden;
+        background:transparent; box-shadow:0 3px 0 rgba(0,0,0,.4); }
+.sh-tgh{ flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+         margin:0; padding:0 12px; border:0; border-radius:0; cursor:pointer;
+         background:transparent; color:var(--paper);
+         font-family:var(--font-display); font-weight:900; font-size:13px; line-height:1;
+         -webkit-tap-highlight-color:transparent; }
+.sh-tgh.is-on{ background:var(--paper); color:var(--ink); }
+/* the little rectangle is the ratio itself, drawn to scale */
+.sh-tgm{ display:inline-block; border:2px solid currentColor; border-radius:2px; flex:none;
+         box-sizing:border-box; }
+.sh-tgm--916{ width:9px;  height:16px; }
+.sh-tgm--45 { width:13px; height:16px; }
+
+/* the two buttons. EQUAL 49px BOXES, and the ring painted OUTSIDE the box
+   on both: the primary already paints a 3px edge, a 4.6px keyline and a
+   4px extrusion as box-shadow; the secondary's R-B ring was inset and
+   contributed nothing outside its box, which read as a 4.6px mismatch on
+   a 0px layout difference. Its ring moves outside here (v29f). Icons
+   trail — last in the DOM, so RTL puts them at the physical left edge —
+   at 21px, 18px in from that edge on both. */
+.sh-acts{ margin-top:14px; display:flex; flex-direction:column; gap:10px; flex:none; }
+.sh-b{ height:49px; min-height:0; width:100%; box-sizing:border-box; padding:0 18px;
+       display:flex; align-items:center; justify-content:space-between; gap:9px;
+       font-size:19px; line-height:1; }
+.sh-b .sh-bl{ flex:1; text-align:center; white-space:nowrap; }
+.sh-ico{ width:21px; height:21px; flex:none; display:block; line-height:0; }
+.sh-ic{ width:21px; height:21px; display:block; }
+.r-b.sh-b{ box-shadow:0 0 0 2.5px var(--paper), 0 0 0 4.6px var(--keyline), 0 4px 0 rgba(0,0,0,.34);
+           transition:transform var(--t-press) linear, box-shadow var(--t-press) linear; }
+.r-b.sh-b:active{ transform:translateY(var(--z-press));
+           box-shadow:0 0 0 2.5px var(--paper), 0 0 0 4.6px var(--keyline), 0 0 0 rgba(0,0,0,.34); }
+/* the working state lives INSIDE the pressed button: the label swaps, the
+   icon slot holds the spinner, the box does not move. The primary drops
+   to #E8C40A so "working" reads without a colour the palette lacks. */
+.p-c.sh-b.is-busy{ background:#E8C40A; }
+.sh-b:disabled{ opacity:.45; cursor:default; }
+.sh-b:disabled:active{ transform:none; }
+.sh-spin{ display:block; width:21px; height:21px; box-sizing:border-box; border-radius:50%;
+          border:2.6px solid currentColor; border-top-color:transparent;
+          animation:sh-spin 820ms linear infinite; }
+@keyframes sh-spin{ to{ transform:rotate(360deg); } }
+.sh-back{ margin-top:2px; }
+@media (prefers-reduced-motion: reduce){
+  /* a dead button with no indicator is worse than a slow one. !important
+     because the global reduce rule (proto.css:3586) flattens every
+     animation to 1ms !important, and a 1ms spinner IS a dead button. */
+  .sh-spin{ animation-duration:2.4s !important; }
+  .sh-rail, .sh-slot, .sh-dot{ transition:none; }
+}
+
+/* =====================================================================
+   v29h · THE CARDS THEMSELVES, at 1080px. Lifted from explorations/v29
+   (board.html), namespaced ec-. THIS BLOCK IS ALSO THE EXPORT'S
+   STYLESHEET: shWarm() cuts it out of proto.css between the two markers
+   and inlines it into the SVG, so it must stay self-contained — every
+   token it uses is declared on .ec, and nothing in it references a rule
+   outside the markers. NO filter ANYWHERE in it: WebKit dropped
+   filter: drop-shadow() inside foreignObject on Safari 18.x, so the chair
+   shadow is baked into its asset and the ink lockup is a pre-inked PNG.
+   ===================================================================== */
+/* @ec-start */
+.ec{
+  --ink:#131310; --ink-soft:#4A4436; --ink-faint:#BEB9AC;
+  --ground:#2B2926; --paper:#FBF7EE; --kraft:#D8C9A8; --kraft-deep:#C0B190;
+  --edge:#FFFFFF; --keyline:rgba(0,0,0,.55);
+  --primary:#FFD60A; --primary-base:#C6A800;
+  --edge-w:8px; --key-w:13px; --drop:17px;
+  position:relative; overflow:hidden; flex:none; box-sizing:border-box;
+  direction:rtl; text-align:right;
+  font-family:'SimplerPro','Helvetica Neue',system-ui,sans-serif;
+  font-weight:900; color:var(--paper); background:var(--ground);
+  font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+  -webkit-font-smoothing:antialiased; line-height:1.2;
+}
+.ec *{ box-sizing:border-box; margin:0; padding:0; }
+.ec--916{ width:1080px; height:1920px; }
+.ec--45 { width:1080px; height:1350px; }
+/* the app's two-layer dot grid, at card scale */
+.ec--dots::before{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(rgba(255,255,255,.07) 1.4px,transparent 1.6px),
+    radial-gradient(rgba(0,0,0,.34) 1.4px,transparent 1.6px);
+  background-size:11px 11px,19px 19px; background-position:0 0,6px 8px;
+}
+.ec > *{ position:relative; z-index:1; }
+/* kraft, with the card's own 27px grid scaled up */
+.ec-kraft{
+  background:
+    repeating-linear-gradient(90deg,rgba(34,31,23,.05) 0 3px,transparent 3px 75px),
+    repeating-linear-gradient(rgba(34,31,23,.05) 0 3px,transparent 3px 75px),
+    var(--kraft);
+  color:var(--ink);
+}
+/* die-cut: white edge, keyline, hard drop — the .p-c ring at card scale */
+.ec-diecut{ box-shadow:0 0 0 var(--edge-w) var(--edge), 0 0 0 var(--key-w) var(--keyline),
+                       0 var(--drop) 0 rgba(0,0,0,.42); }
+
+/* ── furniture every card carries ─────────────────────────── */
+.ec-pad{ position:absolute; inset:0; display:flex; flex-direction:column; padding:96px 80px; }
+.ec--916 .ec-pad{ padding:150px 80px 170px; }        /* Stories UI safe band */
+.ec-top{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex:none; }
+.ec-tag{ font-size:40px; letter-spacing:-.01em; color:var(--paper); }
+.ec-logo{ height:44px; width:auto; display:block; }
+.ec-foot{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex:none;
+          margin-top:auto; }
+.ec-link{ direction:ltr; unicode-bidi:isolate; font-size:40px; letter-spacing:.01em;
+          color:var(--primary); }
+.ec-link--ink{ color:var(--ink); }
+.ec-ava{ width:104px; height:104px; border-radius:50%; overflow:hidden; flex:none; display:block;
+         background:var(--kraft);
+         box-shadow:0 0 0 6px var(--edge),0 0 0 10px var(--keyline),0 10px 0 rgba(0,0,0,.42); }
+.ec-ava svg{ width:100%; height:100%; display:block; }
+.ec-eyebrow{ font-weight:400; font-size:40px; line-height:1.25; color:var(--ink-faint);
+             letter-spacing:.005em; }
+.ec-eyebrow--ink{ color:var(--ink-soft); }
+
+/* ── C · the chair ─────────────────────────────────────────── */
+.ec-plaza{ position:absolute; left:0; right:0; bottom:0; height:52%; z-index:0;
+           background:linear-gradient(to top,#6E6242 0%,#514A38 38%,rgba(43,41,38,0) 100%); }
+.ec-c-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:24px; flex:none; }
+.ec-c-chair{ flex:1; display:flex; align-items:center; justify-content:center; min-height:0;
+             padding:20px 0; }
+/* THE SHADOW IS IN THE ASSET. knesset_chair_300_shadow.webp carries the
+   design's 0 20px 0 rgba(0,0,0,.34) painted into its alpha (11px at the
+   asset's 300px, 20px at this 560px), so there is no filter here to be
+   dropped. The extra 11 rows are the shadow's room; the chair's own
+   pixels are untouched. */
+.ec-c-chair img{ width:560px; max-height:100%; object-fit:contain; display:block; }
+.ec--45 .ec-c-chair img{ width:430px; }
+.ec-c-title{ font-size:112px; line-height:.94; letter-spacing:-.035em; flex:none; text-align:right; }
+.ec--45 .ec-c-title{ font-size:88px; }
+.ec-c-foot{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex:none;
+            margin-top:38px; }
+
+/* ── D · the record ────────────────────────────────────────── */
+.ec-d-doc{ position:absolute; inset:64px; border-radius:8px; }
+.ec--916 .ec-d-doc{ inset:120px 64px 140px; }
+.ec-d-in{ display:flex; flex-direction:column; padding:76px 68px; }
+.ec--45 .ec-d-in{ padding:52px 56px; }
+.ec-d-hd{ display:flex; align-items:flex-start; justify-content:space-between; gap:20px;
+          border-bottom:5px solid var(--ink); padding-bottom:26px; flex:none; }
+.ec--45 .ec-d-hd{ padding-bottom:18px; }
+.ec-d-kicker{ font-size:44px; line-height:1.1; color:var(--ink); }
+.ec--45 .ec-d-kicker{ font-size:36px; }
+.ec-d-meta{ font-weight:400; font-size:32px; color:var(--ink-soft); margin-top:8px; }
+.ec--45 .ec-d-meta{ font-size:27px; }
+.ec-d-body{ flex:1; min-height:0; display:flex; flex-direction:column; justify-content:flex-start;
+            padding-top:40px; }
+.ec-d-hero{ flex:none; }
+.ec-d-lab{ font-weight:400; font-size:40px; color:var(--ink-soft); }
+.ec--45 .ec-d-lab{ font-size:34px; }
+.ec-d-big{ display:flex; align-items:baseline; gap:14px; color:var(--ink);
+           font-size:250px; line-height:.86; letter-spacing:-.045em; margin-top:2px; }
+.ec--45 .ec-d-big{ font-size:150px; }
+.ec-d-u{ font-weight:400; font-size:74px; color:var(--ink-soft); }
+.ec-d-second{ font-weight:400; font-size:40px; color:var(--ink-soft); margin-top:18px; }
+.ec--45 .ec-d-second{ font-size:32px; margin-top:12px; }
+.ec-d-second b{ font-weight:900; color:var(--ink); }
+.ec-d-rule{ height:5px; background:var(--ink); opacity:.18; margin:38px 0 30px; }
+.ec--45 .ec-d-rule{ margin:24px 0 20px; }
+.ec-d-in .ec-eyebrow{ margin-bottom:22px; }
+.ec-d-foot{ flex:none; display:flex; align-items:center; justify-content:space-between; gap:24px;
+            border-top:5px solid var(--ink); padding-top:26px; }
+.ec--45 .ec-d-foot{ padding-top:18px; }
+
+/* ── E · type only ─────────────────────────────────────────── */
+.ec-e-wrap{ position:absolute; inset:0; display:flex; flex-direction:column; padding:150px 90px 170px; }
+.ec--45 .ec-e-wrap{ padding:74px 76px; }
+.ec-e-mid{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:60px 0; }
+.ec-e-rule{ height:7px; background:var(--paper); opacity:.5; }
+.ec-e-rule--end{ margin-top:52px; }
+.ec-e-lead{ font-weight:400; font-size:48px; color:var(--ink-faint); margin:40px 0 26px; }
+.ec--45 .ec-e-lead{ font-size:38px; margin-top:26px; }
+.ec-e-topic{ font-size:158px; line-height:.92; letter-spacing:-.04em; color:var(--paper); }
+.ec--45 .ec-e-topic{ font-size:128px; }
+.ec-e-mid .ec-pills{ margin-top:52px; }
+.ec--45 .ec-e-mid .ec-pills{ margin-top:34px; }
+.ec-e-rec{ margin-top:40px; font-weight:400; font-size:56px; color:var(--ink-faint); }
+.ec-e-rec b{ font-weight:900; color:var(--primary); font-size:74px; }
+
+/* ── the pill block ────────────────────────────────────────────
+   One pill per allocated topic: the name, a hairline, the coin count,
+   highest first. The scale steps down as the block grows (data-t). */
+.ec-pills{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; direction:rtl; width:100%;
+           margin-top:34px; flex:none; }
+.ec-pill{ display:inline-flex; align-items:center; flex:none;
+          background:var(--paper); color:var(--ink);
+          border-radius:39px; white-space:nowrap; max-width:100%;
+          box-shadow:0 0 0 5px var(--keyline), 0 10px 0 rgba(0,0,0,.38); }
+.ec-pill__n{ font-weight:900; overflow:hidden; text-overflow:ellipsis; }
+.ec-pill__r{ width:3px; align-self:stretch; background:var(--ink); opacity:.16; flex:none; }
+.ec-pill__c{ font-weight:900; color:var(--ink-soft); display:inline-flex; align-items:center;
+             gap:.28em; flex:none; font-variant-numeric:tabular-nums; }
+/* THE COIN IS .coin-t, THE REAL TOKEN (proto.css:2740 — 19px disc,
+   --primary fill, 2px inset keyline at 55%, 2px hard offset at 30%), here
+   in em so it follows the pill tier: keyline and offset stay at the
+   token's own 2/19 = 0.1053 of its diameter at every size. It is
+   border-radius + background + box-shadow — nothing in it is a filter. */
+.ec-pill .coin-t{ position:static; width:.72em; height:.72em; border-radius:50%; flex:none;
+                  background:var(--primary); will-change:auto;
+                  box-shadow:inset 0 0 0 .0758em rgba(0,0,0,.55), 0 .0758em 0 rgba(0,0,0,.3);
+                  margin-bottom:.0758em; }
+/* the player's own words: kraft, not paper, and the allocation screen's
+   own ✎ — marked as authored without being dressed as a ninth topic */
+.ec-pill--free{ background:var(--kraft); }
+.ec-pill__g{ opacity:.55; flex:none; }
+/* "עוד N" — an outline, not an object; it counts what is not shown */
+.ec-pill--more{ background:transparent; color:var(--ink-faint);
+                box-shadow:inset 0 0 0 4px currentColor; }
+/* tier a · 1-2 topics — full size, one per row */
+.ec-pills[data-t="a"]{ gap:18px; }
+.ec-pills[data-t="a"] .ec-pill{ font-size:54px; padding:20px 34px; gap:24px; }
+.ec-pills[data-t="a"] .ec-pill__r{ margin:0 2px; }
+.ec-pills[data-t="a"] .ec-pill__g{ font-size:44px; margin-left:-6px; }
+/* tier b · 3-4 */
+.ec-pills[data-t="b"]{ gap:14px; }
+.ec-pills[data-t="b"] .ec-pill{ font-size:42px; padding:15px 26px; gap:18px; border-radius:31px;
+                                box-shadow:0 0 0 4px var(--keyline),0 8px 0 rgba(0,0,0,.38); }
+.ec-pills[data-t="b"] .ec-pill__g{ font-size:34px; margin-left:-4px; }
+/* tier c · 5-6 */
+.ec-pills[data-t="c"]{ gap:11px; }
+.ec-pills[data-t="c"] .ec-pill{ font-size:33px; padding:11px 20px; gap:14px; border-radius:25px;
+                                box-shadow:0 0 0 3px var(--keyline),0 6px 0 rgba(0,0,0,.38); }
+.ec-pills[data-t="c"] .ec-pill__g{ font-size:27px; margin-left:-3px; }
+/* tier d · 7-8 — the floor before the cap takes over */
+.ec-pills[data-t="d"]{ gap:9px; }
+.ec-pills[data-t="d"] .ec-pill{ font-size:27px; padding:9px 16px; gap:11px; border-radius:21px;
+                                box-shadow:0 0 0 3px var(--keyline),0 5px 0 rgba(0,0,0,.38); }
+.ec-pills[data-t="d"] .ec-pill__g{ font-size:22px; margin-left:-3px; }
+/* on kraft the pill needs the die-cut edge to separate */
+.ec-d-in .ec-pill{ box-shadow:0 0 0 5px var(--edge),0 0 0 9px var(--keyline),0 10px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pills[data-t="b"] .ec-pill{ box-shadow:0 0 0 4px var(--edge),0 0 0 7px var(--keyline),0 8px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pills[data-t="c"] .ec-pill{ box-shadow:0 0 0 3px var(--edge),0 0 0 5px var(--keyline),0 6px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pills[data-t="d"] .ec-pill{ box-shadow:0 0 0 3px var(--edge),0 0 0 5px var(--keyline),0 5px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pill--free{ background:var(--kraft-deep); }
+.ec-d-in .ec-pill--more{ box-shadow:inset 0 0 0 4px currentColor; }
+/* @ec-end */
