@@ -5466,3 +5466,284 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    `max-height:100%` (.stmodal[data-profile] .stmodal__box), which is what
    lets that sheet fill the stage when no keyboard is up */
 .kb-open .stmodal .stmodal__box{ max-height:calc(var(--kb-vis, 100vh) - 2 * var(--sp-4)); }
+
+
+/* =====================================================================
+   v29h · THE SHARE SCREEN — beat 4 of the end-game. See egBeat4().
+   The column: title, the carousel track (takes what is left), the dots,
+   the aspect toggle, the two buttons. Nothing is ever laid over the card.
+   ===================================================================== */
+.eg-col--sh{ gap:0; justify-content:flex-start; padding-inline:clamp(12px,5vw,20px); }
+.sh-title{ flex:none; }
+
+/* the track owns the gesture; touch-action keeps a vertical drag the
+   browser's. The rail is LTR and zero-width at the track's centre, and the
+   slots are placed off it in JS — see place() in egBeat4() for why. */
+.sh-track{ flex:1; min-height:0; position:relative; overflow:hidden; margin-top:14px;
+           touch-action:pan-y; cursor:grab; -webkit-user-select:none; user-select:none; }
+.sh-rail{ position:absolute; left:50%; top:0; bottom:0; width:0; direction:ltr;
+          transition:transform var(--t-flip) var(--e-settle); }
+.sh-rail.is-drag{ transition:none; }
+.sh-slot{ position:absolute; transform:scale(.9); opacity:.5;
+          transition:transform var(--t-flip) var(--e-settle), opacity var(--t-flip) linear; }
+.sh-slot.is-cur{ transform:none; opacity:1; z-index:2; }
+/* the preview's frame: the same white edge, keyline and hard drop every
+   card in the game carries, at screen scale */
+.sh-hold{ position:relative; width:100%; height:100%; overflow:hidden; border-radius:4px;
+          box-shadow:0 0 0 3px var(--paper), 0 0 0 5px var(--keyline), 0 6px 0 rgba(0,0,0,.42); }
+.sh-scale{ position:absolute; left:0; top:0; transform-origin:0 0; }
+
+/* the dots: the active one is a PILL, not a colour change */
+.sh-dots{ display:flex; gap:7px; justify-content:center; margin-top:14px; flex:none; }
+.sh-dot{ width:7px; height:7px; border-radius:50%; background:var(--paper); opacity:.3;
+         border:0; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent;
+         transition:width var(--t-press) linear, opacity var(--t-press) linear; }
+.sh-dot.is-on{ opacity:1; background:var(--primary); width:20px; border-radius:4px; }
+
+/* the aspect toggle: ONE CONTROL DIVIDED IN TWO. A single container
+   carries the keyline, the radius and the lift; the halves are flush at
+   0px with no radius of their own, and overflow:hidden clips the active
+   fill to the container's rounded ends. THE LIFT IS ON THE CONTAINER —
+   overflow:hidden would clip a half's shadow away entirely, and one
+   setting lifts as one object (v29g, measured: step 0.1/255 across the
+   shared edge). 36px tall; 48px with its margin. */
+.sh-tg{ margin-top:12px; height:36px; box-sizing:border-box; flex:none; display:flex;
+        border:2px solid var(--paper); border-radius:999px; overflow:hidden;
+        background:transparent; box-shadow:0 3px 0 rgba(0,0,0,.4); }
+.sh-tgh{ flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+         margin:0; padding:0 12px; border:0; border-radius:0; cursor:pointer;
+         background:transparent; color:var(--paper);
+         font-family:var(--font-display); font-weight:900; font-size:13px; line-height:1;
+         -webkit-tap-highlight-color:transparent; }
+.sh-tgh.is-on{ background:var(--paper); color:var(--ink); }
+/* the little rectangle is the ratio itself, drawn to scale */
+.sh-tgm{ display:inline-block; border:2px solid currentColor; border-radius:2px; flex:none;
+         box-sizing:border-box; }
+.sh-tgm--916{ width:9px;  height:16px; }
+.sh-tgm--45 { width:13px; height:16px; }
+
+/* the two buttons. EQUAL 49px BOXES, and the ring painted OUTSIDE the box
+   on both: the primary already paints a 3px edge, a 4.6px keyline and a
+   4px extrusion as box-shadow; the secondary's R-B ring was inset and
+   contributed nothing outside its box, which read as a 4.6px mismatch on
+   a 0px layout difference. Its ring moves outside here (v29f). Icons
+   trail — last in the DOM, so RTL puts them at the physical left edge —
+   at 21px, 18px in from that edge on both. */
+.sh-acts{ margin-top:14px; display:flex; flex-direction:column; gap:10px; flex:none; }
+.sh-b{ height:49px; min-height:0; width:100%; box-sizing:border-box; padding:0 18px;
+       display:flex; align-items:center; justify-content:space-between; gap:9px;
+       font-size:19px; line-height:1; }
+.sh-b .sh-bl{ flex:1; text-align:center; white-space:nowrap; }
+.sh-ico{ width:21px; height:21px; flex:none; display:block; line-height:0; }
+.sh-ic{ width:21px; height:21px; display:block; }
+.r-b.sh-b{ box-shadow:0 0 0 2.5px var(--paper), 0 0 0 4.6px var(--keyline), 0 4px 0 rgba(0,0,0,.34);
+           transition:transform var(--t-press) linear, box-shadow var(--t-press) linear; }
+.r-b.sh-b:active{ transform:translateY(var(--z-press));
+           box-shadow:0 0 0 2.5px var(--paper), 0 0 0 4.6px var(--keyline), 0 0 0 rgba(0,0,0,.34); }
+/* the working state lives INSIDE the pressed button: the label swaps, the
+   icon slot holds the spinner, the box does not move. The primary drops
+   to #E8C40A so "working" reads without a colour the palette lacks. */
+.p-c.sh-b.is-busy{ background:#E8C40A; }
+.sh-b:disabled{ opacity:.45; cursor:default; }
+.sh-b:disabled:active{ transform:none; }
+.sh-spin{ display:block; width:21px; height:21px; box-sizing:border-box; border-radius:50%;
+          border:2.6px solid currentColor; border-top-color:transparent;
+          animation:sh-spin 820ms linear infinite; }
+@keyframes sh-spin{ to{ transform:rotate(360deg); } }
+.sh-back{ margin-top:2px; }
+@media (prefers-reduced-motion: reduce){
+  /* a dead button with no indicator is worse than a slow one. !important
+     because the global reduce rule (proto.css:3586) flattens every
+     animation to 1ms !important, and a 1ms spinner IS a dead button. */
+  .sh-spin{ animation-duration:2.4s !important; }
+  .sh-rail, .sh-slot, .sh-dot{ transition:none; }
+}
+
+/* =====================================================================
+   v29h · THE CARDS THEMSELVES, at 1080px. Lifted from explorations/v29
+   (board.html), namespaced ec-. THIS BLOCK IS ALSO THE EXPORT'S
+   STYLESHEET: shWarm() cuts it out of proto.css between the two markers
+   and inlines it into the SVG, so it must stay self-contained — every
+   token it uses is declared on .ec, and nothing in it references a rule
+   outside the markers. NO filter ANYWHERE in it: WebKit dropped
+   filter: drop-shadow() inside foreignObject on Safari 18.x, so the chair
+   shadow is baked into its asset and the ink lockup is a pre-inked PNG.
+   ===================================================================== */
+/* @ec-start */
+.ec{
+  --ink:#131310; --ink-soft:#4A4436; --ink-faint:#BEB9AC;
+  --ground:#2B2926; --paper:#FBF7EE; --kraft:#D8C9A8; --kraft-deep:#C0B190;
+  --edge:#FFFFFF; --keyline:rgba(0,0,0,.55);
+  --primary:#FFD60A; --primary-base:#C6A800;
+  --edge-w:8px; --key-w:13px; --drop:17px;
+  position:relative; overflow:hidden; flex:none; box-sizing:border-box;
+  direction:rtl; text-align:right;
+  font-family:'SimplerPro','Helvetica Neue',system-ui,sans-serif;
+  font-weight:900; color:var(--paper); background:var(--ground);
+  font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;
+  -webkit-font-smoothing:antialiased; line-height:1.2;
+}
+.ec *{ box-sizing:border-box; margin:0; padding:0; }
+.ec--916{ width:1080px; height:1920px; }
+.ec--45 { width:1080px; height:1350px; }
+/* the app's two-layer dot grid, at card scale */
+.ec--dots::before{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(rgba(255,255,255,.07) 1.4px,transparent 1.6px),
+    radial-gradient(rgba(0,0,0,.34) 1.4px,transparent 1.6px);
+  background-size:11px 11px,19px 19px; background-position:0 0,6px 8px;
+}
+.ec > *{ position:relative; z-index:1; }
+/* kraft, with the card's own 27px grid scaled up */
+.ec-kraft{
+  background:
+    repeating-linear-gradient(90deg,rgba(34,31,23,.05) 0 3px,transparent 3px 75px),
+    repeating-linear-gradient(rgba(34,31,23,.05) 0 3px,transparent 3px 75px),
+    var(--kraft);
+  color:var(--ink);
+}
+/* die-cut: white edge, keyline, hard drop — the .p-c ring at card scale */
+.ec-diecut{ box-shadow:0 0 0 var(--edge-w) var(--edge), 0 0 0 var(--key-w) var(--keyline),
+                       0 var(--drop) 0 rgba(0,0,0,.42); }
+
+/* ── furniture every card carries ─────────────────────────── */
+.ec-pad{ position:absolute; inset:0; display:flex; flex-direction:column; padding:96px 80px; }
+.ec--916 .ec-pad{ padding:150px 80px 170px; }        /* Stories UI safe band */
+.ec-top{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex:none; }
+.ec-tag{ font-size:40px; letter-spacing:-.01em; color:var(--paper); }
+.ec-logo{ height:44px; width:auto; display:block; }
+.ec-foot{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex:none;
+          margin-top:auto; }
+.ec-link{ direction:ltr; unicode-bidi:isolate; font-size:40px; letter-spacing:.01em;
+          color:var(--primary); }
+.ec-link--ink{ color:var(--ink); }
+.ec-ava{ width:104px; height:104px; border-radius:50%; overflow:hidden; flex:none; display:block;
+         background:var(--kraft);
+         box-shadow:0 0 0 6px var(--edge),0 0 0 10px var(--keyline),0 10px 0 rgba(0,0,0,.42); }
+.ec-ava svg{ width:100%; height:100%; display:block; }
+.ec-eyebrow{ font-weight:400; font-size:40px; line-height:1.25; color:var(--ink-faint);
+             letter-spacing:.005em; }
+.ec-eyebrow--ink{ color:var(--ink-soft); }
+
+/* ── C · the chair ─────────────────────────────────────────── */
+.ec-plaza{ position:absolute; left:0; right:0; bottom:0; height:52%; z-index:0;
+           background:linear-gradient(to top,#6E6242 0%,#514A38 38%,rgba(43,41,38,0) 100%); }
+.ec-c-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:24px; flex:none; }
+.ec-c-chair{ flex:1; display:flex; align-items:center; justify-content:center; min-height:0;
+             padding:20px 0; }
+/* THE SHADOW IS IN THE ASSET. knesset_chair_300_shadow.webp carries the
+   design's 0 20px 0 rgba(0,0,0,.34) painted into its alpha (11px at the
+   asset's 300px, 20px at this 560px), so there is no filter here to be
+   dropped. The extra 11 rows are the shadow's room; the chair's own
+   pixels are untouched. */
+.ec-c-chair img{ width:560px; max-height:100%; object-fit:contain; display:block; }
+.ec--45 .ec-c-chair img{ width:430px; }
+.ec-c-title{ font-size:112px; line-height:.94; letter-spacing:-.035em; flex:none; text-align:right; }
+.ec--45 .ec-c-title{ font-size:88px; }
+.ec-c-foot{ display:flex; align-items:center; justify-content:space-between; gap:24px; flex:none;
+            margin-top:38px; }
+
+/* ── D · the record ────────────────────────────────────────── */
+.ec-d-doc{ position:absolute; inset:64px; border-radius:8px; }
+.ec--916 .ec-d-doc{ inset:120px 64px 140px; }
+.ec-d-in{ display:flex; flex-direction:column; padding:76px 68px; }
+.ec--45 .ec-d-in{ padding:52px 56px; }
+.ec-d-hd{ display:flex; align-items:flex-start; justify-content:space-between; gap:20px;
+          border-bottom:5px solid var(--ink); padding-bottom:26px; flex:none; }
+.ec--45 .ec-d-hd{ padding-bottom:18px; }
+.ec-d-kicker{ font-size:44px; line-height:1.1; color:var(--ink); }
+.ec--45 .ec-d-kicker{ font-size:36px; }
+.ec-d-meta{ font-weight:400; font-size:32px; color:var(--ink-soft); margin-top:8px; }
+.ec--45 .ec-d-meta{ font-size:27px; }
+.ec-d-body{ flex:1; min-height:0; display:flex; flex-direction:column; justify-content:flex-start;
+            padding-top:40px; }
+.ec-d-hero{ flex:none; }
+.ec-d-lab{ font-weight:400; font-size:40px; color:var(--ink-soft); }
+.ec--45 .ec-d-lab{ font-size:34px; }
+.ec-d-big{ display:flex; align-items:baseline; gap:14px; color:var(--ink);
+           font-size:250px; line-height:.86; letter-spacing:-.045em; margin-top:2px; }
+.ec--45 .ec-d-big{ font-size:150px; }
+.ec-d-u{ font-weight:400; font-size:74px; color:var(--ink-soft); }
+.ec-d-second{ font-weight:400; font-size:40px; color:var(--ink-soft); margin-top:18px; }
+.ec--45 .ec-d-second{ font-size:32px; margin-top:12px; }
+.ec-d-second b{ font-weight:900; color:var(--ink); }
+.ec-d-rule{ height:5px; background:var(--ink); opacity:.18; margin:38px 0 30px; }
+.ec--45 .ec-d-rule{ margin:24px 0 20px; }
+.ec-d-in .ec-eyebrow{ margin-bottom:22px; }
+.ec-d-foot{ flex:none; display:flex; align-items:center; justify-content:space-between; gap:24px;
+            border-top:5px solid var(--ink); padding-top:26px; }
+.ec--45 .ec-d-foot{ padding-top:18px; }
+
+/* ── E · type only ─────────────────────────────────────────── */
+.ec-e-wrap{ position:absolute; inset:0; display:flex; flex-direction:column; padding:150px 90px 170px; }
+.ec--45 .ec-e-wrap{ padding:74px 76px; }
+.ec-e-mid{ flex:1; display:flex; flex-direction:column; justify-content:center; padding:60px 0; }
+.ec-e-rule{ height:7px; background:var(--paper); opacity:.5; }
+.ec-e-rule--end{ margin-top:52px; }
+.ec-e-lead{ font-weight:400; font-size:48px; color:var(--ink-faint); margin:40px 0 26px; }
+.ec--45 .ec-e-lead{ font-size:38px; margin-top:26px; }
+.ec-e-topic{ font-size:158px; line-height:.92; letter-spacing:-.04em; color:var(--paper); }
+.ec--45 .ec-e-topic{ font-size:128px; }
+.ec-e-mid .ec-pills{ margin-top:52px; }
+.ec--45 .ec-e-mid .ec-pills{ margin-top:34px; }
+.ec-e-rec{ margin-top:40px; font-weight:400; font-size:56px; color:var(--ink-faint); }
+.ec-e-rec b{ font-weight:900; color:var(--primary); font-size:74px; }
+
+/* ── the pill block ────────────────────────────────────────────
+   One pill per allocated topic: the name, a hairline, the coin count,
+   highest first. The scale steps down as the block grows (data-t). */
+.ec-pills{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; direction:rtl; width:100%;
+           margin-top:34px; flex:none; }
+.ec-pill{ display:inline-flex; align-items:center; flex:none;
+          background:var(--paper); color:var(--ink);
+          border-radius:39px; white-space:nowrap; max-width:100%;
+          box-shadow:0 0 0 5px var(--keyline), 0 10px 0 rgba(0,0,0,.38); }
+.ec-pill__n{ font-weight:900; overflow:hidden; text-overflow:ellipsis; }
+.ec-pill__r{ width:3px; align-self:stretch; background:var(--ink); opacity:.16; flex:none; }
+.ec-pill__c{ font-weight:900; color:var(--ink-soft); display:inline-flex; align-items:center;
+             gap:.28em; flex:none; font-variant-numeric:tabular-nums; }
+/* THE COIN IS .coin-t, THE REAL TOKEN (proto.css:2740 — 19px disc,
+   --primary fill, 2px inset keyline at 55%, 2px hard offset at 30%), here
+   in em so it follows the pill tier: keyline and offset stay at the
+   token's own 2/19 = 0.1053 of its diameter at every size. It is
+   border-radius + background + box-shadow — nothing in it is a filter. */
+.ec-pill .coin-t{ position:static; width:.72em; height:.72em; border-radius:50%; flex:none;
+                  background:var(--primary); will-change:auto;
+                  box-shadow:inset 0 0 0 .0758em rgba(0,0,0,.55), 0 .0758em 0 rgba(0,0,0,.3);
+                  margin-bottom:.0758em; }
+/* the player's own words: kraft, not paper, and the allocation screen's
+   own ✎ — marked as authored without being dressed as a ninth topic */
+.ec-pill--free{ background:var(--kraft); }
+.ec-pill__g{ opacity:.55; flex:none; }
+/* "עוד N" — an outline, not an object; it counts what is not shown */
+.ec-pill--more{ background:transparent; color:var(--ink-faint);
+                box-shadow:inset 0 0 0 4px currentColor; }
+/* tier a · 1-2 topics — full size, one per row */
+.ec-pills[data-t="a"]{ gap:18px; }
+.ec-pills[data-t="a"] .ec-pill{ font-size:54px; padding:20px 34px; gap:24px; }
+.ec-pills[data-t="a"] .ec-pill__r{ margin:0 2px; }
+.ec-pills[data-t="a"] .ec-pill__g{ font-size:44px; margin-left:-6px; }
+/* tier b · 3-4 */
+.ec-pills[data-t="b"]{ gap:14px; }
+.ec-pills[data-t="b"] .ec-pill{ font-size:42px; padding:15px 26px; gap:18px; border-radius:31px;
+                                box-shadow:0 0 0 4px var(--keyline),0 8px 0 rgba(0,0,0,.38); }
+.ec-pills[data-t="b"] .ec-pill__g{ font-size:34px; margin-left:-4px; }
+/* tier c · 5-6 */
+.ec-pills[data-t="c"]{ gap:11px; }
+.ec-pills[data-t="c"] .ec-pill{ font-size:33px; padding:11px 20px; gap:14px; border-radius:25px;
+                                box-shadow:0 0 0 3px var(--keyline),0 6px 0 rgba(0,0,0,.38); }
+.ec-pills[data-t="c"] .ec-pill__g{ font-size:27px; margin-left:-3px; }
+/* tier d · 7-8 — the floor before the cap takes over */
+.ec-pills[data-t="d"]{ gap:9px; }
+.ec-pills[data-t="d"] .ec-pill{ font-size:27px; padding:9px 16px; gap:11px; border-radius:21px;
+                                box-shadow:0 0 0 3px var(--keyline),0 5px 0 rgba(0,0,0,.38); }
+.ec-pills[data-t="d"] .ec-pill__g{ font-size:22px; margin-left:-3px; }
+/* on kraft the pill needs the die-cut edge to separate */
+.ec-d-in .ec-pill{ box-shadow:0 0 0 5px var(--edge),0 0 0 9px var(--keyline),0 10px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pills[data-t="b"] .ec-pill{ box-shadow:0 0 0 4px var(--edge),0 0 0 7px var(--keyline),0 8px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pills[data-t="c"] .ec-pill{ box-shadow:0 0 0 3px var(--edge),0 0 0 5px var(--keyline),0 6px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pills[data-t="d"] .ec-pill{ box-shadow:0 0 0 3px var(--edge),0 0 0 5px var(--keyline),0 5px 0 rgba(0,0,0,.38); }
+.ec-d-in .ec-pill--free{ background:var(--kraft-deep); }
+.ec-d-in .ec-pill--more{ box-shadow:inset 0 0 0 4px currentColor; }
+/* @ec-end */

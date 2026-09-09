@@ -6230,12 +6230,19 @@ let ALLOC = {};
    counts them without a special case, and every lookup BY TOPIC misses
    them without a special case either. That second half is the whole
    safety property; see cardTopics().
-   Its NAME lives here, alone, in a variable no card and no share code
-   references. It is not in ALLOC, not in PROFILE and not in the save, so
-   it cannot be reached by anything that walks those.
+   Its NAME lives here, alone. It is not in ALLOC, not in PROFILE and not
+   in the save, so it cannot be reached by anything that walks those. The
+   ONE reader outside this screen is cardTopics(), since 09 Sep — see the
+   dated note there; that is a decision, not drift.
    ===================================================================== */
 const OTHER_KEY = '__other';
-const OTHER_MAX = 24;                 /* the hard cap on what can be typed */
+/* 11, NOT 24 — AND NOT 12. The player's own pill is never the widest thing
+   in the block, in either script: 12 Hebrew characters is safe but 12
+   Latin measures 332px at card scale, wider than the widest system pill
+   (312px). The rule is absolute, so the cap is 11. Lowered together with
+   the gate in cardTopics() opening — one without the other does nothing,
+   or ships a 466px pill. v29h, 09 Sep. */
+const OTHER_MAX = 11;                 /* the hard cap on what can be typed */
 let ALLOC_OTHER_NAME = '';            /* NEVER leaves this screen */
 
 /* =====================================================================
@@ -6250,6 +6257,13 @@ async function endGame() {
      previous run's word sitting on an empty row. */
   ALLOC_OTHER_NAME = '';
   showScreen('end');
+  /* v29h · NON-NEGOTIABLE 3 · the share card's assets are fetched and
+     base64'd NOW, while beats 1–3 play, so beat 4's first export is the
+     warm ~150ms and not the cold 1.3s measured on the phone. This is the
+     ONLY call site: endGame() is reached from the finale's last door and
+     from ?screen=end, and from nowhere on load or on the map — a player
+     who never finishes never pays for it. */
+  shWarm();
   /* THE HUD HAS TO BE REPAINTED HERE. Its count and coin chip were only
      ever written by renderMap(), because the map was the only screen
      that showed them; the end-game shows the same two and would
@@ -6587,25 +6601,27 @@ const EG_OTHER_PH    = 'ומה עוד חשוב לכם?';                        
 const OTHER_GLYPH    = '<span class="eg-other__g" aria-hidden="true">✎</span>';
 
 /* =====================================================================
-   ITEM 19 + 20B · THE ONE GATE THE FREE TEXT CANNOT PASS
+   ITEM 19 + 20B · THE ONE GATE — AND IT IS OPEN.
    Every topic name the card or the share string is allowed to say comes
-   from here and from nowhere else. THE ENFORCEMENT IS THE FIRST LINE:
-   it walks TOPICS() — data.js's own eight — and looks each id up in
-   ALLOC. The free-text row's coins are under OTHER_KEY, which is not any
-   topic's id, so they are not reachable by this walk; the player's text
-   is in ALLOC_OTHER_NAME, which this function does not mention and could
-   not return if it did, because what it returns are `t` objects taken
-   from DATA.topics.
-   THAT IS ALSO THE FALLBACK ITEM 20B ASKS FOR, for free and without a
-   branch: if אחר holds the most coins it is simply not in the list, so
-   the highest FIXED topic is what comes back — and if no fixed topic has
-   any, the list is empty and the caller omits the line. There is no
-   "if top is other" test anywhere, because there is no code path on
-   which `other` could have been top.
+   from here and from nowhere else; that part is unchanged. What changed:
+
+   TAMAR'S DECISION, 09 SEP 2026: THE FREE TEXT GOES ON THE CARD.
+   Until this date the walk below covered TOPICS() only — data.js's own
+   eight — and the free-text row, whose coins sit under OTHER_KEY and
+   whose words sit in ALLOC_OTHER_NAME, could not reach a card by
+   construction. Tamar asked for the player's own words on the card, so
+   the row is appended to the walk as a ninth entry, marked `free` so the
+   card can dress it as authored (kraft, ✎) rather than as a topic. This
+   is NOT a bug and NOT drift; the next reader should not "fix" it. It is
+   paired with OTHER_MAX dropping to 11 — see the note there — because
+   the words now have to fit a pill.
+   An unnamed row with coins on it shows as אחר.
    ===================================================================== */
 function cardTopics(n) {
-  return TOPICS()
-    .map(t => ({ t, v: ALLOC[t.id] || 0 }))
+  const list = TOPICS().map(t => ({ t, v: ALLOC[t.id] || 0 }));
+  const ov = ALLOC[OTHER_KEY] || 0;
+  if (ov > 0) list.push({ t: { id: OTHER_KEY, label: ALLOC_OTHER_NAME || EG_OTHER_LABEL, free: true }, v: ov });
+  return list
     .filter(x => x.v > 0)
     .sort((a, b) => b.v - a.v)
     .slice(0, n || 1);
@@ -6689,7 +6705,7 @@ async function egBeat3() {
   otherWrap.appendChild(otherBtn);
   const field = el('input', 'eg-other__in');
   field.type = 'text';
-  field.maxLength = OTHER_MAX;                 /* the hard cap, 24 */
+  field.maxLength = OTHER_MAX;                 /* the hard cap, 11 */
   field.placeholder = EG_OTHER_PH;                                     /* TAMAR */
   field.setAttribute('dir', 'auto');
   field.setAttribute('autocomplete', 'off');
@@ -6780,235 +6796,432 @@ function egPaint() {
 }
 
 /* =====================================================================
-   BEATS 4 AND 5 · THE CARD, THEN THE WAY OUT.
+   v29h · BEAT 4 · THE SHARE SCREEN
 
-   THE HEADLINE IS THE SURPRISE COUNT AND IT IS NOT NEGOTIABLE (§5.3).
-   A card that leads with the prediction record self-selects twice over:
-   players who did badly quietly do not share it, and the ones who do
-   share it learn that doing badly is the shameful outcome — which
-   contradicts the §1.3 framing the entire round is built on. The
-   surprise count is HIGH when the player did badly, so the shame
-   inverts and the metric is on-thesis: the game is about the Knesset
-   being surprising, not about the player being right.
+   Three cards in a carousel, one toggle, two buttons, and nothing is
+   ever laid over the card — if the player screenshots the picker instead
+   of sharing, no control lands in the shot.
 
-   SECONDARY: the top topic, NAMED FROM data.js. Never the full split —
-   how you divide between topics maps loosely onto political camps and
-   the sheet holds that back for an opt-in variant that does not exist
-   yet. Never the free text either: unvalidated user text next to the
-   NGO's hashtag is §0.4-8, and the reason the אחר field does not ride
-   here even once it exists in-game.
+   C IS THE DEFAULT and it is re-asserted on every arrival, for the same
+   reason the old beat re-asserted its own: most players never swipe, so
+   the card that opens is the card that ships, and a module variable would
+   quietly make the last pick the default for the rest of the session.
 
-   THE PREDICTION RECORD IS PRESENT AND DEMOTED — one quiet line under
-   the rule, which is what "secondary line, not the headline" means.
+   THE CARD IS DRAWN ONCE, AT 1080px, AND SCALED. The preview in the
+   track is the same DOM the export serialises — a 1080×1920 card under a
+   transform — so what the player sees and what goes out cannot drift.
+   The card's stylesheet lives in proto.css between the @ec-start /
+   @ec-end markers and is read from there at export time, so it is
+   written once and the export cannot fall behind the screen.
 
-   NO SHARE ACTION IS WIRED. The card is the artifact; actually
-   publishing it raises the opt-in and hashtag questions §5.3 leaves
-   open, and those are Tamar/NGO decisions rather than build ones.
+   THE EXPORT ROUTE is SVG <foreignObject> → <img> → canvas → PNG. No
+   library. Four things were measured on real hardware on 09 Sep and are
+   not negotiable — each is marked NON-NEGOTIABLE where it is honoured:
+     1 · the SVG is a data: URL. A blob: URL taints the canvas.
+     2 · fonts and images are base64-inlined into the SVG.
+     3 · the inlining is warmed when the end-game mounts (shWarm(), called
+         from endGame() and nowhere else).
+     4 · the SVG image is drawn twice, 50ms apart, before toBlob.
    ===================================================================== */
-/* §C THE NAME STAYS OFF THE CARD BY DEFAULT. The card is the artifact a
-   player may put in front of other people, and a name on it is the
-   opt-in question §5.3 leaves open — so it is a switch, off, rather than
-   a behaviour. The avatar is on the card regardless: it is the player's
-   token, not their identity. */
-const SHARE_NAME = false;
-
-/* =====================================================================
-   ITEM 20B · THREE CARDS, ONE DEFAULT, AND THE DEFAULT IS NOT OURS
-   A leads with the surprise count and is UNCHANGED — same strings, same
-   order, same markup as it shipped. B leads with the topic and states no
-   number at all. C is the prediction record alone.
-   'a' IS RE-ASSERTED ON EVERY ARRIVAL, not just declared here. A module
-   variable would keep whatever the player last picked and quietly make
-   that the default for the rest of the session; decision table #8 says
-   the default is A and is Tamar's and the NGO's to move, so the card
-   opens on A every time it is opened.
-   THE FULL SPLIT IS NEVER ON ANY OF THEM. cardTopics() is asked for one
-   topic, never for the list.
-   ===================================================================== */
-const SHARE_VARIANTS = ['a', 'b', 'c'];
-let SHARE_VARIANT = 'a';
-const SHARE_TAB = {                                                    /* TAMAR */
-  a: 'הפתעות',
-  b: 'נושא',
-  c: 'ניחושים',
+const SH_KINDS   = ['C', 'D', 'E'];
+const SH_ASPECTS = { '916': [1080, 1920], '45': [1080, 1350] };
+const SH_LINK    = 'hac121.org';
+const SH_FILE    = 'hac121-card.png';
+const SH_COPY = {
+  title:    'בחרו כרטיס לשיתוף',                            /* TAMAR */
+  tag:      'הח״כ ה-121',                                   /* TAMAR */
+  claim:    'תפסתי את<br>הכיסא ה-121',          /* C's title; the break is the design's */ /* TAMAR */
+  claimTxt: 'תפסתי את הכיסא ה-121',            /* the same words, for the text fallback */ /* TAMAR */
+  kicker:   'הח״כ ה-121 · דוח אישי',                        /* TAMAR */
+  meta:     'סוגיות שנוחשו · עונה 1',                       /* TAMAR */
+  guessed:  'ניחשתי נכון',                                  /* TAMAR */
+  outOf:    'מתוך',                                         /* TAMAR */
+  surprised:'פעמים שהכנסת הפתיעה אותי',                     /* TAMAR */
+  most:     'הכי הרבה הקצאתי ל',                            /* TAMAR */
+  more:     'עוד',                              /* "עוד N" — in words, never "+N" */ /* TAMAR */
+  share:    'שיתוף',                                        /* TAMAR */
+  save:     'שמירה לגלריה',                                 /* TAMAR */
+  sharing:  'מכינים את הכרטיס…',                            /* TAMAR */
+  saving:   'שומרים…',                                      /* TAMAR */
+  copied:   'הועתק',                                        /* TAMAR */
+  back:     'חזרה למפה',                                    /* TAMAR */
+  card:     'כרטיס',                                        /* TAMAR */
+  a916:     '9:16',
+  a45:      '4:5',
 };
-const SHARE_ACT  = 'שיתוף';                                            /* TAMAR */
-const SHARE_DONE = 'הועתק';                                            /* TAMAR */
-
-/* the card's own strings, named once so the three variants and the share
-   TEXT read the identical words. Every one of them is a string that was
-   already on the card; nothing here is new copy. */
-const CARD_COPY = {
-  tag:       'הח״כ ה-121',                                             /* TAMAR · shipped */
-  surprises: 'פעמים שהכנסת הפתיעה אותי',                                /* TAMAR · shipped */
-  topic:     'הכי הרבה הקצאתי ל',                                      /* TAMAR · shipped */
-  guessed:   'ניחשתי נכון ',                                           /* TAMAR · shipped */
-  outOf:     ' מתוך ',                                                 /* TAMAR · shipped */
+/* S2 plane and D1 tray, as picked on the v29f board. Trailing — last in
+   the DOM, so RTL puts them at the physical left edge. */
+const SH_ICON = {
+  share: '<svg class="sh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 3.2 10.3 13.7"/><path d="M20.8 3.2 14.2 20.8l-3.9-7.1-7.1-3.9z"/></svg>',
+  save:  '<svg class="sh-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.4v10.9"/><path d="M7.8 10.1 12 14.3l4.2-4.2"/><path d="M4.2 16.6v2.1c0 1 .8 1.8 1.8 1.8h12c1 0 1.8-.8 1.8-1.8v-2.1"/></svg>',
+  spin:  '<span class="sh-spin" aria-hidden="true"></span>',
+};
+const SH_SRC = {
+  chair:   'assets/mk/knesset_chair_300_shadow.webp',  /* the BAKED shadow — see the note at .ec-c-chair */
+  logo:    'assets/share/logo-mono-900.png',
+  logoInk: 'assets/share/logo-mono-900-ink.png',       /* pre-inked for kraft; no filter */
+  black:   'fonts/SimplerPro_HLAR-Black.woff2',
+  regular: 'fonts/SimplerPro_HLAR-Regular.woff2',
 };
 
-/* ITEM 20B · the three bodies. `tops` is whatever cardTopics() allowed —
-   see the gate. None of these functions can reach ALLOC_OTHER_NAME, and
-   none of them takes a topic from anywhere but this argument. */
-function shareCardBody(v, s, tops) {
-  const topicLine = tops.length
-    ? '<p class="eg-share__topic">' +
-        '<span class="eg-share__ico">' + topicFace(tops[0].t, 22) + '</span>' +
-        esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</p>'
-    : '';
-  const record =
-    '<p class="eg-share__second">' + esc(CARD_COPY.guessed) + N(s.correct) +
-      esc(CARD_COPY.outOf) + N(s.asked) + '</p>';
-  if (v === 'b') {
-    /* THE TOPIC LEADS AND THERE IS NO NUMBER ON THE CARD. Not the record,
-       not the surprise count, not the coins — "no numbers" is the whole
-       variant, so the record line is absent rather than demoted. */
-    return tops.length
-      ? '<p class="eg-share__blead">' +
-          '<span class="eg-share__bico">' + topicFace(tops[0].t, 34) + '</span>' +
-          '<span>' + esc(CARD_COPY.topic) + esc(tops[0].t.label) + '</span></p>'
-      : '';
-  }
-  if (v === 'c') {
-    /* THE RECORD ALONE, at the lead's size. No topic line at all — that
-       is what "no topics" means, and it is also why C is the one variant
-       that is always available. */
-    return '<p class="eg-share__lead eg-share__lead--c">' +
-             '<span>' + esc(CARD_COPY.guessed.trim()) + '</span>' +
-             '<b class="eg-num eg-share__n">' + N(s.correct) + '</b>' +
-             '<span class="eg-share__of">' + esc(CARD_COPY.outOf) + N(s.asked) + '</span></p>';
-  }
-  /* A · unchanged */
-  return '<p class="eg-share__lead">' +
-           '<span>' + esc(CARD_COPY.surprises) + '</span>' +
-           '<b class="eg-num eg-share__n">' + N(s.surprises) + '</b></p>' +
-         topicLine +
-         '<hr class="eg-share__rule">' +
-         record;
+let SH_KIND = 'C', SH_ASPECT = '916';
+let SH_BUSY = false;
+
+/* ---- the pills: what the card is allowed to say ---------------------
+   cardTopics() is the gate (see it). Ordered by allocation, highest
+   first; the free-text row rides along since 09 Sep. Three pills, then
+   "עוד N" IN WORDS — a leading "+" is a bidi neutral and renders as "5+",
+   which reads as "5 or more". */
+const SH_PILL_CAP = 3;
+function shPills() {
+  const all = cardTopics(99);
+  const shown = all.slice(0, SH_PILL_CAP);
+  return { shown, more: all.length - shown.length, total: all.length };
+}
+/* the pill block's scale steps down as it grows — the v29e tiers, which
+   with the cap only ever reach b on 9:16 and c on 4:5 */
+function shTier(n, aspect) {
+  if (aspect === '45') return n <= 1 ? 'a' : n <= 3 ? 'b' : n <= 5 ? 'c' : 'd';
+  return n <= 2 ? 'a' : n <= 4 ? 'b' : n <= 6 ? 'c' : 'd';
+}
+const shNum = v => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function shPillsHTML(aspect) {
+  const p = shPills();
+  const n = p.shown.length + (p.more ? 1 : 0);
+  if (!n) return '';
+  let h = '<div class="ec-pills" data-t="' + shTier(n, aspect) + '">';
+  p.shown.forEach(x => {
+    h += '<span class="ec-pill' + (x.t.free ? ' ec-pill--free' : '') + '">' +
+           (x.t.free ? '<span class="ec-pill__g" aria-hidden="true">✎</span>' : '') +
+           '<span class="ec-pill__n">' + esc(x.t.label) + '</span>' +
+           '<span class="ec-pill__r"></span>' +
+           '<span class="ec-pill__c">' + shNum(x.v) +
+             /* THE COIN IS .coin-t, THE REAL TOKEN, restated in em so the
+                2/19 keyline and offset hold at every tier — proto.css:4760:
+                "a second coin drawn a second way would be a second currency" */
+             '<i class="coin-t ec-pill__coin" aria-hidden="true"></i></span>' +
+         '</span>';
+  });
+  if (p.more) h += '<span class="ec-pill ec-pill--more">' + esc(SH_COPY.more) + ' ' + p.more + '</span>';
+  return h + '</div>';
 }
 
-/* ITEM 20A · the string that actually gets shared, built from the same
-   two sources the card is: endStats() and cardTopics(). It cannot carry
-   the free text for the same structural reason the card cannot. */
-function shareText(v) {
-  const s = endStats(), tops = cardTopics(1);
-  const L = [CARD_COPY.tag];
-  if (v === 'b') {
-    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
-  } else if (v === 'c') {
-    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+/* ---- the three cards, as markup ------------------------------------ */
+function shAvatar() { return '<span class="ec-ava">' + avatarSvg() + '</span>'; }
+function shCardHTML(kind, aspect) {
+  const s = endStats(), pills = shPillsHTML(aspect), top = shPills().shown[0];
+  const cls = 'ec ec--' + aspect + (kind === 'D' ? '' : ' ec--dots');
+  let body = '';
+  if (kind === 'C') {
+    body =
+      '<div class="ec-plaza"></div>' +
+      '<div class="ec-pad">' +
+        '<div class="ec-c-head"><span class="ec-tag">' + esc(SH_COPY.tag) + '</span>' + shAvatar() + '</div>' +
+        '<div class="ec-c-chair"><img src="' + SH_SRC.chair + '" alt=""></div>' +
+        '<p class="ec-c-title">' + SH_COPY.claim + '</p>' +
+        pills +
+        '<div class="ec-c-foot"><img class="ec-logo" src="' + SH_SRC.logo + '" alt="">' +
+          '<span class="ec-link">' + SH_LINK + '</span></div>' +
+      '</div>';
+  } else if (kind === 'D') {
+    body =
+      '<div class="ec-d-doc ec-kraft ec-diecut"></div>' +
+      '<div class="ec-d-doc ec-d-in">' +
+        '<div class="ec-d-hd"><div><p class="ec-d-kicker">' + esc(SH_COPY.kicker) + '</p>' +
+          '<p class="ec-d-meta">' + esc(SH_COPY.meta) + '</p></div>' +
+          '<img class="ec-logo" src="' + SH_SRC.logoInk + '" alt=""></div>' +
+        '<div class="ec-d-body">' +
+          '<div class="ec-d-hero"><p class="ec-d-lab">' + esc(SH_COPY.guessed) + '</p>' +
+            '<p class="ec-d-big"><span>' + s.correct + '</span><span class="ec-d-u">' + esc(SH_COPY.outOf) +
+              '</span><span>' + s.asked + '</span></p>' +
+            '<p class="ec-d-second"><b>' + s.surprises + '</b> ' + esc(SH_COPY.surprised) + '</p></div>' +
+          (pills
+            ? '<div class="ec-d-rule"></div><p class="ec-eyebrow ec-eyebrow--ink">' + esc(SH_COPY.most) + '</p>' + pills
+            : '') +
+        '</div>' +
+        '<div class="ec-d-foot">' + shAvatar() +
+          '<span class="ec-link ec-link--ink">' + SH_LINK + '</span></div>' +
+      '</div>';
   } else {
-    L.push(CARD_COPY.surprises + ': ' + s.surprises);
-    if (tops.length) L.push(CARD_COPY.topic + tops[0].t.label);
-    L.push(CARD_COPY.guessed + s.correct + CARD_COPY.outOf + s.asked);
+    body =
+      '<div class="ec-e-wrap">' +
+        '<div class="ec-top"><span class="ec-tag">' + esc(SH_COPY.tag) + '</span>' + shAvatar() + '</div>' +
+        '<div class="ec-e-mid"><div class="ec-e-rule"></div>' +
+          (top
+            ? '<p class="ec-e-lead">' + esc(SH_COPY.most) + '</p>' +
+              '<p class="ec-e-topic">' + esc(top.t.label) + '</p>' + pills
+            /* nothing allocated: the record is the only true sentence left */
+            : '<p class="ec-e-rec">' + esc(SH_COPY.guessed) + ' <b>' + s.correct + '</b> ' +
+              esc(SH_COPY.outOf) + ' ' + s.asked + '</p>') +
+          '<div class="ec-e-rule ec-e-rule--end"></div></div>' +
+        '<div class="ec-foot"><img class="ec-logo" src="' + SH_SRC.logo + '" alt="">' +
+          '<span class="ec-link">' + SH_LINK + '</span></div>' +
+      '</div>';
   }
-  return L.join('\n');
+  return '<div class="' + cls + '" data-k="' + kind + '">' + body + '</div>';
 }
 
-/* ITEM 20A · THE OS SHEET IS THE TARGET AND THERE IS NO CUSTOM ONE.
-   navigator.share first; where it does not exist, or refuses, the text
-   goes to the clipboard instead. TEXT ONLY — see the feasibility report
-   for why no image is built: an SVG-in-<img> rasterisation cannot load
-   the webfont or the topic art, and html2canvas would be a dependency.
-   A CANCEL IS NOT A FAILURE. AbortError is the player closing the sheet
-   and must not fall through to copying something they chose not to send. */
-async function shareCard(btn) {
-  const text = shareText(SHARE_VARIANT);
+/* ---- the export ------------------------------------------------------
+   NON-NEGOTIABLE 2 + 3 · everything the SVG needs, base64, fetched ONCE
+   and only for a player who is in the end-game. On the real iPhone this
+   fetch-and-encode was 1.1s of a 1.3s first export; warmed, the export
+   is ~150–190ms. shWarm() is called from endGame() and from nowhere
+   else — it is not on load and not on the map, so a player who never
+   finishes never pays for it. */
+let SH_WARM = null;
+const shB64 = async url => {
+  const b = await (await fetch(url)).blob();
+  return new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+};
+function shWarm() {
+  if (SH_WARM) return SH_WARM;
+  SH_WARM = (async () => {
+    const [black, regular, chair, logo, logoInk, cssText] = await Promise.all([
+      shB64(SH_SRC.black), shB64(SH_SRC.regular),
+      shB64(SH_SRC.chair), shB64(SH_SRC.logo), shB64(SH_SRC.logoInk),
+      fetch('proto.css').then(r => r.text()),
+    ]);
+    /* the card's own rules, cut from proto.css between the markers */
+    const m = cssText.match(/\/\*\s*@ec-start\s*\*\/([\s\S]*?)\/\*\s*@ec-end\s*\*\//);
+    const css =
+      "@font-face{font-family:'SimplerPro';src:url(" + black + ") format('woff2');font-weight:900}" +
+      "@font-face{font-family:'SimplerPro';src:url(" + regular + ") format('woff2');font-weight:400}" +
+      (m ? m[1] : '');
+    return { css, img: { [SH_SRC.chair]: chair, [SH_SRC.logo]: logo, [SH_SRC.logoInk]: logoInk } };
+  })();
+  SH_WARM.catch(() => { SH_WARM = null; });      /* a failed warm is retried by the next call */
+  return SH_WARM;
+}
+
+async function shExport(kind, aspect) {
+  const W = SH_ASPECTS[aspect][0], H = SH_ASPECTS[aspect][1];
+  const A = await shWarm();
+  await Promise.all([document.fonts.load('900 40px SimplerPro'), document.fonts.load('400 40px SimplerPro')]);
+  /* a fresh card, not the preview: the preview is under a transform and
+     inside the stage's stacking, and the export wants neither */
+  const host = el('div', '', shCardHTML(kind, aspect));
+  $$('img', host).forEach(i => { const d = A.img[i.getAttribute('src')]; if (d) i.setAttribute('src', d); });
+  const xhtml = new XMLSerializer().serializeToString(host.firstChild);
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+      '<foreignObject width="100%" height="100%">' +
+        '<div xmlns="http://www.w3.org/1999/xhtml"><style>' + A.css + '</style>' + xhtml + '</div>' +
+      '</foreignObject></svg>';
+  /* NON-NEGOTIABLE 1 · a data: URL. blob: taints the canvas and toBlob
+     throws SecurityError — Chrome, Playwright WebKit and real iOS Safari. */
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('svg')); img.src = url; });
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  /* NON-NEGOTIABLE 4 · drawn twice. WebKit paints the first draw of a new
+     SVG document before its inlined fonts and images have decoded — a
+     blank ground with one pill. img.decode() does not help. 50ms and a
+     second draw does; it is done on every engine because it costs 50ms
+     and a UA sniff would be the only thing that could get it wrong. */
+  await wait(50);
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(img, 0, 0);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('png')), 'image/png'));
+}
+
+/* ---- share and save --------------------------------------------------
+   שיתוף → navigator.share({ files }). Confirmed on real iOS Safari 26 over
+   HTTPS: canShare({files}) true, share() resolved. It does not EXIST on an
+   http origin, so this feature-detects and falls back to text + link, and
+   from there to the clipboard. A CANCEL IS NOT A FAILURE: AbortError is
+   the player closing the sheet and must not fall through to a copy they
+   chose not to send. */
+function shText() {
+  const top = shPills().shown[0];
+  return [SH_COPY.tag, SH_COPY.claimTxt]
+    .concat(top ? [SH_COPY.most + top.t.label] : [])
+    .concat(['https://' + SH_LINK]).join('\n');
+}
+async function shShare() {
+  const blob = await shExport(SH_KIND, SH_ASPECT);
+  const file = new File([blob], SH_FILE, { type: 'image/png' });
   if (typeof navigator.share === 'function') {
-    try { await navigator.share({ text }); return 'shared'; }
+    const data = navigator.canShare && navigator.canShare({ files: [file] })
+      ? { files: [file], title: SH_COPY.tag }
+      : { text: shText() };
+    try { await navigator.share(data); return 'shared'; }
     catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
   }
-  try {
-    await navigator.clipboard.writeText(text);
-    if (btn) { btn.classList.add('is-copied'); btn.textContent = SHARE_DONE;   /* TAMAR */
-      setTimeout(() => { btn.classList.remove('is-copied'); btn.textContent = SHARE_ACT; }, 1600); }
-    return 'copied';
-  } catch (e) { return 'failed'; }
+  try { await navigator.clipboard.writeText(shText()); return 'copied'; }
+  catch (e) { return 'failed'; }
+}
+/* שמירה לגלריה → the PNG, downloaded. The aspect is whatever the toggle
+   says — 4:5 is offered here, at save time, not as a second screen. */
+async function shSave() {
+  const blob = await shExport(SH_KIND, SH_ASPECT);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = SH_FILE;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  return 'saved';
 }
 
+/* THE WORKING STATE LIVES INSIDE THE PRESSED BUTTON: the label swaps, the
+   icon slot becomes a 21px spinner, the box does not move. THE OTHER
+   BUTTON IS DISABLED WHILE ONE RUNS — two rasterise passes at once on a
+   mid-range Android is what produces a janked card. */
+async function shRun(btn, other, busyLabel, fn) {
+  if (SH_BUSY) return;
+  SH_BUSY = true;
+  const lab = $('.sh-bl', btn), ico = $('.sh-ico', btn);
+  const label0 = lab.textContent, ico0 = ico.innerHTML;
+  btn.classList.add('is-busy'); btn.setAttribute('aria-busy', 'true');
+  lab.textContent = busyLabel; ico.innerHTML = SH_ICON.spin;
+  other.disabled = true;
+  let r = 'failed';
+  try { r = await fn(); } catch (e) { r = 'failed'; }
+  btn.classList.remove('is-busy'); btn.removeAttribute('aria-busy');
+  ico.innerHTML = ico0;
+  other.disabled = false;
+  SH_BUSY = false;
+  /* the clipboard fallback is the one outcome the player cannot see
+     happen, so it says so, briefly, in the button it came from */
+  if (r === 'copied') { lab.textContent = SH_COPY.copied; setTimeout(() => { lab.textContent = label0; }, 1600); }
+  else lab.textContent = label0;
+}
+
+/* ---- the screen ----------------------------------------------------- */
 async function egBeat4() {
   const c = egStage();
-  const s = endStats();
-  const top = egTopTopic();
-  SHARE_VARIANT = 'a';                 /* the default, on every arrival */
+  SH_KIND = 'C'; SH_ASPECT = '916';          /* the defaults, on every arrival */
+  SH_BUSY = false;
 
-  c.innerHTML = '<h2 class="eg-h2">' + esc('הכרטיס שלכם') + '</h2>';   /* TAMAR */
-  requestAnimationFrame(() => $('.eg-h2', c).classList.add('is-in'));
-  await egStep(T.f5In);
+  c.innerHTML =
+    '<h2 class="eg-h2 sh-title">' + esc(SH_COPY.title) + '</h2>' +
+    '<div class="sh-track" id="shTrack"><div class="sh-rail" id="shRail"></div></div>' +
+    '<div class="sh-dots" id="shDots" role="tablist"></div>' +
+    '<div class="sh-tg" id="shTg" role="radiogroup"></div>' +
+    '<div class="sh-acts" id="shActs"></div>';
+  const track = $('#shTrack', c), rail = $('#shRail', c), dots = $('#shDots', c), tg = $('#shTg', c), acts = $('#shActs', c);
 
-  const tops = cardTopics(1);
-  const card = el('div', 'eg-share');
-  const head =
-    '<div class="eg-share__head">' +
-      '<span class="as-d eg-share__av" aria-hidden="true">' + avatarSvg() + '</span>' +
-      '<p class="eg-share__tag">' + esc(CARD_COPY.tag) + '</p>' +
-      (SHARE_NAME && PROFILE.name
-        ? '<p class="eg-share__name">' + esc(PROFILE.name) + '</p>' : '') +
-    '</div>';
-  const paintCard = () => {
-    card.dataset.v = SHARE_VARIANT;
-    card.innerHTML = head + shareCardBody(SHARE_VARIANT, s, tops);
-  };
-  paintCard();
-  c.appendChild(card);
-  requestAnimationFrame(() => card.classList.add('is-in'));
-
-  /* ITEM 20B · the switcher. B is offered only when there is a fixed
-     topic for it to lead with: with none, its body is empty by the rule
-     above, and a variant that renders a blank card is not a choice. A and
-     C are always available. */
-  const sw = el('div', 'eg-vars', '');
-  sw.setAttribute('role', 'group');
-  SHARE_VARIANTS.forEach(v => {
-    const b = el('button', 'eg-var' + (v === SHARE_VARIANT ? ' is-on' : ''), esc(SHARE_TAB[v]));
-    b.type = 'button'; b.dataset.v = v;
-    b.setAttribute('aria-pressed', v === SHARE_VARIANT);
-    if (v === 'b' && !tops.length) b.disabled = true;
-    pressable(b).addEventListener('click', () => {
-      if (b.disabled) return;
-      SHARE_VARIANT = v;
-      paintCard();
-      $$('.eg-var', sw).forEach(x => {
-        x.classList.toggle('is-on', x.dataset.v === v);
-        x.setAttribute('aria-pressed', x.dataset.v === v);
-      });
-    });
-    sw.appendChild(b);
+  /* ---- the carousel: three slots, absolutely placed, one transform ----
+     The rail is LTR on purpose: slot i sits at -i·step, so the RTL order
+     (C on the right, then D, then E to its left) is arithmetic rather
+     than a bidi question, and the swipe direction falls out with it. */
+  let step = 0, k = 1, drag = null;
+  const slots = SH_KINDS.map(kind => {
+    const s = el('div', 'sh-slot'); s.dataset.k = kind;
+    s.innerHTML = '<div class="sh-hold"><div class="sh-scale"></div></div>';
+    rail.appendChild(s);
+    return s;
   });
-  c.appendChild(sw);
-  requestAnimationFrame(() => sw.classList.add('is-in'));
-
-  /* BEAT 5 · the buttons arrive last and stay. Nothing is appended after
-     them, so this is the end of the screen and of the game. */
-  await egStep(T.f5CoinHold);
-  const acts = el('div', 'eg-acts eg-acts--exit');
-  /* TWO DOORS AND NOTHING AFTER THEM. The map is the primary — it is
-     where every topic can be reopened, and openTopic()'s existing
-     fallback already replays a finished one. The secondary names ONE
-     topic rather than saying "replay a topic" abstractly, and the one it
-     names is the player's own top allocation: the only non-arbitrary
-     choice available, and a callback to the decision they just made. It
-     is absent when nothing was allocated, because there is then no
-     topic this screen has any business naming. */
-  if (top) {
-    const again = el('button', 'eg-clear',
-      'לשחק שוב: ' + top.t.label);                                    /* TAMAR */
-    again.type = 'button';
-    pressable(again).addEventListener('click', () => {
-      showScreen('map'); openTopic(top.t.id);
+  const paintCards = () => slots.forEach(s => { $('.sh-scale', s).innerHTML = shCardHTML(s.dataset.k, SH_ASPECT); });
+  const place = () => {
+    const [W, H] = SH_ASPECTS[SH_ASPECT];
+    const tw = track.clientWidth, th = track.clientHeight;
+    if (!tw || !th) return;
+    /* the card takes the track's height, and its width follows; the width
+       is capped so a sibling's peek stays on screen at 360 */
+    const h = Math.min(th, (tw * 0.78) * H / W);
+    const w = h * W / H;
+    k = w / W; step = w + 14;
+    slots.forEach((s, i) => {
+      s.style.width = w + 'px'; s.style.height = h + 'px';
+      s.style.left = (-w / 2 - i * step) + 'px';
+      s.style.top  = ((th - h) / 2) + 'px';
+      $('.sh-scale', s).style.transform = 'scale(' + k + ')';
     });
-    acts.appendChild(again);
-  }
-  /* ITEM 20A · the share action. It sits above the two doors because it
-     is what this screen is for; the doors are the way off it. */
-  const share = el('button', 'r-b eg-shareb', esc(SHARE_ACT));         /* TAMAR */
-  share.type = 'button';
-  pressable(share).addEventListener('click', () => shareCard(share));
-  acts.insertBefore(share, acts.firstChild);
-  const back = el('button', 'p-c eg-go', 'חזרה למפה ›');               /* TAMAR */
+    go(SH_KINDS.indexOf(SH_KIND), true);
+  };
+  const go = (i, silent) => {
+    i = Math.max(0, Math.min(SH_KINDS.length - 1, i));
+    SH_KIND = SH_KINDS[i];
+    rail.style.transform = 'translateX(' + (i * step) + 'px)';
+    slots.forEach((s, j) => s.classList.toggle('is-cur', j === i));
+    $$('.sh-dot', dots).forEach((d, j) => {
+      d.classList.toggle('is-on', j === i);
+      d.setAttribute('aria-selected', j === i);
+    });
+    if (!silent) buzz(10);
+  };
+  /* the swipe. pointer events, one finger, a 40px threshold; the rail
+     follows the finger and snaps on release. touch-action:pan-y in CSS
+     keeps a vertical gesture the browser's. */
+  track.addEventListener('pointerdown', e => {
+    if (SH_BUSY) return;
+    drag = { x: e.clientX, i: SH_KINDS.indexOf(SH_KIND), moved: false };
+    rail.classList.add('is-drag');
+    track.setPointerCapture(e.pointerId);
+  });
+  track.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 4) drag.moved = true;
+    rail.style.transform = 'translateX(' + (drag.i * step + dx) + 'px)';
+  });
+  const drop = e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    rail.classList.remove('is-drag');
+    /* finger moves LEFT → the next card, which sits to the left */
+    go(drag.i + (dx < -40 ? 1 : dx > 40 ? -1 : 0));
+    drag = null;
+  };
+  track.addEventListener('pointerup', drop);
+  track.addEventListener('pointercancel', drop);
+
+  /* the dots: a pill for the active one, not a colour change */
+  SH_KINDS.forEach((kind, i) => {
+    const d = el('button', 'sh-dot'); d.type = 'button'; d.setAttribute('role', 'tab');
+    d.setAttribute('aria-label', SH_COPY.card + ' ' + (i + 1));              /* TAMAR */
+    pressable(d).addEventListener('click', () => go(i));
+    dots.appendChild(d);
+  });
+
+  /* the toggle: ONE control divided in two. The container carries the
+     keyline, the radius and the lift; the halves are flush at 0px and
+     the active fill is clipped to the rounded ends by overflow:hidden. */
+  [['916', SH_COPY.a916], ['45', SH_COPY.a45]].forEach(([a, label]) => {
+    const h = el('button', 'sh-tgh' + (a === SH_ASPECT ? ' is-on' : ''));
+    h.type = 'button'; h.dataset.a = a; h.setAttribute('role', 'radio');
+    h.innerHTML = '<i class="sh-tgm sh-tgm--' + a + '" aria-hidden="true"></i>' + label;
+    h.setAttribute('aria-checked', a === SH_ASPECT);
+    pressable(h).addEventListener('click', () => {
+      if (SH_BUSY || a === SH_ASPECT) return;
+      SH_ASPECT = a;
+      $$('.sh-tgh', tg).forEach(x => {
+        x.classList.toggle('is-on', x.dataset.a === a);
+        x.setAttribute('aria-checked', x.dataset.a === a);
+      });
+      paintCards(); place();
+    });
+    tg.appendChild(h);
+  });
+
+  /* the two buttons: equal 49px boxes, both rings painted OUTSIDE the box */
+  const mkBtn = (cls, label, icon) => {
+    const b = el('button', cls); b.type = 'button';
+    b.innerHTML = '<span class="sh-bl">' + esc(label) + '</span><span class="sh-ico">' + icon + '</span>';
+    return b;
+  };
+  const share = mkBtn('p-c sh-b sh-b--share', SH_COPY.share, SH_ICON.share);
+  const save  = mkBtn('r-b sh-b sh-b--save',  SH_COPY.save,  SH_ICON.save);
+  pressable(share).addEventListener('click', () => shRun(share, save, SH_COPY.sharing, shShare));
+  pressable(save ).addEventListener('click', () => shRun(save,  share, SH_COPY.saving,  shSave));
+  acts.append(share, save);
+  /* the way off the screen, quiet: the map is where every topic reopens */
+  const back = el('button', 'eg-clear sh-back', esc(SH_COPY.back));
+  back.type = 'button';
   pressable(back).addEventListener('click', () => goMap());
   acts.appendChild(back);
-  c.appendChild(acts);
-  requestAnimationFrame(() => acts.classList.add('is-in'));
+
+  paintCards();
+  place();
+  if (window.ResizeObserver) new ResizeObserver(place).observe(track);
+  else addEventListener('resize', place);
+  requestAnimationFrame(() => {
+    $('.eg-h2', c).classList.add('is-in');
+    place();
+    c.classList.add('is-in');
+  });
 }
 
 /* ===================== boot ========================================= */
