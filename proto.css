@@ -1766,6 +1766,31 @@ body.no-ph .ph{ display:none !important; }
 /* the top pad is what a short phone can least afford: at 640px of height
    fitBeat() is already scaling the whole beat, and 44px of air above the
    board is 44px the grid pays for. Fluid, so the tall phones keep it. */
+/* T21 · THE BOARD ARRIVES, IT IS NOT SIMPLY THERE. Every other block on
+   this beat takes .b5stage's 6px rise, which is a settle rather than an
+   entrance and is right for them: they are the account that follows the
+   result. The board IS the result, it is the first thing on the beat, and
+   fading up 6px in place made it appear rather than land.
+   FROM ABOVE, and that is the same direction the gate just left in — see
+   .prereveal.is-out. The gate falls 32px and out, the board falls 34px
+   and in, and because both travel down the two beats read as one motion
+   handing over rather than as one thing vanishing and another appearing.
+   Up would have been the alternative and it is wrong here: the board
+   would rise into the space the gate was still falling out of, two
+   objects crossing, which is what makes a swap look like a glitch.
+   --t-finale, not --t-flip: this is the beat's own arrival and it is
+   allowed to be the slowest thing on it. --e-land rather than --e-settle
+   because a scoreboard drops and stops; it does not glide. */
+.f5board.b5stage{
+  transform:translateY(-34px);
+  transition:opacity var(--t-finale) var(--e-out),
+             transform var(--t-finale) var(--e-land);
+}
+.f5board.b5stage.is-in{ transform:none; }
+@media (prefers-reduced-motion: reduce){
+  .f5board.b5stage{ transform:none; }
+}
+
 .b5{ padding-top:clamp(14px, 5vh, 44px); gap:var(--sp-2); justify-content:flex-start; }
 .b5 > *{ flex:none; }
 .b5fit{ transform-origin:top center; }
@@ -2417,7 +2442,15 @@ body.no-ph .ph{ display:none !important; }
    board's alone, and a diagonal sweep on a die-cut object reads as a
    loading skeleton.
    ===================================================================== */
-.i-cta.is-breathing{
+/* T21 · .pr-go JOINS IT, IT DOES NOT COPY IT. The reveal gate wants this
+   exact invitation and the keyframes below already say everything about
+   it — the timing, the two-beat shape, the shadow it grows and gives
+   back. A second @keyframes with the same numbers would drift the first
+   time one of them was retuned, and the drift would be invisible: two
+   buttons breathing 40ms apart on two screens nobody sees together.
+   Both are .p-c, so the shadow the keyframes rebuild is already theirs. */
+.i-cta.is-breathing,
+.pr-go.is-breathing{
   transform-origin:center;
   animation:i-cta-breathe 3500ms linear 1200ms infinite both;
 }
@@ -2444,7 +2477,8 @@ body.no-ph .ph{ display:none !important; }
    animations; an invitation that fires in 1ms every 3500ms is a flicker.
    startBreath() also refuses to add the class — this is the backstop. */
 @media (prefers-reduced-motion: reduce){
-  .i-cta.is-breathing{ animation:none; }
+  .i-cta.is-breathing,
+  .pr-go.is-breathing{ animation:none; }
 }
 
 /* ---- the display title, letter by letter --------------------------
@@ -3052,6 +3086,37 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   gap:clamp(18px, 4.5vh, 34px);
   padding-bottom:clamp(8px, 3vh, 26px);
 }
+/* T21 · THE GATE LEAVES DOWNWARD, and the direction is the whole reason
+   this exists. The board it hands over to arrives from ABOVE, travelling
+   down; if the gate went up the two would pass each other and read as two
+   events. Going the same way, the eye follows one downward sweep from the
+   press to the tally landing.
+   32px, not off the screen: it is a fade with a push behind it, not a
+   throw. The object is being replaced, not dismissed. */
+.prereveal.is-out{
+  opacity:0; transform:translateY(32px);
+  transition:opacity var(--t-exit) var(--e-in),
+             transform var(--t-exit) var(--e-in);
+}
+@media (prefers-reduced-motion: reduce){
+  .prereveal.is-out{ transition:none; }
+}
+
+/* T22 · THE CHAIR ON THE GROUND. Beat 2's asset and beat 2's treatment —
+   the same die-cut filter and the same hard offset shadow — so it is
+   recognisably the object that carried that beat rather than a picture of
+   a chair. width:auto against a height the budget writes, with the
+   asset's own aspect ratio, so fitPreReveal() controls one number and the
+   other follows.
+   NO FILTER OF ITS OWN AND NO ANIMATION. .b2chair carries a transition
+   for the seat's press reaction; this one never reacts to anything, so it
+   has none. The .b5stage fade it takes with its siblings is the whole of
+   its motion, and the global reduced-motion rule already flattens that. */
+.pr-chair{
+  display:block; flex:none; width:auto; height:0;
+  aspect-ratio:168 / 196; object-fit:contain;
+  filter:url(#dcw) drop-shadow(0 5px 0 rgba(0,0,0,.34));
+}
 
 /* THE EXPLANATION. On the dark ground, so it takes the ground's own ink
    rather than a card's — this is the one place in the round where display
@@ -3067,15 +3132,20 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   color:var(--paper); text-align:center; text-wrap:balance;
 }
 
-/* THE BUTTON IS AN ORDINARY PRIMARY, WITH NOTHING LEFT TO OVERRIDE. It
-   carried width, font-size, line-height and padding overrides while the
-   long sentence was in it; the sentence has moved to .pr-head and all of
-   them went with it. What remains is .p-c exactly as beat 5's own go
-   button takes it — full content width, one line — so the two advancing
-   presses in the round are the same object, not two sizes of it.
-   .prereveal stretches it because align-items is centre for the head:
-   align-self is the one line that has to say so. */
-.pr-go{ align-self:stretch; }
+/* T21 · IT IS NOT FULL WIDTH ANY MORE, AND THAT IS THE WHOLE NOTE.
+   Every other primary in the app sits at the foot of a column of content
+   and full width is what makes it the base of that column. This one is
+   alone on bare ground with nothing above it on most rounds, and at 358px
+   a yellow bar across an empty charcoal field reads as chrome — a footer
+   the screen happens to have — rather than as the one object the beat is
+   about. 216px is the ink (114.3px) plus a wide, even margin either side:
+   enough that the padding reads as deliberate, short enough that the eye
+   takes the whole thing as a shape rather than as an edge-to-edge rule.
+   Against .p-c's 56px minimum that is close to 4:1, which is a button.
+   min() rather than a bare 216 so a narrower stage clamps it instead of
+   overflowing; nothing in the app is narrower than 328px of content, so
+   the clamp never bites today and exists for the phone that does. */
+.pr-go{ width:min(100%, 216px); align-self:center; }
 /* THE PLACEHOLDER, AND WHY IT IS NOT ph(). Same hazard treatment the .ph
    marker draws, so it reads as placeholder copy at a glance — but it is
    NOT hidden by body.no-ph. ph()'s marker is, and the default build sets
@@ -5399,20 +5469,33 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    OUTSIDE the chip. A 28% grey line inside it is a different colour, a
    different weight and on the other side of the border box. The two
    remain unmistakable — see the report's before/after.
-   SCOPED TO .prof-gender. .gchip is also the invitation sheet's row
-   (.inv-row > .gchip) and the sticker sheet's "any" option
-   (.gchip.bopt-any); neither is touched. */
-.prof-gender > .gchip{
+   T21 · THE INVITATION'S ROW JOINS IT, 09 Sep. When this was scoped the
+   note above said .inv-row > .gchip was deliberately not touched. It asks
+   the same question — איך לפנות אליכם? — with the same chips on the same
+   cream, and the only thing that made it different was that T17 had not
+   reached it. Two sheets asking one question in two treatments is the
+   drift, not the fix for it. The sticker sheet's "any" option
+   (.gchip.bopt-any) is still not touched: that one is a filter on a
+   picker, not a voice.
+   THE INVITATION HAS THREE CHIPS, NOT TWO. Its third is לא משנה, which
+   dismisses without writing a gender, so it never takes .on — the
+   selected ring below is reachable on two of the three and that is
+   correct, not an omission. */
+.prof-gender > .gchip,
+.inv-row > .gchip{
   box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 3px 0 rgba(0,0,0,.3);
 }
-.prof-gender > .gchip.on{
+.prof-gender > .gchip.on,
+.inv-row > .gchip.on{
   box-shadow:inset 0 0 0 2px rgba(19,19,16,.28),
              0 0 0 3px #FBF7EE, 0 0 0 5.5px #131310, 0 4px 0 rgba(0,0,0,.32);
 }
-.prof-gender > .gchip:active{
+.prof-gender > .gchip:active,
+.inv-row > .gchip:active{
   box-shadow:inset 0 0 0 2px rgba(19,19,16,.28), 0 1px 0 rgba(0,0,0,.3);
 }
-.prof-gender > .gchip.on:active{
+.prof-gender > .gchip.on:active,
+.inv-row > .gchip.on:active{
   box-shadow:inset 0 0 0 2px rgba(19,19,16,.28),
              0 0 0 3px #FBF7EE, 0 0 0 5.5px #131310, 0 2px 0 rgba(0,0,0,.32);
 }

@@ -3993,6 +3993,65 @@ function explainSplit(text) {
    S.beat is 4.5 on purpose: exitRound() treats > 1 and < 5 as mid-round,
    so leaving here still asks for confirmation, which is right — the
    record is written by beat 5 and nothing is saved yet. */
+/* =====================================================================
+   T22 · THE PRE-REVEAL'S CHAIR BUDGET, AND IT IS v27's, NOT A NEW ONE.
+   Same shape as fitBeat2(): the bottom of the column is the interaction
+   and never moves — the gate keeps its height, the explanation keeps
+   whatever its two lines need, the gaps are the gaps — and the chair is
+   the remainder. Measured as a remainder rather than re-derived term by
+   term, for the reason v27 gives: the terms are spread across a rule and
+   a flex gap, and a re-derivation drifts the first time one of them
+   moves while the remainder cannot.
+
+   THE FLOOR IS v27's 150px, DELIBERATELY THE SAME NUMBER. Below it the
+   chair stops being the thing the screen is about and becomes an icon
+   beside a button, which is the failure that floor is on record for. If
+   the remainder comes in under it the chair does NOT squash further — it
+   takes the floor and the column absorbs the difference, which on this
+   screen it can because the column is centred with slack rather than
+   packed like beat 2's.
+
+   THE CEILING IS 210, NOT BEAT 2's 330. This is a callback, not a
+   reprise: at beat 2's size the same object twice in ninety seconds
+   reads as the same screen returning, and the gate stops being the thing
+   the eye lands on. 210 is comfortably a chair — beat 2 itself runs down
+   to 180 on the long questions — and comfortably not beat 2's.
+
+   IT CANNOT REACH THE HUD, and that is structural rather than computed
+   here. This beat lives inside .round, which is a flex sibling BELOW the
+   HUD in the stage's column; beat 2's chair could only ever pass behind
+   the pills because its overlay is inset:0 over the whole stage. The
+   clearance is measured in the report against T20's 14px rule and comes
+   in far above it, but nothing here has to defend it.
+   ===================================================================== */
+const PR_CHAIR_MAX = 210;
+const PR_CHAIR_MIN = CHAIR_MIN;      /* v27's 150, named once */
+
+function fitPreReveal(b) {
+  const chair = $('.pr-chair', b); if (!chair) return;
+  const cs = getComputedStyle(b);
+  /* THE COLUMN IS CENTRED, WHICH IS WHY scrollHeight IS NO USE HERE.
+     beat 2's inner is packed and its scrollHeight IS its content;
+     .prereveal is justify-content:center inside a flex:1 box, so
+     scrollHeight is clamped to clientHeight and reading it back gives
+     the room rather than the content in it. The rest is summed from the
+     children instead, plus the gaps between them, which is the same
+     "measured, not re-derived" contract fitBeat2() keeps — it is just
+     that on a centred column the measurable thing is the children. */
+  const avail = b.clientHeight
+              - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const gap = parseFloat(cs.rowGap) || 0;
+  const kids = [].slice.call(b.children);
+  const rest = kids.reduce((a, n) =>
+        a + (n === chair ? 0 : n.getBoundingClientRect().height), 0)
+      + gap * Math.max(0, kids.length - 1);
+
+  let target = avail - rest;
+  if (target > PR_CHAIR_MAX) target = PR_CHAIR_MAX;
+  if (target < PR_CHAIR_MIN) target = PR_CHAIR_MIN;
+  chair.style.height = target.toFixed(2) + 'px';
+}
+
 function seenPreHow() {
   if (DEV.preHow !== null) return !DEV.preHow;
   return PRE_HOW_SEEN;
@@ -4031,6 +4090,18 @@ async function preReveal() {
      has anything to measure. */
   const b = el('div', 'beat prereveal');
   b.innerHTML =
+    /* T22 · THE CHAIR, AT REST, AND IT IS BEAT 2'S. Same asset off the
+       same manifest entry, so there is one chair in the game and this is
+       it again rather than a second drawing of it. The screen was one
+       button in a very large charcoal field on every round after the
+       first; the chair is the object the player already reads as "the
+       Knesset is about to do something", and it gives the gate something
+       to sit under — which is the arrangement beat 2 has trained them on.
+       AT REST MEANS AT REST. No breath, no float, no glow: the gate is
+       the thing being offered and a second moving object beside it would
+       split the invitation. The chair is the setting. */
+    '<img class="pr-chair" src="' + ROOT +
+      (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
     /* THE EXPLANATION, FIRST ROUND ONLY, and it is written now — the
        hazard placeholder this screen carried is gone with it. It goes
        through t() because it speaks to the player; see COPY.revealHow. */
@@ -4045,12 +4116,37 @@ async function preReveal() {
       esc('לתוצאות ›') + '</button>';                          /* TAMAR */
   r.appendChild(b);
   sizeStage();
+  fitPreReveal(b);
 
-  const parts = [$('.pr-head', b), $('.pr-go', b)].filter(Boolean);
+  const parts = [$('.pr-chair', b), $('.pr-head', b), $('.pr-go', b)].filter(Boolean);
   parts.forEach(n => n.classList.add('b5stage'));
   requestAnimationFrame(() => parts.forEach(n => n.classList.add('is-in')));
 
-  pressable($('.pr-go', b)).addEventListener('click', () => beat5(), { once:true });
+  /* T21 · THE INTRO'S BREATH, THE SAME ONE. startBreath() is the whole
+     policy in three lines — it refuses under reduced motion and it stops
+     on the first press — so calling it is also how this gate inherits
+     both of those. The CSS above lists .pr-go beside .i-cta on one rule
+     rather than copying the keyframes. */
+  const gate = $('.pr-go', b);
+  startBreath(gate);
+
+  /* T21 · THE PRESS HANDS OVER, IT DOES NOT CUT. beat5() opens with
+     r.innerHTML = '', so the gate used to vanish on the same frame the
+     board was built and the board faded up 6px in place: two events, and
+     the join between them was the one moment the screen had nothing to
+     say. The gate now falls 32px and out, and the board falls 34px and
+     in from above — see .prereveal.is-out and .f5board.b5stage. Same
+     direction, so it reads as one motion.
+     THE WAIT IS THE EXIT'S OWN DURATION and is read from the token
+     rather than typed, so retuning --t-exit moves both halves together.
+     Reduced motion skips it outright: the CSS kills the transition, and a
+     wait for a transition that will not run is a delay with nothing in
+     it. */
+  pressable(gate).addEventListener('click', () => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return beat5();
+    b.classList.add('is-out');
+    setTimeout(beat5, T.exit);
+  }, { once:true });
 }
 
 /* ===================== BEAT 5 · THE REVEAL ========================== */
@@ -6300,8 +6396,17 @@ function inviteModal() {
     if (c.dataset.g) setProfile({ gender: c.dataset.g });
     $('.stmodal__x', m).click();
   }));
+  /* T21 · IT OPENS THE BUILDER NOW, NOT THE PRESET SHEET. renderSheet()
+     is the templates — pick one of the drawn characters and close.
+     renderBuilder() is the six-axis customisation. החליפו next to
+     "הדמות שלכם" is an offer to make the character yours, and handing
+     that press a grid of other people's faces answers a different
+     question. 2b's own two doors already distinguish them: [data-swap]
+     goes to the sheet there and [data-build] to the builder; this link
+     was wired to the first of those and should always have been the
+     second. */
   const sw = $('[data-swap]', box);
-  if (sw) pressable(sw).addEventListener('click', () => renderSheet(m));
+  if (sw) pressable(sw).addEventListener('click', () => renderBuilder(m));
   return m;
 }
 
