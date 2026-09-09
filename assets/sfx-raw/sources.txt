@@ -1,12 +1,11 @@
 SOURCE AND LICENCE TRAIL — raw sound effects
 ============================================
 
-NINE raw files. The first five were obtained from Zapsplat
-(https://www.zapsplat.com) on a PAID Zapsplat subscription (Gold,
-£4.99/month), not the free tier — provenance as stated by Lion, 09 Sep
-2026. FOUR MORE were added by Lion on 09 Sep 2026 with no source stated;
-their position is recorded separately at the foot of this file and is NOT
-yet settled.
+Nine raw files, all nine obtained from Zapsplat (https://www.zapsplat.com)
+on a PAID Zapsplat subscription (Gold, £4.99/month), not the free tier.
+Provenance as stated by Lion — the first five on 09 Sep 2026, the four
+later takes confirmed the same day as coming from the same paid account,
+within the download-time exemption.
 
 ATTRIBUTION: NOT REQUIRED
 -------------------------
@@ -16,19 +15,11 @@ DOWNLOAD rather than to the account: sounds downloaded while the
 subscription was active stay licensed for attribution-free use for life,
 in unlimited projects, even if the subscription later lapses.
 
-So no Zapsplat credit line is owed for these five files, and none has been
-built. This supersedes the earlier note in this file, which assumed the
-free Standard Licence and flagged a credit as outstanding. That flag is
-closed.
-
-ONE CONDITION, AND IT IS THE ONLY ONE LEFT
-------------------------------------------
-The exemption depends on these five having been downloaded AFTER the Gold
-subscription went active. If any of them was pulled down before the
-upgrade, that particular file still carries the free-tier credit condition
-regardless of the account's state today. Worth one look at the Zapsplat
-download history before release; it is the only thing between this and a
-closed matter.
+So no Zapsplat credit line is owed for any of these nine files, and none
+has been built. This supersedes two earlier notes in this file — the first
+assumed the free Standard Licence and flagged a credit as outstanding; the
+second held the four later takes open pending their provenance. Both are
+closed. Nothing about attribution is outstanding.
 
 ONE LINE PER FILE
 -----------------
@@ -38,9 +29,8 @@ zapsplat_impacts_wood_plank_thin_stamp_on_no_snap_002_110789.wav
     Also the strike and the reverberated tail of: assets/sfx/complete.wav
     NOTE: this file shipped as stamp_knock.wav until 09 Sep 2026. It is the
     only dull, low, heavily damped single impact in the set, so it is the
-    PRESS; the knock is now the brighter mechanical hit from
-    master_of_dreams_stamp_5_729.wav. See the batch report for the
-    measurements behind the swap.
+    PRESS; the knock is the brighter mechanical hit from
+    master_of_dreams_stamp_5_729.wav. Swap confirmed by Lion, 09 Sep 2026.
 
 zapsplat_industrial_tape_masking_peel_from_roll_002_104068.wav
     Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit mono, 1.039 s
@@ -63,39 +53,33 @@ zapsplat_multimedia_game_sound_tally_clicks_spin_board_slows_down_to_stop_104966
     (one click and the final stop, cut out of a decelerating spin-board tally —
      the recording's own shape is deliberately NOT used; see the batch report)
 
-THE FOUR LATER TAKES — PROVENANCE NOT STATED
---------------------------------------------
-Added 09 Sep 2026. Their filenames do not carry the zapsplat_ prefix the
-first five do, and no source was given, so nothing here should be read as
-a claim about where they came from.
-
 foley_sticker_small_peel_off_remove_from_wooden_surface.wav
-    source not stated · 96 kHz/24-bit stereo, 0.617 s
-    SHIPPING as: assets/sfx/tape_peel.wav
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.617 s
+    Used for: assets/sfx/tape_peel.wav
+    (the release at ~254 ms — the only slice in either peel candidate that
+     opens on its own event rather than building toward one)
 
 master_of_dreams_stamp_5_729.wav
-    source not stated · 96 kHz/24-bit stereo, 0.456 s
-    SHIPPING as: assets/sfx/stamp_knock.wav (its second event)
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.456 s
+    Used for: assets/sfx/stamp_knock.wav, and layer 1 of assets/sfx/stamp.wav
+    (its SECOND event — the only single impact among the four stamp events
+     supplied; the other three are multi-hit rattles)
 
 office_printer_label_peel_quickly_hard_from_surface.wav
-    source not stated · 96 kHz/24-bit stereo, 0.757 s
-    not used — no onset; see the batch report
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.757 s
+    NOT USED — a 744 ms continuous rip cresting 555 ms in with no attack
+    anywhere, which is the same defect as the masking-tape roll above.
 
 master_of_dreams_stamp_6_730.wav
-    source not stated · 96 kHz/24-bit stereo, 0.730 s
-    not used — a multi-hit rattle, not a single impact
-
-WHY THIS MATTERS. The attribution exemption established above is specific:
-it covers files downloaded from Zapsplat under Lion's paid account. It
-says nothing about these four. Two of them are now shipping in processed
-form, so their licence position needs establishing before release in the
-same way the first five's did.
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.730 s
+    NOT USED — both of its events are multi-hit rattles (4 hits and 3 hits),
+    and a press layer has to land as one event on the contact frame.
 
 NOT FROM ZAPSPLAT
 -----------------
 assets/sfx/complete.wav is built here, from the files above. Every transient
 in it is one of ours; the reverb tail is a synthesised impulse response,
-because nothing in the five has any sustain to stretch. No third-party
+because nothing in the nine has any sustain to stretch. No third-party
 material of any kind is in it.
 
 WHY THE RAW FILES STAY IN THE REPO
@@ -111,5 +95,5 @@ tier terms above were read from search results quoting zapsplat.com's FAQ
 and upgrade pages, corroborated by an independent licence guide. Three
 sources agree on all three points: free requires credit, paid does not, and
 the exemption follows the download for life. This is not a primary reading
-of the licence document itself, and nothing here has been checked against
-Zapsplat's account records.
+of the licence document itself, and the account and download facts are as
+Lion stated them rather than checked against Zapsplat's records.
