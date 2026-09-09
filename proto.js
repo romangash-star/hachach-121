@@ -101,6 +101,7 @@ const T = {
   seatCross: ms('--t-seat-cross'),
   markGap:   ms('--t-mark-gap'),
   panelGap:  ms('--t-panel-gap'),
+  deckPeek:  ms('--t-deck-peek'),    /* T22 · the back of the next card, seen */
   cmarkLand: ms('--t-cmark-land'),   /* the pill's own landing, read not guessed */
   claimHold: ms('--t-claim-hold'),   /* T18 · verdict -> the card reacting */
   peel:      ms('--t-peel'),
@@ -383,6 +384,7 @@ addEventListener('resize', () => { if ($('#mapline')) redrawPath(); });
    listens to. */
 addEventListener('resize', () => {
   if (!$('.b2q__tab')) return;
+  fitClaimSize();      /* T22 · the step is a function of the width */
   fitBeat2();          /* the budget moves with the viewport */
   placeQTab();         /* and line 1 moved with the chair */
 });
@@ -2258,7 +2260,16 @@ async function claimReveal(ans, card) {
      swiped right sees it leave right. */
   await new Promise(res => {
     pressable(go).addEventListener('click', async () => {
-      const dir = card._swipe ? card._swipe.dirFor(S.claim) : 1;
+      /* T22 · THE THROW IS THE DECK'S OWN, AND IT GOES LEFT.
+         It used to take dirFor(S.claim), so the card left in whichever
+         direction the player had swiped — which made the handover a
+         different motion on an אמת round than on a שקר one, and made the
+         card that is being retired behave like a card still in play.
+         The values here are .deckcard.is-leaving's, read off that rule
+         rather than invented: -420px, 8px of drop and -13deg. Every MK
+         card in the cascade leaves on exactly these, so the claim card
+         now leaves the way every other card in the game leaves. */
+      const dir = -1;
       panel.classList.remove('is-in');
       /* .mf-b.is-stamped runs d2-jolt with fill:both, which HOLDS
          transform:translateY(0) forever — and a held animation beats an
@@ -2266,11 +2277,11 @@ async function claimReveal(ans, card) {
       card.classList.remove('is-stamped');
       card.style.animation = 'none';
       card.classList.add('is-leaving');
-      card.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25) + 'deg)';
+      card.style.transform = CARD_EXIT_T;
       card.style.opacity = .2;              /* the deck's own exit value */
       mark.style.animation = 'none';
       mark.classList.add('is-leaving');
-      mark.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25) + 'deg)';
+      mark.style.transform = CARD_EXIT_T;
       mark.style.opacity = .2;
       /* ITEM 50 · THE PILL RIDES OUT WITH THEM. It is on .cardwrap now, so
          nothing else takes it off screen.
@@ -2283,10 +2294,20 @@ async function claimReveal(ans, card) {
          throw can own transform outright without losing the centring. */
       chip.style.animation = 'none';
       chip.classList.add('is-leaving');
-      chip.style.transform = 'translateX(' + (dir * 620) + 'px) rotate(' + (dir * 25 + CM_REST) + 'deg)';
+      chip.style.transform = 'translate(' + (dir * 420) + 'px,8px) rotate(' +
+                             (dir * 13 + CM_REST) + 'deg)';
       chip.style.opacity = .2;
       await wait(T.cardExit);
       card.remove(); mark.remove(); panel.remove(); chip.remove();
+      /* T22 · THE BACK OF THE NEXT CARD IS SHOWN, ON PURPOSE. It was
+         already visible for the frame between the throw finishing and
+         beat 2 covering it, and the brief is right that this is correct
+         rather than a glitch: it is the deck, and seeing the deck is what
+         says another card is coming. It was simply too short to read.
+         --t-deck-peek holds it with nothing else moving, which is the
+         same device --t-mark-gap is on the verdict: a gap that exists so
+         one thing can be seen before the next arrives. */
+      await wait(matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : T.deckPeek);
       res();
     }, { once:true });
   });
@@ -3006,6 +3027,12 @@ function beat2() {
 
   /* NO INSTRUCTION LINE. Three vote chips are the instruction. */
 
+  /* T22 · THE CLAIM IS SIZED FIRST, and the order is not incidental. The
+     question's height is a term in the chair's remainder, so a size
+     picked after the budget would leave the chair measured against a
+     block that is about to change height. Sized, then budgeted, then the
+     tab placed against the line the first two settled. */
+  fitClaimSize();
   /* v27 · the chair yields BEFORE the tab is placed: resizing it moves
      line 1, and placeQTab() reads line 1's rect. */
   fitBeat2();
@@ -3259,6 +3286,99 @@ const CHAIR_MAX = 330;
 const CHAIR_MIN = 150;
 
 /* =====================================================================
+   T22 PART 1 · 32px UNDER THE VOTE ROW, MEASURED ON INK.
+   The overlay's bottom padding was 16px and the row sat 11.4px clear of
+   the stage at 360x640 — close enough to the edge to read as cut off
+   rather than as placed. The reservation is 32px of visible ground, and
+   like T20's HUD gap it is taken from ink and not from the box: .v-a
+   carries a 4.6px extrusion below its border box, so the padding has to
+   be 32 + 4.6 to leave 32 of actual air.
+   IT COMES OUT OF THE CHAIR, NOT THE QUESTION. avail shrinks, rest does
+   not, and the chair is the remainder — which is v27's whole design and
+   the reason it can absorb this without anything else moving.
+   VOTE_INK is a named constant rather than a parse of computed
+   box-shadow, for the reason HUD_INK gives: a shadow string is four
+   numbers whose meaning depends on their count, and getting that wrong
+   silently is worse than a named 4.6 that a grep for .v-a finds. */
+const VOTE_GAP = 32;    /* T22 · visible ground under the row, ink to edge */
+const VOTE_INK = 4.6;   /* .v-a's extrusion, painted below its box        */
+
+/* =====================================================================
+   T22 PART 2 · THE CLAIM STEPS, IT DOES NOT SCALE.
+   Three fixed sizes and the largest that fits in three lines. A
+   continuously fitted size would give the question a different size on
+   every round, which reads as arbitrary rather than as designed — the
+   player would see 26 on one issue, 24.3 on the next and have no way to
+   understand why. Three steps are a set, and a set reads as a decision.
+   THE FLOOR DOES NOT BEND. If an issue still runs to four lines at 20px
+   it runs to four lines: going smaller would put the claim under its own
+   21px tail and invert the hierarchy, which is a worse failure than a
+   fourth line. Those issues are a content-length problem and are named
+   in the report rather than absorbed here. */
+/* T22 · THE DECK'S EXIT, WRITTEN ONCE. These are .deckcard.is-leaving's
+   own numbers. The claim card cannot take that class — it is not a
+   .deckcard and the rule also carries rotateY(180deg) for the flipper —
+   so the transform is named here and applied inline, which is the same
+   values reaching the same place by the only route available. If that
+   rule is ever retuned, this is the other half to move with it. */
+const CARD_EXIT_T = 'translate(-420px,8px) rotate(-13deg)';
+
+/* T22b · THE TAIL STEPS WITH THE CLAIM, AND IT IS A RATIO NOT A SIZE.
+   21 was set against a claim fixed at 26 — 21/26 is 0.81 — and when the
+   claim started stepping the tail did not follow. At the floor that put a
+   21px tail under a 20px claim: the subordinate line larger than the
+   question it belongs to, which is not a collapsed hierarchy but an
+   inverted one. The pairs below hold 0.81 to the nearest pixel, so the
+   relationship the board decided at 26 is the relationship at every step.
+   PAIRS RATHER THAN A CALC. 23 x 0.81 is 18.63 and 20 x 0.81 is 16.2;
+   written as a calc the tail would land on fractional sizes that hint
+   differently at each step. Three pairs are a set the same way three
+   sizes are. */
+const Q_STEPS = [
+  { q: 26, t: 21 },     /* today's, and what most issues get */
+  { q: 23, t: 19 },
+  { q: 20, t: 16 },     /* the floor */
+];
+const Q_MAX_LINES = 3;
+
+/* the claim's own line count — the tail is excluded because it is its own
+   line by declaration and is not part of what is being fitted */
+function claimLines(q) {
+  const tn = [].filter.call(q.childNodes, n => n.nodeType === 3 && n.textContent.trim());
+  if (!tn.length) return 0;
+  const rg = document.createRange();
+  rg.setStart(tn[0], 0);
+  rg.setEnd(tn[tn.length - 1], tn[tn.length - 1].textContent.length);
+  const tops = [].filter.call(rg.getClientRects(), r => r.height > 4)
+                 .map(r => Math.round(r.top));
+  return new Set(tops).size;
+}
+
+/* ONE PASS PER STEP AND AT MOST THREE, which is cheap enough to run on
+   every build: the block's width does not change with its font size, so
+   each step's line count is settled the moment the size is written and
+   there is nothing to converge on. */
+function fitClaimSize() {
+  const q = $('.b2q'); if (!q) return null;
+  /* THE TAIL IS WRITTEN WITH EVERY TRY, NOT ONLY WITH THE WINNER. It is a
+     block of its own so it cannot change where the claim wraps, but it IS
+     part of the block the chair is budgeted against, and leaving it at the
+     previous step's size between tries would measure a height that never
+     ships. */
+  const put = st => {
+    q.style.setProperty('--b2q-size', st.q + 'px');
+    q.style.setProperty('--b2q-tail', st.t + 'px');
+  };
+  for (let i = 0; i < Q_STEPS.length; i++) {
+    put(Q_STEPS[i]);
+    if (claimLines(q) <= Q_MAX_LINES) return Q_STEPS[i].q;
+  }
+  const floor = Q_STEPS[Q_STEPS.length - 1];
+  put(floor);                     /* the floor holds, four lines and all */
+  return floor.q;
+}
+
+/* =====================================================================
    T20 PART 1 · THE TOP OF THE BUDGET, WHICH v27 NEVER HAD.
    v27 reserved from the bottom up — the vote row, the gaps, the padding —
    and let the chair take whatever was left. Nothing reserved from the
@@ -3311,6 +3431,10 @@ function fitBeat2() {
   /* BEFORE the budget reads its own padding, not after: the reservation
      is part of what "available" means now. */
   reserveHudGap(ov);
+  /* T22 · and the same from the other end. --ov-bot is written here for
+     the same reason --ov-top is: the safe-area inset is not knowable from
+     the stylesheet alone and a literal would be right on one device. */
+  ov.style.setProperty('--ov-bot', (VOTE_GAP + VOTE_INK).toFixed(2) + 'px');
 
   const cs = getComputedStyle(ov);
   const avail = ov.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
@@ -3415,7 +3539,14 @@ function qBlock(text, extra) {
      shipped default stays in the stylesheet where it belongs. Compared
      against the SHIPPED size, so ?qsize=26 is a no-op and the default
      path never writes an inline style. */
-  const size = DEV.qsize !== 26 ? ' style="--b2q-size:' + DEV.qsize + 'px"' : '';
+  /* T22b · the switch carries the tail with it, so a forced size is the
+     whole pair rather than a claim at one step and a tail at another.
+     An unlisted size falls back to the ratio, rounded. */
+  const pair = Q_STEPS.filter(st => st.q === DEV.qsize)[0];
+  const size = DEV.qsize !== 26
+    ? ' style="--b2q-size:' + DEV.qsize + 'px;--b2q-tail:' +
+      (pair ? pair.t : Math.round(DEV.qsize * 0.81)) + 'px"'
+    : '';
   const t   = String(text || '');
   const i   = t.indexOf(Q_TAIL);
   /* the tab is drawn in every branch: it labels the question, not the
