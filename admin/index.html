@@ -461,6 +461,19 @@ function buildIssueForm(iss){
     fg('שם','source_name','<input class="form-input" name="source_name" value="'+esc(iss.source_name||'')+'">')+
     fg('קישור','source_url','<input class="form-input ltr" name="source_url" value="'+esc(iss.source_url||'')+'" placeholder="https://...">')+
     '</div>'+
+    '<hr class="form-divider"><div class="form-section-label">הרחבה בסוף הסבב (עד 3 קישורים)</div>'+
+    '<div class="form-grid">'+
+    fg('תווית 1','fl1_label','<input class="form-input" name="fl1_label" value="'+esc((iss.further_links&&iss.further_links[0]&&iss.further_links[0].label)||'')+'" placeholder="שם הקישור">')+
+    fg('קישור 1','fl1_url','<input class="form-input ltr" name="fl1_url" value="'+esc((iss.further_links&&iss.further_links[0]&&iss.further_links[0].url)||'')+'" placeholder="https://...">')+
+    '</div>'+
+    '<div class="form-grid">'+
+    fg('תווית 2','fl2_label','<input class="form-input" name="fl2_label" value="'+esc((iss.further_links&&iss.further_links[1]&&iss.further_links[1].label)||'')+'" placeholder="שם הקישור">')+
+    fg('קישור 2','fl2_url','<input class="form-input ltr" name="fl2_url" value="'+esc((iss.further_links&&iss.further_links[1]&&iss.further_links[1].url)||'')+'" placeholder="https://...">')+
+    '</div>'+
+    '<div class="form-grid">'+
+    fg('תווית 3','fl3_label','<input class="form-input" name="fl3_label" value="'+esc((iss.further_links&&iss.further_links[2]&&iss.further_links[2].label)||'')+'" placeholder="שם הקישור">')+
+    fg('קישור 3','fl3_url','<input class="form-input ltr" name="fl3_url" value="'+esc((iss.further_links&&iss.further_links[2]&&iss.further_links[2].url)||'')+'" placeholder="https://...">')+
+    '</div>'+
     '<div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">✓ עדכן שאלה</button>'+
     '<button type="button" class="btn btn-danger btn-sm" data-del-issue="'+iss.id+'">✕ מחק שאלה</button>'+
     '<span class="save-status" id="st-'+iss.id+'"></span></div>'+
@@ -487,6 +500,11 @@ function saveIssueLocal(id){
     mode:fd.get('mode'),verification:fd.get('verification'),voteId:fd.get('voteId'),
     tally_for:parseInt(fd.get('tally_for'))||0,tally_against:parseInt(fd.get('tally_against'))||0,
     knesset_url:fd.get('knesset_url'),source_name:fd.get('source_name'),source_url:fd.get('source_url'),
+    further_links:[
+      {label:fd.get('fl1_label'),url:fd.get('fl1_url')},
+      {label:fd.get('fl2_label'),url:fd.get('fl2_url')},
+      {label:fd.get('fl3_label'),url:fd.get('fl3_url')},
+    ].filter(l=>l.label&&l.url),
   });
   markDirty();
   stEl.textContent='✓ עודכן — לחץ "שמור ב-GitHub" לשמירה סופית';
