@@ -241,6 +241,11 @@ const DEV = {
      looked at twice, and resetting the save to see it spends the whole
      run. on/off force it WITHOUT writing the flag. */
   preHow: qPick('prehow', { on:true, off:false }, null),
+  /* SOUND · and a fifth time, for the same reason as the four above: a
+     preference that ships OFF cannot otherwise be looked at without
+     spending the player's own setting. on/off force it WITHOUT writing
+     the flag; null means "ask the save". */
+  sound: qPick('sound', { on:true, off:false }, null),
   /* T20 · the claim's size on beat 2. 26 SHIPS as of 09 Sep — see .b2q in
      proto.css for why, and note it is a fit decision rather than a type
      one. 30 and 22 stay reachable so the three can be drawn beside each
@@ -1144,7 +1149,137 @@ function buzz(ms) {
 }
 /* one call site for every pressable thing, so the rule cannot be applied
    to some buttons and forgotten on others */
-function pressable(node) { node.addEventListener('pointerdown', () => buzz(10)); return node; }
+function pressable(node) { node.addEventListener('pointerdown', () => { unlockAudio(); buzz(10); }); return node; }
+
+/* ===================== SOUND · THE FOLEY SET =========================
+   FOLEY, NOT UI SOUNDS. Everything on screen is a physical object, so the
+   library is paper, ink, card and wood. Ten files were cut for this in
+   assets/sfx/; eight of them are used at runtime — stamp.wav is the
+   assembled two-layer hero and its own layers stay on disk only so the
+   composite can be rebuilt.
+
+   IT CONFIRMS, IT NEVER INFORMS. Most players are muted, on a bus or in
+   class, so no state change anywhere may depend on a sound being heard.
+   Every call below is fire-and-forget: nothing is awaited, nothing is
+   scheduled off a decode, and a missing buffer is silence rather than a
+   wait. See sfx().
+
+   OFF BY DEFAULT, and that is not timidity: sound-on by default on a
+   phone is how a teenager kills the tab in a classroom.
+
+   EVERY SOUND IS CAUSED BY SOMETHING THE PLAYER DID, at the moment they
+   did it. That is the rule the set is built against and it is what keeps
+   beat 2 and the coin silent — see the notes at those call sites.
+
+   NOTHING IS FETCHED UNTIL SOUND IS TURNED ON. A player who never touches
+   the toggle pays zero bytes, which is most of them. */
+const SFX_DIR = 'assets/sfx/';
+const SFX_SRC = {
+  /* the hero. ONE file, not two scheduled layers: the 190ms offset and the
+     8dB between knock and press are baked into it, so neither can drift
+     from --t-stamp-drop or be re-levelled by accident. It is fired at the
+     START of the fall, which is what puts the press on the contact frame. */
+  stamp: 'stamp.wav',
+  /* three real takes, not one pitch-shifted three ways — 2106 / 3019 /
+     3690 Hz, cut from separate card events. Cycled so no two consecutive
+     cards in a cascade sound alike. */
+  card1: 'card_1.wav', card2: 'card_2.wav', card3: 'card_3.wav',
+  peel:  'tape_peel.wav',
+  tick:  'count_tick.wav',
+  land:  'count_land.wav',
+  done:  'complete.wav'
+};
+let AC = null;                 /* the AudioContext, created on first gesture */
+let SFX_BUF = {};              /* name -> AudioBuffer, as they decode        */
+let SFX_FETCHED = false;       /* the fetch is fired once and only once      */
+let SND_ON = false;            /* the save-backed preference. OFF by default */
+/* the tick sample is 52ms; it may not retrigger faster than it lasts */
+const SFX_TICK_MIN = 55;
+
+/* ?sound=on / ?sound=off FORCE the preference WITHOUT writing it, on the
+   same terms as ?intro, ?mapintro, ?beacon and ?prehow: a switch that
+   exists to look at something must not spend the player's real state. */
+function sndOn() {
+  return DEV.sound !== null ? DEV.sound : SND_ON;
+}
+
+/* iOS WILL NOT PLAY ANYTHING UNTIL THE PLAYER TAPS, and the tap has to be
+   the one that creates or resumes the context. pressable() is already the
+   single call site for every pressable thing in the app — the comment
+   above it says why — so the unlock rides there rather than being wired
+   button by button and forgotten on one of them.
+   IDEMPOTENT AND SILENT. It runs on every press for the life of the
+   session and must cost nothing after the first. */
+function unlockAudio() {
+  try {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return;
+    if (!AC) AC = new Ctor();
+    if (AC.state === 'suspended') AC.resume();
+    /* THE FETCH HANGS HERE, NOT ONLY ON THE TOGGLE. A returning player
+       whose save already says sound is on never passes through setSound(),
+       so without this the context would open on their first press and the
+       files would never be asked for. sfxLoad() is idempotent. */
+    if (sndOn()) sfxLoad();
+  } catch (e) { /* no audio on this device; the game is unchanged */ }
+}
+
+/* THE FETCH IS THE WHOLE PRELOAD, and it happens when sound is switched
+   on rather than at boot. Eight files, ~149 KB, all in flight at once and
+   each decoded as it lands, so a sound becomes available the moment its
+   own file is ready instead of waiting for the slowest.
+   A FILE THAT HAS NOT ARRIVED IS SILENCE. sfx() reads SFX_BUF and returns
+   if the name is not in it yet; nothing retries, nothing queues, and no
+   beat is held for a decode. On a slow connection the first stamp of the
+   first round may be silent and the second will not, which is the correct
+   failure for something that is garnish. */
+function sfxLoad() {
+  if (SFX_FETCHED || !AC) return;
+  SFX_FETCHED = true;
+  Object.keys(SFX_SRC).forEach(name => {
+    fetch(SFX_DIR + SFX_SRC[name])
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status))
+      .then(b => new Promise((ok, no) => {
+        /* the callback form as well as the promise: older Safari resolves
+           decodeAudioData only through the callback */
+        const p = AC.decodeAudioData(b, ok, no);
+        if (p && p.then) p.then(ok, no);
+      }))
+      .then(buf => { SFX_BUF[name] = buf; })
+      .catch(() => { /* one file missing is one sound missing, not a bug */ });
+  });
+}
+
+/* PLAY. Returns immediately, always. Every reason not to make a sound —
+   preference off, no context, no buffer yet, a device that throws — lands
+   in the same place, which is nothing happening.
+   `at` is an offset in SECONDS from now, used only by the stamp's second
+   layer... which it no longer needs, since the layers ship as one file.
+   It stays because scheduling ahead is sample-accurate where setTimeout
+   is not, and the next sound that needs it should not have to add it. */
+function sfx(name, at) {
+  if (!sndOn() || !AC) return;
+  const buf = SFX_BUF[name];
+  if (!buf) return;
+  try {
+    if (AC.state === 'suspended') AC.resume();
+    const src = AC.createBufferSource();
+    src.buffer = buf;
+    src.connect(AC.destination);
+    src.start(at ? AC.currentTime + at : 0);
+  } catch (e) { /* never let a sound break a beat */ }
+}
+
+/* THE CARD DEAL CYCLES, and it cycles rather than randomises: three takes
+   picked at random repeat immediately about a third of the time, which is
+   the exact thing the three variants exist to prevent. A cursor guarantees
+   no two consecutive cards are the same file. */
+let SFX_CARD_I = 0;
+function sfxCard() {
+  const n = ['card1', 'card2', 'card3'][SFX_CARD_I % 3];
+  SFX_CARD_I++;
+  sfx(n);
+}
 
 /* ===================== COINS · §0.3 and §4 =========================
    THE WALLET OUTLIVES THE ROUND. S.coins is the round's own tally and is
@@ -1511,6 +1646,12 @@ function wirePeel(card) {
     /* the hint has been taken; it must not still be wiggling under the
        peel it just asked for */
     cov.classList.remove('is-nudging');
+    /* SOUND · ON THE CLICK, AND ABOVE THE REDUCED-MOTION BRANCH. Under
+       reduced motion the cover is removed outright and there is no
+       .is-peeling and no .is-gone, so a sound hung on either stage would
+       be silent for exactly the people who turned motion off. The peel is
+       something the player did either way. */
+    sfx('peel');
     if (reduced) { cov.remove(); chip.classList.add('is-open'); return; }
     /* 1 · the sheet lifts from the leading edge and curls as it goes,
            uncovering the party line behind it */
@@ -1552,6 +1693,11 @@ async function flipUp() {
     wrap.insertBefore(nxt, d);        /* earlier in the DOM = underneath */
   }
   setPile(i + 1);
+  /* SOUND · THE THWIP IS THE TURN, and it is fired before the await, not
+     after: the sound belongs to the card starting to move, not to it
+     having finished. The next card joining the deck underneath is the
+     same physical event, so it gets no second sound. */
+  sfxCard();
   await wait(T.cardFlip);
   /* ITEM 6 · THE TAPE'S AFFORDANCE NUDGE. The cover says מפלגה and is a
      button, but nothing on a still card says it can be taken off. Two
@@ -2179,6 +2325,12 @@ async function claimReveal(ans, card) {
   mark.classList.add('d2--neutral', 'd2--claim');
   wrap.appendChild(mark);
   card.classList.add('is-stamped');
+  /* SOUND · FIRED AT THE START OF THE FALL, not at contact. stamp.wav is
+     the assembled two-layer file: the knock is at 0 and the press is 190ms
+     in, which is --t-stamp-drop, so playing it here puts the press on the
+     contact frame and inside inkBleed()'s 60ms rupture. Firing it beside
+     the buzz below would put the whole thing 190ms late. */
+  sfx('stamp');
   /* ITEM 7 DELIBERATELY DOES NOT REACH HERE. The claim stamp keeps its
      190ms fall and its 1.8/1.06 landing; only the MK card's stamp was
      asked to land harder. Its contact stays --t-stamp-drop. */
@@ -3965,6 +4117,12 @@ async function verdict(guess, foot, card) {
   const mark = stamp(ok);
   $('.cardwrap').appendChild(mark);
   card.classList.add('is-stamped');
+  /* SOUND · the same file, fired at the start of the fall. Its press sits
+     190ms in against this card's 200ms contact (ITEM 7 moved it) — 10ms
+     early, which is well inside the window where a listener hears the
+     sound and the jolt as one event, and the alternative is a second
+     file whose offset could drift from the token. */
+  sfx('stamp');
   inkBleed(T.stampDropMk);
   /* §5 25ms AT CONTACT, not when the stamp is appended: --t-stamp-drop-mk
      is the frame the disc actually hits the card, and the jolt is keyed to
@@ -4142,6 +4300,7 @@ async function invResolve(pid, foot, card, btn) {
   const mark = stamp(ok);
   $('.cardwrap').appendChild(mark);
   card.classList.add('is-stamped');
+  sfx('stamp');                       /* SOUND · as the cascade's */
   /* ITEM 7 · the inverted round stamps the same MK card with the same
      disc, so it lands on the same 200ms contact as the cascade's. */
   inkBleed(T.stampDropMk);
@@ -5345,6 +5504,23 @@ function runCount(board, tally) {
   return new Promise(res => {
     const RUN = T.f5Count - T.f5Flare, t0 = performance.now();
     let held = false, holdUntil = 0;
+    /* SOUND · A FLAT TICK, AND A FLOOR UNDER IT. The count paints every
+       frame, so at PLENUM 120 a numeral changes roughly every 17ms — a
+       tick per change would be three copies of a 52ms sample overlapping
+       and would arrive as a rattle, not as ticks. SFX_TICK_MIN is the
+       sample's own length: it cannot retrigger faster than it lasts.
+       THE RATE IS THEREFORE CONSTANT, which is the decided property. The
+       count's own ease is near-linear and the tick is floored, so nothing
+       here accelerates, and the 400ms hold at the majority crossing gets
+       silence for free — the held branch returns above this. */
+    let lastF = -1, lastA = -1, lastTickAt = 0;
+    const tickIf = (f, a, now) => {
+      if (f === lastF && a === lastA) return;
+      lastF = f; lastA = a;
+      if (now - lastTickAt < SFX_TICK_MIN) return;
+      lastTickAt = now;
+      sfx('tick');
+    };
     (function tick(now) {
       if (held && now < holdUntil) return requestAnimationFrame(tick);
       const k = Math.min(1, (now - t0 - (held ? T.f5Flare : 0)) / RUN);
@@ -5357,9 +5533,17 @@ function runCount(board, tally) {
         buzz(18);
         return requestAnimationFrame(tick);
       }
-      paint(Math.round(tally.for * p), Math.round(tally.against * p));
+      const nf = Math.round(tally.for * p), na = Math.round(tally.against * p);
+      paint(nf, na);
+      tickIf(nf, na, now);
       if (k < 1) requestAnimationFrame(tick);
-      else { paint(tally.for, tally.against); maj.classList.remove('is-flare'); res(); }
+      else {
+        paint(tally.for, tally.against); maj.classList.remove('is-flare');
+        /* SOUND · the weight is in the landing, not in a climb. One soft
+           drop when the count stops, and nothing before it rises. */
+        sfx('land');
+        res();
+      }
     })(t0);
   });
 }
@@ -5774,6 +5958,7 @@ const SAVE_VER = 1;
    celebration once more. Bumping SAVE_VER would discard an eleven-round
    run to protect one animation, which is the wrong trade. */
 let EG_CONFETTI_SPENT = false;
+let SND_DONE_FIRED = false;     /* SOUND · once per session, on top of `cf` */
 
 /* ITEM 43 · THE MAP'S FIRST ARRIVAL, ONCE EVER. It goes in the save
    rather than in a key of its own — SEEN_KEY predates the save and is
@@ -5820,6 +6005,7 @@ function saveState() {
       mi: MAP_INTRO_SEEN,
       ab: AV_BEACON_SPENT,                                       /* T13 */
       pr: PRE_HOW_SEEN,                                          /* T11 */
+      snd: SND_ON,                                               /* SOUND */
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -5867,6 +6053,11 @@ function restoreSave() {
   MAP_INTRO_SEEN = s.mi === true;
   AV_BEACON_SPENT = s.ab === true;                               /* T13 */
   PRE_HOW_SEEN    = s.pr === true;                               /* T11 */
+  /* SOUND · the fifth boolean on the same terms as the four above:
+     additive and optional, so no SAVE_VER bump. A save written before
+     this has no `snd` and restores FALSE — which is not a fallback here,
+     it is the shipped default. Sound is off until somebody asks for it. */
+  SND_ON          = s.snd === true;                              /* SOUND */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
@@ -5978,6 +6169,7 @@ function showScreen(name) {
   if (av) av.hidden = (name === 'round');
   if (x)  x.hidden  = (name !== 'round');
   syncAvBeacon(name);                                            /* T13 */
+  syncSndToggle(name);                                         /* SOUND */
   /* the banner is no longer inside #scRound, so hiding the round no
      longer hides it — that is the whole point of the promotion, and it
      is also the one thing the promotion has to pay for. */
@@ -6922,6 +7114,117 @@ function spendAvBeacon() {
   const av = $('#hudAvatar'); if (av) av.classList.remove('is-beacon');
 }
 
+/* ===================== SOUND · THE TOGGLE ============================
+   IT SHIPS WITH THE FIRST SOUND, never after: with sound off by default
+   this control is the only way anyone learns sound exists at all.
+
+   NOT IN THE HUD, AND BOTTOM-LEFT. The HUD's three slots are the coin
+   chip, the count and the avatar, and all three are subject matter; this
+   is a setting. The corner is free on both screens it appears on — the
+   map bar's own pill starts at x=112 and the round's card foot ends at
+   y=791, against a 44px target at [12,786].
+
+   MAP AND ROUNDS ONLY, and that is the app's own rule rather than a new
+   one. .stage.is-ending .hud{display:none} already takes the coin chip
+   and the progress pill off for the whole ending because they are round
+   chrome and the round is over. A control governing sounds that only
+   fire in a round is round chrome by the same test, so it goes with them
+   and comes back with them on goMap().
+
+   ARMED FROM THE ROUTER, exactly as T13's beacon is. showScreen() is the
+   only code that knows which screen is up, which is what makes "never
+   left on a screen it does not belong to" a property of the code rather
+   than a promise. See syncAvBeacon() directly above — this is the same
+   mechanism, not a second one.
+
+   THE RESTING STATE IS THE SLASHED SPEAKER because sound is off, and the
+   slash is the true state rather than a warning. It also reads as an
+   invitation in a way a plain speaker does not.
+
+   FULL WHITE ON THE MAP, 0.7 EVERYWHERE ELSE. Measured: the map's ground
+   under this corner is #E4752C and pure white is 3.05:1 against it, so
+   every reduction fails there and the map gets 1.0. The round's ground is
+   --ground #2B2926, where 0.7 white is 7.9:1 and the toggle can afford to
+   be quiet. The opacity is per-screen in CSS; there is no plate and no
+   new object.
+
+   ONE ARC ON, NOT THREE. At 20px the outermost of three concentric arcs
+   sits 2px from the box edge and the set smears; the slashed state is the
+   more legible of the two because the slash REPLACES the arcs rather than
+   adding to them. So the on-state carries one. */
+const SND_LBL = {
+  off: 'הפעלת צלילים',                                          /* TAMAR */
+  on:  'השתקת צלילים'                                           /* TAMAR */
+};
+/* the fade-up is ONE-SHOT PER SESSION rather than once-ever, and that is
+   the one place this departs from T13. T13 spends its flag in the save;
+   a sixth boolean was not sanctioned by the brief, and an ENTRANCE is not
+   an attention loop the way a 2000ms infinite pulse is — every other
+   entrance in the app replays on a fresh session too. */
+let SND_ARRIVED = false;
+
+function sndGlyph(on) {
+  return '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">' +
+    '<path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/>' +
+    (on ? '<path d="M15.6 9.2a4.4 4.4 0 0 1 0 5.6" fill="none" stroke="currentColor" ' +
+          'stroke-width="2.2" stroke-linecap="round"/>'
+        : '<path d="M21 9.5l-5 5M16 9.5l5 5" fill="none" stroke="currentColor" ' +
+          'stroke-width="2.2" stroke-linecap="round"/>') +
+  '</svg>';
+}
+
+function paintSndToggle() {
+  const b = $('#sndToggle'); if (!b) return;
+  const on = sndOn();
+  b.innerHTML = sndGlyph(on);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', on ? SND_LBL.on : SND_LBL.off);
+  b.classList.toggle('is-on', on);
+}
+
+/* THE PREFERENCE IS WRITTEN THE MOMENT IT CHANGES, not on some later
+   save: a player who switches sound on and closes the tab meant it. */
+function setSound(on) {
+  SND_ON = !!on;
+  if (DEV.sound === null) saveState();
+  if (SND_ON) { unlockAudio(); sfxLoad(); }
+  paintSndToggle();
+}
+
+function buildSndToggle() {
+  const st = $('#stage'); if (!st || $('#sndToggle')) return;
+  const b = el('button', 'snd-t');
+  b.id = 'sndToggle';
+  b.type = 'button';
+  b.hidden = true;
+  st.appendChild(b);
+  /* pressable() carries the unlock, so the toggle's own press is what
+     opens the audio context on iOS — the player turning sound on IS the
+     gesture that makes sound possible. */
+  pressable(b).addEventListener('click', () => setSound(!sndOn()));
+  paintSndToggle();
+}
+
+function syncSndToggle(screen) {
+  const b = $('#sndToggle'); if (!b) return;
+  const show = (screen === 'map' || screen === 'round');
+  b.hidden = !show;
+  if (show && screen === 'map' && !SND_ARRIVED) {
+    SND_ARRIVED = true;
+    /* skipped entirely under reduce, the way nudgeCover() skips the tape's
+       wiggle: an entrance that resolves in 1ms is a flicker with no
+       meaning, and the toggle simply being there is the correct still. */
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    /* the same contract the beacon keeps: the class is added, the
+       animation runs once, and the class comes off on its own end so
+       nothing is left holding a fill state. Under reduced motion the
+       rule kills the NAME, so there is no 1ms stub to clean up and the
+       handler simply never fires — hence the class is removed here too. */
+    b.classList.add('is-arriving');
+    b.addEventListener('animationend', () => b.classList.remove('is-arriving'), { once: true });
+  }
+}
+
 function maybeMapIntro() {
   if (seenMapIntro()) return false;
   if ($('#stage').dataset.screen !== 'map') return false;
@@ -7721,6 +8024,13 @@ async function egOverlay() {
      did on the old beat 1: the overlay's own ov-in first, the confetti
      after it. Map completion is still the only confetti in the game. */
   await egStep(T.ovIn + T.f5Gap);
+  /* SOUND · THE ONE CELEBRATORY SOUND, and the last sound in the app. It
+     is read BEFORE egConfetti(), which spends the flag, and it is not
+     inside it: egConfetti() returns early under reduced motion, and
+     prefers-reduced-motion governs motion, not sound. The session guard
+     is what keeps the deep-link demo path from re-firing it on a store
+     where the flag was never spent. */
+  if (!EG_CONFETTI_SPENT && !SND_DONE_FIRED) { SND_DONE_FIRED = true; sfx('done'); }
   egConfetti($('.egov__fx', ov));
 }
 
@@ -8747,6 +9057,9 @@ function boot() {
      is drawn rather than with the per-screen HUD sync. */
   pairHudProgress();
   paintHudAvatar();
+  /* SOUND · built once, before the first screen, so the router has
+     something to show or hide on its very first call. */
+  buildSndToggle();
   pressable($('#hudAvatar')).addEventListener('click', () => {
     /* T13 · SPENT BEFORE THE GUARD, NOT AFTER. The double-tap that lands
        while 2b is already open is still a tap on the avatar, and a beacon
