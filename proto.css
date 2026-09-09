@@ -2165,6 +2165,43 @@ body.no-ph .ph{ display:none !important; }
    switched on and whichever beat is showing. */
 .chyron.is-empty{ visibility:hidden; }
 
+/* =====================================================================
+   T26 · THE QUESTION IN THE BAND, AT ZERO VERTICAL COST.
+
+   THE WIDTH WAS ALREADY RESERVED AND ALREADY EMPTY. .chyron has been a
+   44px flex row since A7 and has held exactly one thing during the
+   cascade: pinVote()'s ~140px pill, in a band that is ~360px wide at 390
+   and ~330 at 360. This takes the rest of it as a second flex item.
+
+   TWO LINES AT 13/1.28 IS 33.3px INSIDE A 44px BOX, which is the whole
+   of how this costs no height. The band's min-height is the slot's and is
+   untouched; the card's scale is a function of what is left after the
+   slot, so it cannot move. Verified in the report at both widths.
+
+   THE PILL DOES NOT SHRINK. .bnr is inline-flex and would otherwise give
+   up width to the question on a long line — flex:none pins it, so the
+   question takes the remainder and truncates instead. The player's own
+   vote is the one thing on this band that is never allowed to become
+   unreadable.
+
+   LIGHT INK, EXPLICITLY. .chyron sets color:var(--ink) for the pill's
+   contents, which sit on paper; this line sits on the round's charcoal
+   ground and would inherit a near-black on charcoal.
+   ===================================================================== */
+.chyron .bnr{ flex:none; }
+.chyron-q{
+  flex:1 1 auto; min-width:0;
+  font-family:var(--font-body); font-weight:400;
+  font-size:13px; line-height:1.28;
+  color:var(--ink-body);
+  text-align:start; text-wrap:pretty;
+  /* the clamp is the reason the height is knowable. -webkit-box is the
+     only line clamp with support on the target browsers; it is the same
+     device .mf-b__id and the map's status line already use. */
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  overflow:hidden;
+}
+
 /* ---- band · the full-width chyron -----------------------------------
    §3b REAL TRANSPARENCY. It was a 62% paper film, which over the dark
    ground composites to an almost solid mid-grey — a grey bar with a blur
