@@ -666,6 +666,77 @@ body{
                0 0 34px 9px rgba(var(--av-beacon),.28);
   }
 }
+/* =====================================================================
+   SOUND · THE TOGGLE.
+
+   IT SITS IN THE STAGE, NOT IN A SCREEN, for the same reason the HUD
+   does: it has to survive the router swapping #scMap for #scRound
+   without being rebuilt, and it must not scroll with the map.
+
+   z-index 12 IS THE HUD's BAND, deliberately. .ov--stage carries 9 and
+   blurs the round out on beats 2 and 3; the HUD's own rule says it sits
+   above that "so the coin count stays readable while the round is
+   blurred out", and a control the player may want mid-beat has the same
+   claim. It stays UNDER .stmodal (60) and .exitsheet (70), which are
+   modal and should cover it.
+
+   BOTTOM-LEFT, AND THE CORNER IS FREE ON BOTH SCREENS IT APPEARS ON.
+   Measured at 390x844: the map bar is pointer-events:none with a
+   transparent ground and its only child starts at x=112, so a 44px
+   target at [12,786] clears it by 56px; on the round the card foot ends
+   at y=791 and beat 2's vote row at y=776. The intro's HaMigdalor lockup
+   IS in this corner — left:0 bottom:4px — which is one more reason the
+   toggle is never on the intro.
+
+   FULL WHITE ON THE MAP, 0.7 ELSEWHERE, and that is a measurement rather
+   than a taste. The map's ground under this corner resolves to #E4752C,
+   against which pure white is 3.05:1 — it clears the 3:1 minimum for a
+   control's shape by five hundredths and every reduction fails. The
+   round's ground is --ground #2B2926, where 0.7 white is 7.9:1 and the
+   toggle can afford to be quiet. Hence the per-screen override below and
+   nothing else: no plate, no fill, no second object.
+
+   NO KEYLINE, NO EXTRUSION. Every other control in this app is a die-cut
+   sticker; this one is deliberately not, because it is a setting rather
+   than a thing in the world, and giving it the sticker treatment would
+   put a fourth object in a corner that is currently empty.
+   ===================================================================== */
+.snd-t{
+  position:absolute; z-index:12;
+  left:calc(12px + env(safe-area-inset-left));
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  width:44px; height:44px;          /* the target; the glyph inside is 20 */
+  margin:0; padding:0; border:0; background:none;
+  display:grid; place-items:center;
+  color:#FFFFFF; opacity:.7;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:transform var(--t-press, 90ms) var(--e-land);
+}
+/* display:grid above beats the UA's own [hidden] rule, so hiding has to
+   be said again here or the router's `hidden` does nothing. */
+.snd-t[hidden]{ display:none; }
+.snd-t svg{ display:block; }
+.stage[data-screen="map"] .snd-t{ opacity:1; }
+.snd-t:active{ transform:scale(.9); }
+
+/* THE ONE-SHOT FADE-UP, on first arrival at the map. Same shape as T13's
+   beacon: a class the router adds, an animation that resolves INTO the
+   resting state so nothing jumps when the class comes off, and the class
+   removed on its own animationend. */
+.snd-t.is-arriving{ animation:snd-in 420ms var(--e-settle) both; }
+@keyframes snd-in{
+  from{ opacity:0; transform:translateY(7px) }
+  to  { opacity:1; transform:none }
+}
+/* skipped entirely, not shortened — syncSndToggle() does not add the
+   class under reduce, so there is no 1ms stub of it either. This is the
+   belt to that braces, and it kills the NAME rather than the duration,
+   which is the only thing the global 1ms !important rule cannot undo. */
+@media (prefers-reduced-motion: reduce){
+  .snd-t.is-arriving{ animation:none; }
+  .snd-t{ transition:none; }
+}
+
 /* A4 · the right slot holds whichever of the two is on this screen, and
    holds the SAME 40px box either way so the row never shifts when the
    avatar swaps for the ✕. */
