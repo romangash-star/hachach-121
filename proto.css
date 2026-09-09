@@ -279,6 +279,15 @@
      the turn, --t-card-exit the resolved card being swiped off. */
   --t-card-flip:   450ms;
   --t-card-exit:   320ms;
+  /* T22 · THE BEAT BETWEEN THE CARD LEAVING AND BEAT 2 ARRIVING. The
+     back of the next card is already uncovered by the throw; this is how
+     long it is left alone before the overlay covers it. 140ms is long
+     enough to register as "there is another card" and short enough that
+     the handover still reads as one motion rather than as two events
+     with a gap in between. Same length as --t-mark-gap, and for the same
+     reason: a pause that exists so one thing can be seen before the next
+     arrives. */
+  --t-deck-peek:   140ms;
 
   /* ITEM 7 · CONTACT ON AN MK CARD. hachach.css's --t-stamp-drop (190ms)
      still describes the CLAIM stamp's fall, which this item does not
@@ -1152,8 +1161,12 @@ body.no-ph .ph{ display:none !important; }
      .ov--stage — is exactly what it was. The overlay still covers the
      whole stage: this pads the CONTENT down, it does not move the blur,
      which is the half of this surface the HUD is meant to sit over. */
+  /* T22 · --ov-bot is the 32px of ground under the vote row plus .v-a's
+     own 4.6px extrusion, written by fitBeat2() beside --ov-top. The
+     fallback is the old literal so any .ov--stage that never reaches the
+     JS is exactly what it was. */
   padding:var(--ov-top, calc(18px + env(safe-area-inset-top))) 16px
-          calc(16px + env(safe-area-inset-bottom));
+          calc(var(--ov-bot, 16px) + env(safe-area-inset-bottom));
   /* softer than beat 3's: what is behind it — the answer just given and
      the cards ahead — is meant to be recognisable as those things */
   -webkit-backdrop-filter:blur(9px) saturate(.9);
@@ -1505,7 +1518,13 @@ body.no-ph .ph{ display:none !important; }
      Neither font size moved; both are decided. */
   display:block; margin-top:0;
   font-family:var(--font-display); font-weight:900;
-  font-size:21px; line-height:1.15;
+  /* T22b · IT STEPS WITH THE CLAIM. 21 is still what it is at the 26px
+     default, so nothing moves on the twelve issues that stay there; the
+     variable is written beside --b2q-size by fitClaimSize() and holds
+     21/26 at every other step. The literal stays as the fallback for the
+     same reason --b2q-size's does: a build that never reaches the JS is
+     exactly what it was. */
+  font-size:var(--b2q-tail, 21px); line-height:1.15;
 }
 /* ITEM 34c · .b2bill is retired — the bill name is no longer its own
    line; the tap target is the title inside .b2head. See .b2title-link. */
@@ -1514,6 +1533,18 @@ body.no-ph .ph{ display:none !important; }
    being asked now. The rule is kept as a tombstone rather than deleted so
    the next person searching for the class finds out where it went. */
 .ov--out{ animation:ov-out var(--t-ov-in) var(--e-settle) both; }
+/* T22 · THE HANDOVER'S REDUCED-MOTION END, AND IT NEEDS !important.
+   proto.css's global reduce rule sets `*{animation-duration:1ms
+   !important}`, so a plain override here would lose to it and the
+   overlay would still play a 1ms ov-in — which is a flash, not an
+   absence of motion. Killing the animation outright is the only way to
+   land beat 2 already arrived. The card's own throw is a transition and
+   the same global rule flattens it; the deck peek is a JS wait and is
+   zeroed there, so all three parts of the handover end in place. */
+@media (prefers-reduced-motion: reduce){
+  .ov--stage{ animation:none !important; }
+  .ov--out{ animation:none !important; }
+}
 @keyframes ov-out{ from{opacity:1} to{opacity:0} }
 
 /* =====================================================================
