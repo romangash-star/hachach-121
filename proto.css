@@ -392,7 +392,12 @@
      pathHeight() — the content grows by the same 64px it lifts the node,
      which is what puts the ground under the label rather than just moving
      the node up into the map. */
-  --node-pad-bot:  196px;   /* the name and status under the last node    */
+  /* v30c · +52 for the map bar. The bar is a 38px control on a 14px
+     bottom inset; the pad grows by the whole of that rather than the bar
+     overlapping the ground T23 just bought, so the last label keeps its
+     59px of clear air and the bar sits below it rather than on it. */
+  --node-pad-bot:  248px;   /* the name and status under the last node,
+                               plus the map bar's own height             */
 
   /* ---- motion the map and the award add ----------------------------- */
   --t-node-press:  80ms;    /* board: transform+box-shadow, linear        */
@@ -705,6 +710,85 @@ body{
   transition:transform var(--t-flip) var(--e-land);
 }
 .exitsheet.is-in .exitsheet__box{ transform:rotate(1.2deg) scale(1); }
+
+/* =====================================================================
+   v30c · THE RESET CONFIRM. Everything above is inherited; only what is
+   different from the exit confirm is declared here.
+   ===================================================================== */
+.rs__q{ margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:21px; line-height:1.2; text-align:center; }
+.rs__note{ margin:0; font-family:var(--font-body); font-weight:400;
+  font-size:14px; line-height:1.45; color:var(--ink-soft); text-align:center; }
+/* THE COST, IN FIGURES. Four chips saying how much is lost, because a
+   player agreeing to a quantity is making a different decision from one
+   agreeing to the word "progress". */
+.rs__cost{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+.rs__c{
+  font-family:var(--font-display); font-weight:900; font-size:12.5px;
+  line-height:1; padding:6px 9px 7px; border-radius:999px;
+  background:rgba(19,19,16,.07); color:var(--ink-soft);
+  box-shadow:inset 0 0 0 1.5px rgba(19,19,16,.16);
+}
+.rs__c .num{ color:var(--ink); }
+
+/* ---- THE TEAR LINE --------------------------------------------------
+   A 2.5px dashed perforation ruled across the sheet with a ✂ break,
+   above the destructive control. It is the escalation, and it is
+   MATERIAL rather than chromatic: lime and magenta are correctness and
+   cannot be spent on danger. A perforation is the one mark in a die-cut
+   system that means this comes apart, and nothing else in the build has
+   one — so it cannot be confused with anything.
+   It is ruled to the sheet's edges, not the content's: the negative
+   inline margin cancels the box's padding so the perforation crosses the
+   whole sheet the way a real one would. */
+.rs__tear{
+  position:relative; height:14px; margin:2px calc(var(--sp-4) * -1) 0;
+  display:flex; align-items:center; justify-content:center;
+}
+.rs__tear::before{
+  content:""; position:absolute; inset-inline:0; height:0;
+  border-top:2.5px dashed rgba(19,19,16,.42);
+}
+.rs__tear::after{
+  content:"✂"; position:relative; background:var(--paper);
+  padding:0 8px; font-size:12px; color:rgba(19,19,16,.5); line-height:1;
+}
+
+/* ---- the two options ------------------------------------------------
+   SAFE FIRST, and it is the primary: yellow, 56px, the full extrusion
+   every other primary in the build carries. */
+.rs__safe{ min-height:56px; height:auto; font-size:20px; }
+/* FLUSH, NOT LIFTED. Every pressable object in this build carries a hard
+   offset — .p-c, .r-b, .v-a, .ib-b, .h-a, the map nodes. This one does
+   not: an ink ring on paper, inset only. It is the one control in the
+   game you press INTO the paper rather than down onto it, and the
+   absence of the lift reads as weight rather than as absence.
+   IT IS DELIBERATELY NOT SOLID INK WITH NO EXTRUSION. .b1prev already
+   owns that exact treatment and proto.css uses it to mean "this is not a
+   button at all", with every affordance removed. Borrowing it here would
+   make the gravest control in the game read as inert — hence the ring
+   rather than the fill. */
+.rs__go{
+  width:100%; min-height:46px; border:0; border-radius:var(--r-chip);
+  background:transparent; color:var(--ink); cursor:pointer;
+  box-shadow:inset 0 0 0 2.5px var(--ink);
+  font-family:var(--font-display); font-weight:900; font-size:15px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  -webkit-tap-highlight-color:transparent;
+  transition:background var(--t-press) linear;
+}
+/* the press goes IN: the ring thickens and the paper darkens under it,
+   which is the only way a flush control can acknowledge a touch without
+   growing the lift it is defined by not having. */
+.rs__go:active{ background:rgba(19,19,16,.09); box-shadow:inset 0 0 0 3.5px var(--ink); }
+
+/* the quiet door in 2b that opens all of the above */
+.prof-reset{
+  align-self:center; margin-top:2px;
+  border:0; background:none; color:var(--ink-soft); cursor:pointer;
+  font-family:var(--font-body); font-size:var(--fs-meta); font-weight:400;
+  padding:8px; text-decoration:underline; text-underline-offset:3px;
+}
 /* §3.3 the ✕ — a third way to stay, and the one that costs nothing to
    reach because it is where the ✕ that opened this already was. Inset so
    it clears the die-cut border rather than sitting on it. */
@@ -1171,7 +1255,20 @@ body.no-ph .ph{ display:none !important; }
      the cards ahead — is meant to be recognisable as those things */
   -webkit-backdrop-filter:blur(9px) saturate(.9);
   backdrop-filter:blur(9px) saturate(.9);
-  background:rgba(28,26,23,.52);
+  /* v30c · THE GRADIENT CORRECTION, ONE DECLARATION AND NO STATE.
+     The overlay covers the whole stage, HUD included — it is not hidden,
+     not restored and not queried — so the three brightest objects in the
+     app sit blurred along its top edge: the coin chip, the progress pill
+     and the avatar, all cream on charcoal. At a flat .52 the overlay's
+     own eyebrow was reading dimmer than the blurred furniture behind it,
+     which put the loudest thing on the screen behind the quietest.
+     The ramp is .74 through the first 58px — the HUD row plus its
+     extrusion — easing to the flat .52 by 122px, which is below anything
+     the HUD paints. Everything past that is the value it always was, so
+     no other screen and no other object on this one changes. */
+  background:linear-gradient(to bottom,
+    rgba(28,26,23,.74) 0, rgba(28,26,23,.74) 58px,
+    rgba(28,26,23,.52) 122px, rgba(28,26,23,.52) 100%);
   animation:ov-in var(--t-ov-in) var(--e-settle) both;
 }
 /* ONE SURFACE, TWO CONTENTS. Both panes occupy the same grid cell of the
@@ -2640,7 +2737,13 @@ body.no-ph .ph{ display:none !important; }
          calc(-12px - env(safe-area-inset-bottom));
 }
 /* the HUD and the jump button keep their inset — only the SURFACE bleeds */
-.sc-map .map-jump{ bottom:calc(14px + env(safe-area-inset-bottom)); }
+/* v30c · THE SAFE-AREA INSET MOVED TO THE BAR. This rule gave the pill
+   its own bottom offset while it was absolutely positioned; inside the
+   bar it is a flex child with position:relative, where a `bottom` is a
+   relative displacement and lifted the pill 14.3px clear of the bar it
+   is supposed to sit in. The bar carries the inset now, once, for both
+   controls. */
+.sc-map .map-bar{ bottom:calc(14px + env(safe-area-inset-bottom)); }
 .path{ position:relative; width:100%; }
 
 /* §2 THE CONNECTOR IS THE BOARD'S RIBBON, not a bead trail. The v7 path
@@ -2926,8 +3029,28 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 /* ---- jump back to the current node ---------------------------------
    Only ever visible when the current node is off screen; it is a way back,
    not a nag. It is not a Claim button and it awards nothing. */
+/* =====================================================================
+   v30c · THE MAP BAR. Both controls used to be absolutely positioned at
+   left:50% / translateX(-50%) / bottom:14px — the same point — and were
+   kept apart only by z-index 6 against 21, so the jump pill painted over
+   the summary door and took its taps. One bar with one bottom inset is
+   the fix that cannot come undone: two children of a centred flex row
+   cannot occupy the same coordinates.
+   THE PAD GROWS RATHER THAN THE BAR SHRINKING. --node-pad-bot is node 1's
+   centre from the foot of the path AND a term in pathHeight(), so adding
+   the bar's height to it lifts the last node and lengthens the scroll by
+   the same amount — the bar sits over ground that now exists rather than
+   over the last label. See the token. */
+.map-bar{
+  position:absolute; z-index:21; left:0; right:0;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  display:flex; justify-content:center; align-items:center; gap:10px;
+  pointer-events:none;                 /* the bar is a rail, not a surface */
+}
+.map-bar > *{ pointer-events:auto; }
+
 .map-jump{
-  position:absolute; z-index:21; bottom:14px; left:50%; transform:translateX(-50%);
+  position:relative; z-index:1;
   display:flex; align-items:center; gap:7px;
   padding:7px 15px 8px; border:0; cursor:pointer;
   border-radius:999px; background:var(--paper); color:var(--ink);
@@ -5074,6 +5197,186 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 .eg-fx{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
 
 /* =====================================================================
+   v30c · SCREENS 1 AND 2 · ONE OVERLAY, TWO STEPS.
+
+   .ov--end IS .ov--stage. Everything about the surface — the 9px
+   backdrop-filter, the scrim and its HUD ramp, the ov-in entrance — is
+   inherited, so there is exactly one blurred overlay in this app and
+   this is a second content on it, not a second surface. Three things
+   differ, and each is here because the end-game's overlay is doing
+   something beat 2's is not.
+
+   1 · IT COVERS THE HUD. z-index 13 against the HUD's 12, and it is the
+   only surface in the app above it. Beat 2's .ov--stage is 9 and has
+   always sat UNDER the HUD; that is not changed here, because it would
+   change every round in the game. The consequence is that the .74->.52
+   ramp on .ov--stage pays off on THIS overlay and is only a slightly
+   darker top band on beat 2's — see the report.
+
+   2 · IT DOES NOT RESERVE THE HUD'S HEIGHT. --ov-top exists so beat 2's
+   chair does not run behind pills it is z-indexed under. Nothing here is
+   under the HUD, so the padding is the design's own 18px and the column
+   centres in the whole stage.
+
+   3 · IT HAS AN INLINE-END EDGE. The chair sits half off it on step 2,
+   so the surface clips: overflow:hidden, which .ov--stage does not set
+   because nothing on beat 2 leaves the box.
+   ===================================================================== */
+.ov--end{
+  z-index:13; overflow:hidden;
+  padding:calc(18px + env(safe-area-inset-top)) 16px
+          calc(16px + env(safe-area-inset-bottom));
+}
+/* the column is a grid item in the same cell as the chair, which is what
+   lets the chair sit behind it without either being positioned off the
+   other. max-width and margin-inline-end are written by egPose(). */
+.egov__col{
+  grid-area:1 / 1; z-index:3; position:relative;
+  width:100%; max-width:358px;
+  display:flex; flex-direction:column; align-items:stretch;
+  justify-content:center; gap:clamp(8px,1.6vh,14px);
+  text-align:center;
+}
+.egov__fx{ z-index:1; }
+
+/* ---- the six nodes -------------------------------------------------
+   .egov__map is a positioning context with an animated HEIGHT and six
+   absolutely-positioned children: the 2x3 grid becoming a 1x6 strip is a
+   REFLOW, and a reflow mid-transition reads as a cut, so nothing here is
+   laid out by the flow at either end. egPose() writes the height and the
+   six transforms; this file only says what a node looks like. */
+.egov__map{ position:relative; width:100%; flex:none; }
+.egn{
+  position:absolute; left:50%; top:0; width:74px;
+  transform-origin:50% 0;
+  display:flex; flex-direction:column; align-items:center;
+}
+.egn__disc{
+  position:relative; width:74px; height:74px; flex:none;
+  display:grid; place-items:center;
+}
+.egn__ring{ position:absolute; inset:0; width:100%; height:100%; }
+/* the map's own disc at this scale: the same paper fill, the same 1.5px
+   casing and the same hard extrusion, so the letterhead is the map's
+   object demoted rather than a second drawing of it */
+.egn__face{
+  position:relative; z-index:2;
+  width:70%; height:70%; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--paper);
+  box-shadow:0 2px 0 0 var(--node-base, #2B2926), 0 0 0 1.5px rgba(0,0,0,.42);
+}
+.egn__face img{ display:block; filter:url(#dcw-sm); }
+.egn__face span{ font-size:26px; line-height:1; }
+/* .node-check at node scale — 12px rather than 24, which is the same
+   fraction of the disc the map gives it */
+.egn__ck{
+  position:absolute; right:2px; bottom:2px; z-index:3;
+  width:20px; height:20px; border-radius:50%;
+  display:grid; place-items:center;
+  font-size:11px; font-weight:900; line-height:1;
+  background:#2B2926; color:#fff; border:2px solid var(--paper);
+  box-shadow:0 2px 0 0 #161413;
+}
+/* the label is the map's .node-name, and it is gone by ~90ms of the
+   handoff: six discs travelling is one motion, six discs and six words
+   is two. opacity is written by egPose(). */
+.egn__lab{
+  margin-top:4px; font-size:11.5px; line-height:1.15; text-align:center;
+  color:#EFECE4; font-family:var(--font-display); font-weight:900;
+  /* 88 on a 74px node, so it paints 7px into each 10px gutter. That is
+     the board's own figure and it is the widest the pitch allows: the
+     morph's columns are 84px apart, not the grid's whole half-width. */
+  max-width:88px;
+  text-shadow:0 1px 4px rgba(0,0,0,.92), 0 2px 14px rgba(0,0,0,.78);
+}
+
+/* THE LETTERHEAD ON SCREEN 3. The nodes are laid out in flow here rather
+   than posed, but they are the SAME 74px objects at the SAME .419 the
+   morph lands on — 31px of ink — so the strip screen 2 arrives at and the
+   strip screen 3 opens with are the same picture. The margin collapses
+   the 74px layout box to the strip's own 38px pitch: 74 - 38 = 36, half
+   each side. */
+.eg-strip{
+  display:flex; justify-content:center; align-items:flex-start;
+  flex:none; height:31px;
+}
+.eg-strip .egn{
+  position:static; flex:none; width:74px;
+  transform:scale(.419); transform-origin:50% 0;
+  margin-inline:-18px;
+}
+.eg-strip .egn__lab{ display:none; }
+
+/* ---- what arrives on step 2 ---------------------------------------- */
+/* the chair takes the inline END and half of it is off the surface: it
+   is the identity object arriving, not an illustration placed beside the
+   words. opacity and transform are written by egPose(). */
+.egov__chair{
+  grid-area:1 / 1; z-index:2; position:relative;
+  justify-self:end; align-self:center;
+  /* NO INLINE MARGIN. The board's -58px is the chair's offset at 390 and
+     only at 390; egPose() derives it from the column's width at every
+     width instead — see the note there. */
+  width:210px;
+  display:grid; place-items:center; pointer-events:none;
+}
+.egov__chair img{ display:block; width:100%; max-width:210px; }
+/* the player, in the seat. The end-game's own token — this is the one
+   place the chair is not empty, because step 2 is the screen where the
+   subject stops being the map and becomes the person. */
+.egov__seat{
+  position:absolute; top:47%; inset-inline-start:50%;
+  transform:translate(50%,-50%);
+  width:46px; height:46px; border-radius:11px; overflow:hidden;
+}
+.egov__seat svg, .egov__seat img{ width:100%; height:100%; display:block; }
+/* the record, start-aligned, following the chair up */
+.egov__doc{
+  display:flex; flex-direction:column; gap:10px;
+  text-align:start; flex:none;
+}
+.egov__doc .eg-h2{ margin:0; }
+.egov__hero{ display:flex; flex-direction:column; gap:6px; flex:none; }
+.egov__sub{ flex:none; }
+/* THE BUTTON'S OPACITY IS WRITTEN ON EVERY FRAME by egPose(), and .eg-go
+   carries `transition:opacity var(--t-f5-in)`: without this override the
+   rAF drive and a 260ms ease are two clocks writing the same property,
+   and the button lags a third of the handoff behind everything else on
+   it. .p-c's own press transition is restated rather than dropped —
+   `transition:none` would have taken the press feedback with it. */
+/* SCOPED TO .ov--end ON PURPOSE. .eg-go's rule is 300 lines further down
+   this file, so at equal specificity it wins on order; the ancestor
+   selector is what makes this override land rather than a !important. */
+.ov--end .egov__go{
+  flex:none; transform:none;
+  transition:transform var(--t-press) linear, box-shadow var(--t-press) linear;
+}
+
+/* THE COLLAPSE IS NOT BEAT 3'S. ov-collapse scales to .86 INTO the card
+   beneath it and starts its blur at 16; there is no card beneath this
+   one and its blur is 9, so scaling would read as a dismissal into a
+   point that is not there. This lifts the blur to 0 and fades, and the
+   allocation's ground — --stage plus the dot grid — is already painted
+   underneath when it starts. */
+.ov--end.ov--collapse{
+  animation:egov-collapse var(--t-ov-collapse) var(--e-out) both;
+  transform:none;
+}
+@keyframes egov-collapse{
+  from{ opacity:1;
+        -webkit-backdrop-filter:blur(9px) saturate(.9); backdrop-filter:blur(9px) saturate(.9) }
+  to  { opacity:0;
+        -webkit-backdrop-filter:blur(0) saturate(1);    backdrop-filter:blur(0) saturate(1) }
+}
+/* the same !important the surface's other two animations need: the
+   global reduce rule caps every duration at 1ms, which turns a collapse
+   into a flash rather than an absence of one. */
+@media (prefers-reduced-motion: reduce){
+  .ov--end.ov--collapse{ animation:none !important; opacity:0; }
+}
+
+/* =====================================================================
    ITEM 14 · THE ALLOCATION'S COINS
    THE SAME TOKEN, SMALLER. .coin-t is the award's 19px coin and this is
    that object at 13px — same fill, same inset keyline, same hard offset —
@@ -5367,8 +5670,7 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
   padding:8px; cursor:pointer; text-decoration:underline; text-underline-offset:3px;
 }
 .map-done{
-  position:absolute; left:50%; transform:translateX(-50%);
-  bottom:calc(14px + env(safe-area-inset-bottom)); z-index:6;
+  position:relative; z-index:1;
   border:0; border-radius:var(--r-pill); cursor:pointer;
   background:var(--primary); color:var(--ink);
   box-shadow:0 var(--z-press) 0 var(--primary-base);
@@ -5842,13 +6144,66 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    The column: title, the carousel track (takes what is left), the dots,
    the aspect toggle, the two buttons. Nothing is ever laid over the card.
    ===================================================================== */
+/* =====================================================================
+   v30c · THE PICKER IS THE SAME SURFACE AS SCREEN 3, AND NEVER BLURS.
+   A backdrop-filter behind a card preview is per-frame cost for nothing
+   the player can see: the card is opaque, covers most of the track, and
+   is the only thing being looked at. The ground is --stage plus the dot
+   grid, which is what screen 3 stands on, so the two read as one place
+   the sequence ends rather than as two.
+   THE CARDS, THE CAROUSEL AND THE TOGGLE ARE UNTOUCHED. Nothing below
+   names .sh-slot, .sh-rail, .sh-hold, .sh-scale or .sh-tg. */
 .eg-col--sh{ gap:0; justify-content:flex-start; padding-inline:clamp(12px,5vw,20px); }
-.sh-title{ flex:none; }
+
+/* THE HEADER ROW. Two rows, not one: the control on top, the title
+   under it. See the note in egBeat4() for why inline was measured and
+   rejected. 12px to the carousel, which is the clearance asked for and
+   is set here rather than on .sh-track's own margin so the header owns
+   the space it opens. */
+.sh-hd{
+  flex:none; display:flex; flex-direction:column; align-items:stretch;
+  gap:10px;
+  /* THE COLUMN'S OWN GAP IS CANCELLED OUT so the 12px is 12px. .eg-col
+     puts clamp(8px,1.6vh,14px) between every child, which is right for
+     the rest of the screen and wrong for a header that has a measured
+     clearance to hold; subtracting it here is the same trick .ov-inner
+     uses on beat 2 for the same reason. Measured 12.0 at both widths. */
+  margin-bottom:calc(12px - clamp(8px, 1.6vh, 14px));
+}
+/* TOP RIGHT — the start edge in RTL, matching iOS. align-self rather
+   than a text-align, so the pill is its own box and the row below it is
+   unaffected by how wide the label happens to be. */
+.sh-back{
+  align-self:flex-start;
+  display:inline-flex; align-items:center; gap:6px;
+  height:36px; padding-inline:13px 11px;
+  border:0; border-radius:999px; cursor:pointer;
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-display); font-weight:900; font-size:15px; line-height:1;
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  -webkit-tap-highlight-color:transparent;
+  transition:transform var(--t-press) linear, box-shadow var(--t-press) linear;
+}
+.sh-back:active{ transform:translateY(2px);
+  box-shadow:0 0 0 2px var(--keyline), 0 1px 0 rgba(0,0,0,.34); }
+/* the chevron points the way it goes: back, which in RTL is to the
+   right, so the glyph is mirrored rather than swapped for a different
+   character. */
+.sh-back i{ font-style:normal; line-height:1; transform:scaleX(-1); display:block; }
+
+/* v30c · 26 -> 35. The title was the same size as beat 3's and read as
+   another row of the same list; at 35 it is the screen's own headline,
+   which is what it is. */
+.sh-title{ flex:none; font-size:35px; }
+/* v30c · 49 -> 54 is applied at the ONE declaration that sets the
+   height, further down beside the rest of .sh-b — a second rule up here
+   would be overridden by it and the two would disagree on which is the
+   real number. See .sh-b. */
 
 /* the track owns the gesture; touch-action keeps a vertical drag the
    browser's. The rail is LTR and zero-width at the track's centre, and the
    slots are placed off it in JS — see place() in egBeat4() for why. */
-.sh-track{ flex:1; min-height:0; position:relative; overflow:hidden; margin-top:14px;
+.sh-track{ flex:1; min-height:0; position:relative; overflow:hidden; margin-top:0;
            touch-action:pan-y; cursor:grab; -webkit-user-select:none; user-select:none; }
 .sh-rail{ position:absolute; left:50%; top:0; bottom:0; width:0; direction:ltr;
           transition:transform var(--t-flip) var(--e-settle); }
@@ -5899,7 +6254,9 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    trail — last in the DOM, so RTL puts them at the physical left edge —
    at 21px, 18px in from that edge on both. */
 .sh-acts{ margin-top:14px; display:flex; flex-direction:column; gap:10px; flex:none; }
-.sh-b{ height:49px; min-height:0; width:100%; box-sizing:border-box; padding:0 18px;
+/* v30c · 49 -> 54. The two actions are the end of the run and were the
+   shortest buttons in the sequence. */
+.sh-b{ height:54px; min-height:0; width:100%; box-sizing:border-box; padding:0 18px;
        display:flex; align-items:center; justify-content:space-between; gap:9px;
        font-size:19px; line-height:1; }
 .sh-b .sh-bl{ flex:1; text-align:center; white-space:nowrap; }
