@@ -263,7 +263,8 @@ let issue, topic, S;
    stage follows the chrome collapsing instead of assuming 844px.
    --card-scale shrinks the 620px card assembly to whatever height the
    round actually has, so a short phone never needs a scrollbar to see a
-   whole card. Nothing in the app scrolls except .scrolls.
+   whole card. Nothing in the app scrolls except .scrolls — the map, the
+   character grid and the end-game allocation list.
    --------------------------------------------------------------------- */
 /* THE STACK IS THE CARD AND NOTHING ELSE. The axis strip is inside the
    card now and the stamp paints on top of it, so there is no box below
@@ -439,8 +440,16 @@ addEventListener('scroll', () => {
 addEventListener('focusin', () => setTimeout(kbSync, 50));
 /* activeElement is body again only AFTER focusout has run */
 addEventListener('focusout', () => setTimeout(kbSync, 0));
-/* belt and braces against rubber-band: the body never pans. The two
-   surfaces that may (map, character) carry .scrolls and opt back in. */
+/* belt and braces against rubber-band: the body never pans. The three
+   surfaces that may (map, character, the end-game allocation list) carry
+   .scrolls and opt back in.
+   THE ALLOCATION LIST WAS THE THIRD AND WAS MISSING. It is worth stating
+   why that was invisible for so long: this handler does not fail loudly.
+   A surface that forgets the class keeps its overflow, keeps its
+   scrollbar geometry, scrolls perfectly from script — and simply ignores
+   the finger. There is nothing to see in the DOM and nothing in the
+   console. Anything that grows a scroll container from here on has to be
+   given this class in the same commit. */
 addEventListener('touchmove', e => {
   if (!e.target.closest || !e.target.closest('.scrolls')) e.preventDefault();
 }, { passive: false });
@@ -6692,7 +6701,14 @@ async function egBeat3() {
       esc('חילקו את המטבעות שצברתם בין הנושאים ששיחקתם.') +            /* TAMAR */
     '</p>' +
     '<p class="eg-left" id="egLeft"></p>' +
-    '<div class="eg-chips" id="egChips"></div>' +
+    /* .scrolls IS NOT DECORATION HERE. The list is a scroll container —
+       overflow-y:auto and min-height:0 in .eg-chips — but the app cancels
+       every touchmove outside .scrolls and pins touch-action to none on
+       the body, so it was a scroller no finger could move. At 360x640 the
+       last row goes under the clip line the moment the first tap adds the
+       reset link, and there was no way to bring it back. One class opts
+       into both policies at once; nothing else was needed. */
+    '<div class="eg-chips scrolls" id="egChips"></div>' +
     '<div class="eg-acts" id="egActs"></div>';
 
   const chips = $('#egChips', c);

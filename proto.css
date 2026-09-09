@@ -382,10 +382,16 @@
    The app is a fixed stage, not a document. html and body are pinned to
    the visual viewport and cannot scroll, rubber-band or overscroll; the
    stage is sized in DYNAMIC viewport units so it follows Safari's chrome
-   collapsing instead of assuming a height. Exactly two surfaces in the
-   whole app may scroll — the path map and character personalisation —
-   and they opt in with .scrolls, which is also the only place
-   touch-action is handed back.
+   collapsing instead of assuming a height. Exactly three surfaces in the
+   whole app may scroll — the path map, character personalisation and the
+   end-game allocation list — and they opt in with .scrolls, which is also
+   the only place touch-action is handed back.
+   THE ALLOCATION LIST JOINED ON 09 SEP and had been a scroll container
+   without the class since it was written: overflow-y:auto, real overflow
+   at 360x640, and every touch gesture on it cancelled by the handler in
+   proto.js. The failure is silent by construction — the box still scrolls
+   from script — so the rule is now a rule: a new overflow container takes
+   .scrolls in the same commit or it does not ship.
    ===================================================================== */
 html, body{
   margin:0; padding:0;
@@ -402,7 +408,7 @@ body{
   -webkit-font-smoothing:antialiased;
   display:flex; justify-content:center;
 }
-/* the only two surfaces that may ever scroll */
+/* the only three surfaces that may ever scroll */
 .scrolls{ overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch; }
 
@@ -4880,6 +4886,11 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
   font-variant-numeric:tabular-nums; }
 .eg-left.is-spent{ color:var(--primary); }
 
+/* IT CARRIES .scrolls IN THE MARKUP — see egBeat3(). overflow-y is
+   declared in both places and is the same value in both; the rest of what
+   the list needs to answer a finger (touch-action, overscroll-behavior,
+   momentum) lives only in .scrolls and is why the class is on the node
+   rather than its declarations being copied down here. */
 .eg-chips{
   display:flex; flex-direction:column; gap:var(--gap-visible);
   overflow-y:auto; min-height:0; padding:2px 0;
