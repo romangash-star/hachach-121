@@ -1751,44 +1751,57 @@ body.no-ph .ph{ display:none !important; }
    בעד->נגד and נגד->בעד are the same class and there is no branch that
    could drift.
 
-   T24 · THE HUE IS NOT A VERDICT HUE ANY MORE, and the reason is not that
-   §3.1's argument was wrong. It was right and it was checked: all nine
-   guess/vote pairs were rendered and measured, and the two distance-2
-   cases come back identical — same hex, same alpha, same 216px — one
-   growing toward בעד and one toward נגד. A colour that never differs when
-   only the direction differs is not reading the direction, so the locked
-   rule was not being broken by the fill.
-   IT WAS BEING BROKEN BY THE AGREEMENT STATE. Distance 0 paints no fill,
-   so agreement was carried by tinting the ENTIRE TRACK lime — and the
-   track's three stops are labelled בעד · נמנע · נגד. Full-width
-   correctness lime under a vote scale reads as endorsement whatever the
-   arithmetic behind it is doing, and one player sees one case rather than
-   nine. The fill had a quieter version of the same problem: at distance 2
-   the bar runs the full width and TERMINATES ON a vote position, with the
-   MK's own token sitting on that end.
-   THE PAIR IS THE SEAT GRID'S, NOT A NEW ONE. --vf-ink and --vf-paper
-   were derived and verified for exactly this problem on the finale bar —
-   separated on LUMINANCE, which is the channel no dichromacy touches —
-   so the two surfaces that had it now answer it the same way. Structure,
-   strengths, lengths and travel are all unchanged; only the hue moved.
-   AND THE TRACK NO LONGER HAS TO CARRY CORRECTNESS AT ALL, which is the
-   real argument: the stamp lands one --t-gx-stamp-lag later and says the
-   same word. Lion, 09 Sep. */
+   =====================================================================
+   T24b · THE VERDICT PAIR IS BACK ON THIS TRACK, AND IT IS A RECORDED
+   OVERRIDE OF THE STANDING COLOUR RULE. DO NOT "FIX" THIS BACK.
+
+   Lion's decision of 09 Sep, reversing his own T24 decision of the same
+   day. The header says lime and magenta code correctness ONLY and may
+   never sit on vote direction; this track's three stops are labelled
+   בעד · נמנע · נגד, so putting them here is the thing that rule names.
+   It was raised, it was reaffirmed, and it is his call to make. Recorded
+   the way T6c's exception is recorded — see CLAIM_MARK in proto.js — so
+   the next person to read this knows it is a decision and not a miss.
+
+   WHAT T24 MEASURED, KEPT HERE BECAUSE IT IS THE PART THAT MATTERS IF
+   THIS IS EVER REVISITED. The two halves of this revert do NOT carry the
+   same risk, and the difference is measured rather than argued:
+
+     · THE FILL codes DISTANCE, not direction, and that was verified
+       across all nine guess/vote pairs. The two distance-2 cases come
+       back identical — same hex, same alpha, same 216px — one growing
+       toward בעד and one toward נגד. runAxis() keys the class off
+       Math.abs(), so there is no branch where a direction could be read.
+       A colour that never differs when only the direction differs is not
+       encoding the direction. This half was never the violation.
+
+     · THE AGREEMENT TRACK is the half that is. Distance 0 paints no fill,
+       so agreement tints the ENTIRE TRACK lime, full width, under those
+       three labels. That reads as endorsement of whatever stop the token
+       is sitting on, whatever the arithmetic behind it is doing — and a
+       player sees one case, not nine. If this exception is ever narrowed,
+       narrow it here first and leave the fill alone.
+
+   THE ALPHAS GO BACK WITH THE HUES. 22% on the track is the value that
+   was tuned for lime; T24's 34% existed only because --vf-paper is a
+   light warm neutral that disappeared at 22. Reverting one without the
+   other would ship a third thing that was never designed.
+
+   --vf-ink AND --vf-paper STAY DEFINED. They are still consumed by
+   [data-f5bar="neutral"], which is the finale bar's comparison palette
+   and is untouched by this. Deleting them would break that switch.
+   DO NOT GENERALISE THIS. One track is where Lion put it. Any other
+   surface is a new decision by him, not an extension of this one. */
 .gx-fill{
   position:absolute; top:0; bottom:0; width:0; border-radius:19px;
   background:var(--gx-gap, rgba(34,31,23,.26)); pointer-events:none;
   transition:background var(--t-flip) linear;
 }
-.gx--d1{ --gx-gap:color-mix(in srgb, var(--vf-ink) 30%, transparent); }
-.gx--d2{ --gx-gap:color-mix(in srgb, var(--vf-ink) 62%, transparent); }
-/* 34%, not the lime's 22%: --vf-paper is a light warm neutral against the
-   lime's saturated hue, so the same alpha would have been invisible on
-   this track. It is still the quietest of the three states, which is
-   right — agreement is the one with nothing to report, and the settle
-   pulse and the paired tokens are what carry it. */
+.gx--d1{ --gx-gap:color-mix(in srgb, var(--verdict-surprise) 30%, transparent); }
+.gx--d2{ --gx-gap:color-mix(in srgb, var(--verdict-surprise) 62%, transparent); }
 .gx--d0 .gx-track,
 .gx.is-agreed .gx-track{
-  background:color-mix(in srgb, var(--vf-paper) 34%, rgba(34,31,23,.26));
+  background:color-mix(in srgb, var(--verdict-correct) 22%, rgba(34,31,23,.26));
 }
 .gx-m{ position:absolute; top:50%; translate:50% -50%; width:38px; height:38px; display:block;
   transition:right var(--t-flip) var(--e-settle); z-index:2; }
