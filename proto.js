@@ -2313,6 +2313,81 @@ async function claimReveal(ans, card) {
   });
 }
 
+/* =====================================================================
+   v30c · THE RESET CONFIRM. The only irreversible action in the game.
+
+   IT IS .exitsheet's CONSTRUCTION, NOT A SECOND MODAL SHAPE. Paper on a
+   dark scrim, white die-cut, keyline, hard offset, laid down at a tilt.
+   The build has one modal shape and this does not add another; it adds a
+   perforation to the one that exists.
+
+   THE ESCALATION IS MATERIAL, NOT CHROMATIC, and that is forced rather
+   than chosen: lime and magenta code correctness only and cannot be
+   spent on danger. A perforation is native to a die-cut sticker system
+   and means exactly one thing — this comes apart. Nothing else in the
+   build has one, so it cannot be read as anything else.
+
+   THE COST IS IN FIGURES. The chips say how much is lost rather than
+   calling it "progress"; the exit confirm already sets that precedent
+   for a round, and this is the same idea at the scale of a run. A player
+   agreeing to a quantity is making a different decision from one
+   agreeing to a word.
+
+   THE SAFE OPTION IS THE PRIMARY. Yellow, 56px, full extrusion, first in
+   reading order, above the tear. The destructive one is 46px, outlined,
+   flush, below it — and the ✕ is a third way out, in the corner the
+   build already puts it. Two ways out, one way through. */
+function resetConfirm() {
+  const sh = el('div', 'exitsheet rs');
+  const coins = wallet;
+  const topics = TOPICS().filter(t => topicDone(t.id)).length;
+  const issues = Object.keys(PROGRESS).filter(k => PROGRESS[k] === true).length;
+  sh.innerHTML =
+    '<div class="exitsheet__box rs__box" role="dialog" aria-modal="true">' +
+      '<button type="button" class="exitsheet__x" aria-label="סגירה">✕</button>' +
+      '<p class="rs__q">' + esc(PROF_COPY.rsQ) + '</p>' +                /* TAMAR */
+      '<p class="rs__note">' + esc(PROF_COPY.rsNote) + '</p>' +          /* TAMAR */
+      '<div class="rs__cost">' +
+        '<span class="rs__c">' + N(topics) + ' ' + esc(PROF_COPY.rsTop) + '</span>' +
+        '<span class="rs__c">' + N(issues) + ' ' + esc(PROF_COPY.rsIss) + '</span>' +
+        /* THE ONLY ONE THAT CAN REACH FOUR DIGITS, so it is the only one
+           that takes the separator. shNum is the share card's own helper
+           — the other place a wallet total is printed at size — rather
+           than a second way of writing a number; it is declared further
+           down the file and this runs long after that. */
+        '<span class="rs__c">' + N(shNum(coins)) + ' ' + esc(PROF_COPY.rsCoin) + '</span>' +
+        '<span class="rs__c">' + esc(PROF_COPY.rsCard) + '</span>' +
+      '</div>' +
+      '<button type="button" class="p-c rs__safe" data-keep>' +
+        esc(PROF_COPY.rsKeep) + '</button>' +                            /* TAMAR */
+      /* the perforation, ruled across the sheet with a ✂ break */
+      '<div class="rs__tear" aria-hidden="true"></div>' +
+      '<button type="button" class="rs__go" data-wipe>' +
+        esc(PROF_COPY.rsGo) + '</button>' +                              /* TAMAR */
+    '</div>';
+  let gone = false;
+  const close = () => {
+    if (gone) return; gone = true;
+    removeEventListener('keydown', onKey);
+    sh.classList.remove('is-in'); sh.classList.add('is-out');
+    setTimeout(() => sh.remove(), T.ovIn);
+  };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  addEventListener('keydown', onKey);
+  pressable($('.exitsheet__x', sh)).addEventListener('click', close);
+  pressable($('[data-keep]', sh)).addEventListener('click', close);
+  sh.addEventListener('click', e => { if (e.target === sh) close(); });
+  pressable($('[data-wipe]', sh)).addEventListener('click', () => {
+    /* the same wipe ?reset performs, so there is one definition of what
+       a clean slate is and this cannot drift from it */
+    clearSave();
+    location.href = location.pathname;
+  });
+  $('#stage').appendChild(sh);
+  requestAnimationFrame(() => sh.classList.add('is-in'));
+  return sh;
+}
+
 /* ===== B3-3 · THE DIE-CUT STICKER MODAL ==============================
    ONE COMPONENT, TWO CONTENTS, and that is the whole point of building it
    this way. B3-3 was picked for the law modal and §3.1 moves the glossary
@@ -2569,6 +2644,21 @@ const PROF_COPY = {
   save:  'שמור',                        /* TAMAR · 2b's one primary; it closes, everything is already kept */
   skip:  'לא משנה',                     /* TAMAR · the invitation's dismiss */
   change:'החליפו',                      /* TAMAR · the invitation's second line */
+  /* v30c · RESET LIVES HERE AND NOWHERE ELSE. Not on the map: replaying
+     one topic is a node tap, the map is where the picker's back control
+     lands the player, and a destructive control there is permanent
+     furniture one mis-tap from erasure. This sheet already opens from the
+     HUD avatar, is present on the map, and already holds who the player
+     is; the run's totals and the way to erase them belong with it. */
+  reset:  'להתחיל מחדש',                /* TAMAR · the quiet door in 2b */
+  rsQ:    'להתחיל את המשחק מחדש?',       /* TAMAR · the confirm's question */
+  rsNote: 'כל מה שצברתם יימחק ולא ניתן יהיה לשחזר אותו.',  /* TAMAR */
+  rsKeep: 'להשאיר הכל',                 /* TAMAR · the safe option, first */
+  rsGo:   'כן, למחוק ולהתחיל מחדש',      /* TAMAR · the destructive one */
+  rsCard: 'הכרטיס שלכם',                /* TAMAR · the fourth cost chip */
+  rsTop:  'נושאים',                     /* TAMAR · cost chip unit */
+  rsIss:  'סוגיות',                     /* TAMAR · cost chip unit */
+  rsCoin: 'מטבעות',                     /* TAMAR · cost chip unit */
 };
 
 function profileModal() {
@@ -2626,6 +2716,11 @@ function renderProfile(m) {
          is active, because avatarSvg() ranks cfg first. */
       '<button type="button" class="r-b prof-tweak" data-build>' +
         esc(PROFILE.cfg ? PROF_COPY.edit : PROF_COPY.build) + '</button>' +
+      /* v30c · THE RESET DOOR. Quiet, last, and a text link rather than a
+         button: it is not one of the two things this sheet is for. It
+         opens a confirm; it never resets on its own. */
+      '<button type="button" class="prof-reset" data-reset>' +
+        esc(PROF_COPY.reset) + '</button>' +
       /* שמור, AND IT ONLY CLOSES. Everything above applied the moment it
          was tapped, so the button is always safe to press and never has
          anything to do; the copy matches the player's model — "I typed a
@@ -2644,6 +2739,8 @@ function renderProfile(m) {
   }));
   if (has) pressable($('[data-swap]', box)).addEventListener('click', () => renderSheet(m));
   pressable($('[data-build]', box)).addEventListener('click', () => renderBuilder(m));
+  const rs = $('[data-reset]', box);
+  if (rs) pressable(rs).addEventListener('click', () => resetConfirm());
   pressable($('[data-close]', box)).addEventListener('click', () => $('.stmodal__x', m).click());
   const nm = $('#profName', box);
   nm.addEventListener('input', () => setProfile({ name: cleanName(nm.value) }));
@@ -6077,17 +6174,36 @@ function renderMap() {
         TOPICS().map((t, i) => nodeHTML(t, i, h, cur)).join('') +
       '</div>' +
     '</div>' +
-    '<button type="button" class="map-jump" id="mapjump">' +
-      '<i aria-hidden="true">↓</i>חזרה לנושא הנוכחי</button>' +
-    /* §E · THE WAY BACK INTO THE SUMMARY. Without it the end-game is a
-       one-way door: its own exit is the map, and a player who takes it
-       would be back in the loop the end-game exists to replace, with no
-       way to reach their card again. Rendered only when the game is
-       actually finished, so it cannot appear mid-run. */
-    (gameDone()
-      ? '<button type="button" class="map-done" id="mapdone">' +
-          esc('לסיכום שלכם ›') + '</button>'                          /* TAMAR */
-      : '');
+    /* v30c · THE CONTROLS GO IN A BAR PINNED OVER THE SCROLL. They were
+       two absolutely-positioned pills at identical coordinates — both
+       left:50%, translateX(-50%), bottom:14px — which is the collision
+       fixed below. A bar is one box with one bottom inset, so two
+       controls can never land on each other again by construction.
+       THE BAR IS NOT RENDERED WHEN IT WOULD BE EMPTY: the jump pill
+       shows and hides on scroll and the summary door only exists on a
+       finished map, so on a fresh map the bar holds one hidden control
+       and reserves nothing it is not using. */
+    '<div class="map-bar" id="mapbar">' +
+      /* §E · THE WAY BACK INTO THE SUMMARY. Without it the end-game is a
+         one-way door: its own exit is the map, and a player who takes it
+         would be back in the loop the end-game exists to replace, with no
+         way to reach their card again. Rendered only when the game is
+         actually finished, so it cannot appear mid-run. */
+      (gameDone()
+        ? '<button type="button" class="map-done" id="mapdone">' +
+            esc('לסיכום שלכם ›') + '</button>'                        /* TAMAR */
+        : '') +
+      /* v30c · SUPPRESSED ON A FINISHED MAP, and it is a suppression
+         rather than a restack. The jump exists to return the player to
+         the CURRENT topic; when every topic is done there is no current
+         one and the pill would offer a journey to nowhere. Restacking it
+         under the summary door would have left an invisible control
+         still taking the tap on its own half of the overlap. */
+      (gameDone()
+        ? ''
+        : '<button type="button" class="map-jump" id="mapjump">' +
+            '<i aria-hidden="true">↓</i>חזרה לנושא הנוכחי</button>') +
+    '</div>';
 
   paintHud();
   /* SHOW IT BEFORE MEASURING IT. A hidden element has no clientHeight and
@@ -6294,19 +6410,23 @@ function wireMap(cur, h) {
   const park = () => { win.scrollTop = Math.max(0, curY - win.clientHeight * 0.667); };
   park();
 
-  const onScroll = () => {
-    /* THE JUMP BUTTON EXISTS ONLY WHILE THE CURRENT NODE IS OFF SCREEN.
-       It is a way back, not a nag, and it awards nothing. */
-    const vis = curY > win.scrollTop + 40 && curY < win.scrollTop + win.clientHeight - 40;
-    jump.classList.toggle('is-on', !vis);
-    jump.querySelector('i').textContent = curY > win.scrollTop ? '↓' : '↑';
-  };
-  win.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  /* v30c · the pill is not in the DOM on a finished map, so everything
+     that drives it is guarded rather than assuming it is there. */
+  if (jump) {
+    const onScroll = () => {
+      /* THE JUMP BUTTON EXISTS ONLY WHILE THE CURRENT NODE IS OFF SCREEN.
+         It is a way back, not a nag, and it awards nothing. */
+      const vis = curY > win.scrollTop + 40 && curY < win.scrollTop + win.clientHeight - 40;
+      jump.classList.toggle('is-on', !vis);
+      jump.querySelector('i').textContent = curY > win.scrollTop ? '↓' : '↑';
+    };
+    win.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-  pressable(jump).addEventListener('click', () => {
-    win.scrollTo({ top: Math.max(0, curY - win.clientHeight * 0.667), behavior: 'smooth' });
-  });
+    pressable(jump).addEventListener('click', () => {
+      win.scrollTo({ top: Math.max(0, curY - win.clientHeight * 0.667), behavior: 'smooth' });
+    });
+  }
 
   /* FREE CHOICE, no locking and no prerequisites — a SET decision (§3.1).
      Only internal_sec has a round behind it in this build; the other seven
@@ -6785,7 +6905,11 @@ async function endGame() {
   /* ITEM 19 · the label goes with the coins. Replaying must not leave a
      previous run's word sitting on an empty row. */
   ALLOC_OTHER_NAME = '';
-  showScreen('end');
+  /* v30c · showScreen IS CALLED BY egOverlay(), not here. Screens 1 and
+     2 are an overlay over the round that has just ended, so the round
+     screen has to stay up behind the blur — and the HUD's slots still
+     have to become the summary's. egOverlay() does both, in that order,
+     and this function no longer knows which screen it is landing on. */
   /* v29h · NON-NEGOTIABLE 3 · the share card's assets are fetched and
      base64'd NOW, while beats 1–3 play, so beat 4's first export is the
      warm ~150ms and not the cold 1.3s measured on the phone. This is the
@@ -6793,14 +6917,7 @@ async function endGame() {
      from ?screen=end, and from nowhere on load or on the map — a player
      who never finishes never pays for it. */
   shWarm();
-  /* THE HUD HAS TO BE REPAINTED HERE. Its count and coin chip were only
-     ever written by renderMap(), because the map was the only screen
-     that showed them; the end-game shows the same two and would
-     otherwise inherit whatever the last map render left — 0/6 on a
-     deep-link, or a stale count on a save restored straight into the
-     summary. */
-  paintHud();
-  await egBeat1();
+  await egOverlay();
 }
 
 function egStage() {
@@ -6840,11 +6957,16 @@ const egStep = ms => wait(egReduced() ? 0 : ms);
    is correct: that flag exists to hand a demo a clean first run.
    ===================================================================== */
 const EG_CONFETTI_N = 34;
-function egConfetti() {
+/* v30c · THE HOST IS AN ARGUMENT NOW. Screen 1 is an overlay rather than
+   a beat on #scEnd, so the layer the pieces fall into is not always the
+   one #egFx names — and two elements carrying that id, even for the
+   260ms the overlay outlives the collapse, is a bug waiting to be found
+   by the next person who queries it. The default is unchanged. */
+function egConfetti(host) {
   if (EG_CONFETTI_SPENT || egReduced()) return;
   EG_CONFETTI_SPENT = true;
   saveState();                    /* spent is spent, across reloads too */
-  const fx = $('#egFx'); if (!fx) return;
+  const fx = host || $('#egFx'); if (!fx) return;
   for (let i = 0; i < EG_CONFETTI_N; i++) {
     const p = el('i', 'eg-cf eg-cf--' + (i % 3));
     p.style.left = (Math.random() * 100).toFixed(2) + '%';
@@ -6857,104 +6979,388 @@ function egConfetti() {
   setTimeout(() => { fx.innerHTML = ''; }, 3200);
 }
 
-async function egBeat1() {
-  const c = egStage();
-  const done = topicsDone(), total = TOPICS().length;
-  c.innerHTML =
-    '<div class="eg-b1">' +
-      '<p class="eg-eyebrow">' + esc('סיימתם') + '</p>' +              /* TAMAR */
-      '<h1 class="eg-h1">' + esc('כל הנושאים') + '</h1>' +             /* TAMAR */
-      '<p class="eg-sub">' + N(done + '/' + total) + ' ' +
-        esc('נושאים · ') + N(Object.keys(RECORD).length) +             /* TAMAR */
-        esc(' סוגיות') + '</p>' +
-    '</div>';
-  const b1 = $('.eg-b1', c);
-  requestAnimationFrame(() => b1.classList.add('is-in'));
+/* =====================================================================
+   v30c · SCREENS 1 AND 2 ARE ONE OVERLAY IN TWO STEPS.
 
-  /* THE CELEBRATION WAITS FOR THE SCREEN TO STOP MOVING. The block's own
-     entrance is --t-f5-in; the confetti is fired after it, not with it. */
-  await egStep(T.f5In + T.f5Gap);
-  egConfetti();
-  await egStep(T.f5CoinHold);
+   WHAT IT REPLACES. egBeat1 and egBeat2 were two full screens on #scEnd,
+   and the MAP — the object the whole run has been filling since minute
+   one — was a fraction on the first of them and absent from the second.
+   The completion arrived as "6/6" and left again before the record it
+   was supposed to introduce had been shown.
 
-  const go = el('button', 'p-c eg-go', 'מה יצא לכם ›');                /* TAMAR */
-  pressable(go).addEventListener('click', () => egBeat2());
-  c.appendChild(go);
-  requestAnimationFrame(() => go.classList.add('is-in'));
+   ONE SURFACE, TWO STEPS, NEVER TWO SCREENS. .ov--end IS .ov--stage: the
+   same 9px backdrop-filter, painted ONCE and never re-rendered. Step 1
+   is egPose(0), step 2 is egPose(1), and every frame of the handoff is
+   egPose(e) — ONE function at different progress values, so the last
+   frame of the transition IS screen 2 rather than a drawing that
+   resembles it. That is the .ovpane argument two blocks up in the
+   stylesheet, applied to a longer move: two overlays would be two blurs
+   and the seam reads as a load.
+
+   THE LAST SCREEN STAYS BEHIND IT. #scRound is not hidden while this is
+   up — the finale board the player has just finished is what the blur is
+   blurring, which is what makes the overlay read as an interruption
+   rather than a navigation. It is hidden at the collapse, not before.
+
+   THE OVERLAY COVERS THE HUD, and it is the only surface in the app that
+   does: .ov--end takes z-index 13 against the HUD's 12. Beat 2's
+   .ov--stage is 9 and has ALWAYS sat under the HUD — see the report; it
+   is not changed here, because that would change every round.
+   ===================================================================== */
+
+/* ---- the geometry, and it is the board's own ------------------------
+   NODE/SNODE and the 84px row are v30b/sequence.src.html's mapMorph()
+   verbatim. The two things generalised out of it are the row count and
+   the strip's spread: the board drew six because the sheet leaves six,
+   and TOPICS() is read live everywhere else in this file. rows is
+   ceil(n/2) and the strip is centred on (n-1)/2 steps, which reproduces
+   the board's own 95 - i*38 at n=6 exactly and does not invent a second
+   layout at any other count. */
+const EG_NODE = 74, EG_SNODE = 31, EG_ROW = 84, EG_SGAP = 7;
+/* the chair's own two numbers: the board's .66, and how far its inboard
+   edge is allowed inside the column. 20px is the overlap the board draws
+   at 390 — enough that the arm passes BEHIND the document and the two
+   read as one object, not enough to reach the seat. */
+const EG_CHAIR_S = 0.66, EG_CHAIR_BITE = 20;
+/* THE LABEL'S LINE IS MEASURED, NOT ASSUMED. The board's 252 for three
+   rows is (3-1)*84 + 74 + 10, and the 10 is one line of label — which is
+   right for five of the six topics and wrong for אחריות ציבורית, whose
+   label wraps to two at 74px and then runs into the count line under the
+   grid. 10 stays as the fallback for a build that never reaches the
+   measurement; egOverlay() overwrites it with the tallest label it
+   actually rendered, so any re-cut content set re-measures itself. */
+const EG_LAB_DEFAULT = 10;
+let EG_LAB = EG_LAB_DEFAULT;
+const EG_EASE3 = e => 1 - Math.pow(1 - e, 3);
+const eg01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+
+/* one node, drawn the way the map draws one: the same ring, the same
+   area-normalised icon, the same check. It is a copy of nodeHTML's face
+   logic and not a call to it, because nodeHTML positions itself on the
+   path from --node-box and --node-face-y and this one is positioned by
+   egPose. The RING IS FULL here with no per-segment state: every topic
+   on this screen is complete by definition — gameDone() is what opened
+   it — so a partial ring could not be true. */
+function egNodeHTML(t, i) {
+  const T_ = M.topics && M.topics[t.id];
+  const art = T_ && (T_['256'] || T_['128'] || T_['64']);
+  let face;
+  if (art) {
+    const S = EG_NODE * 0.40 * (T_.node_scale || 1);
+    const a = T_.aspect || 1;
+    const w = a >= 1 ? S : S * a, hh = a >= 1 ? S / a : S;
+    face = '<img src="' + ROOT + art + '" alt="" style="width:' + w.toFixed(1) +
+           'px;height:' + hh.toFixed(1) + 'px">';
+  } else {
+    face = '<span aria-hidden="true">' + esc(t.icon || '') + '</span>';
+  }
+  return '<div class="egn" data-i="' + i + '">' +
+    '<span class="egn__disc">' +
+      '<svg class="egn__ring" viewBox="0 0 74 74" aria-hidden="true">' +
+        '<circle cx="37" cy="37" r="32" fill="none" stroke="rgba(0,0,0,.34)" stroke-width="7"></circle>' +
+        '<circle cx="37" cy="37" r="32" fill="none" stroke="' + t.color +
+          '" stroke-width="7" stroke-linecap="round" stroke-dasharray="96 6" ' +
+          'transform="rotate(-90 37 37)"></circle>' +
+      '</svg>' +
+      '<span class="egn__face">' + face + '</span>' +
+      '<span class="egn__ck" aria-hidden="true">✓</span>' +
+    '</span>' +
+    /* THE SHORT LABEL, not the map's `sub || label`. The map's node shows
+       the topic's QUESTION under it and has a whole column of height to
+       show it in; six of those at an 84px pitch overlap each other into
+       an unreadable band. This is the board's own choice and it is also
+       the only one that fits. */
+    '<span class="egn__lab">' + esc(t.label) + '</span>' +
+  '</div>';
+}
+
+/* THE LETTERHEAD, STANDING STILL. Screen 3 is on a different ground, and
+   the strip is the only object that crosses that change: it is what makes
+   the handoff a DEMOTION rather than a replacement, and a completion that
+   disappeared the moment the subject changed would say the completion had
+   stopped being true.
+   IT IS THE SAME OBJECT AT THE SAME SIZE, not a second drawing of it. The
+   nodes are built at their full 74px and scaled by the morph's own .419,
+   with the layout box collapsed by margin so the pitch comes out at the
+   strip's 38 — so screen 3's letterhead is pixel-identical to the one
+   screen 2 landed on rather than a 31px rebuild that nearly matches. */
+function egStripHTML() {
+  return '<div class="eg-strip" aria-hidden="true">' +
+    TOPICS().map(egNodeHTML).join('') + '</div>';
 }
 
 /* =====================================================================
-   BEAT 2 · YOUR RECORD.
+   THE ONE FUNCTION.
 
-   WHY IT EXISTS: without it the allocation arrives from nowhere. This is
-   the bridge between "I finished" and "here is what I am deciding" —
-   the sheet's §1.4c argument that the values screen has to be introduced
-   by the positions the player already took.
+   egPose(0) is screen 1. egPose(1) is screen 2. Nothing else draws
+   either of them, so they cannot drift apart and the handoff cannot
+   arrive somewhere the destination is not.
 
-   ONE NUMBER AT A TIME. The consolidated NEVERs forbid >1 number at the
-   emotional peak. The two lines here are staged rather than simultaneous
-   — the surprise count lands, holds alone, and only then does the
-   alignment line arrive — so the beat never presents two figures for the
-   eye to choose between.
+   SIX ELEMENTS, SIX TRANSFORMS, ONE DURATION. The 2x3 grid becoming a
+   1x6 letterhead is a REFLOW, and a reflow mid-transition reads as a
+   cut — which is why the nodes are absolutely positioned and moved by
+   transform rather than laid out by the grid at either end.
 
-   THE FRAMING IS §1.3: the Knesset surprised you, you did not fail.
-   There is no "wrong", no score colour, and no correctness treatment on
-   this screen at all.
+   THE STAGGER IS BETWEEN THE FOUR THINGS THAT MOVE, not between the six
+   nodes: labels out over the first 90ms, the grid unfolding across the
+   whole 360, the chair from 65ms, the document from 165ms. All four are
+   sampled from the same e, so there is no gap anywhere to read as a
+   second beat.
+
+   EVERYTHING TRAVELS UP. The grid's rows rise to one line, the chair
+   rises from below, the document follows the chair. The unfold does add
+   a horizontal component — the outer nodes spread sideways as they rise,
+   so four of the six paths are diagonal. That is Lion's call and it is
+   kept: the vertical term is the larger one at every frame, and the
+   spread RESOLVES onto a single line, which is a more legible
+   destination than six arriving in a smaller copy of where they began.
    ===================================================================== */
-async function egBeat2() {
-  const c = egStage();
-  const s = endStats();
-  /* §C the record is the player's, so the player's token heads it, and
-     it is addressed by name when one was given — the plural otherwise. */
-  c.innerHTML =
-    '<span class="as-d eg-av" aria-hidden="true">' + avatarSvg() + '</span>' +
-    '<h2 class="eg-h2">' +
-      esc(PROFILE.name ? 'מה יצא לך, ' + PROFILE.name : 'מה יצא לכם') +  /* TAMAR */
-    '</h2>';
-  const h2 = $('.eg-h2', c);
-  requestAnimationFrame(() => { h2.classList.add('is-in'); $('.eg-av', c).classList.add('is-in'); });
-  await egStep(T.f5In);
+function egPose(e) {
+  const ov = $('.ov--end'); if (!ov) return;
+  const grid = $('.egov__map', ov); if (!grid) return;
+  const k = eg01(e), ease = EG_EASE3(k);
+  const nodes = [].slice.call(grid.children);
+  const n = nodes.length; if (!n) return;
+  const rows = Math.ceil(n / 2);
+  const s = 1 - (1 - EG_SNODE / EG_NODE) * ease;      /* 1 -> .419 */
+  const gh = (rows - 1) * EG_ROW + EG_NODE + EG_LAB;
+  const step = EG_SNODE + EG_SGAP;
+  const lab = Math.max(0, 1 - ease * 3);              /* gone by ~90ms */
+  grid.style.height = (gh - (gh - EG_SNODE) * ease).toFixed(1) + 'px';
+  nodes.forEach((node, i) => {
+    /* col 0 is the RIGHT column and node 0 is the FIRST topic: the offset
+       is physical (+42 is right of centre) and RTL reading order puts the
+       first node there, which is also where the strip's first node lands. */
+    const col = i % 2, row = (i / 2) | 0;
+    const gx = col === 0 ? 42 : -42, gy = row * EG_ROW;
+    const sx = ((n - 1) / 2 - i) * step;
+    const x = gx + (sx - gx) * ease, y = gy - gy * ease;
+    node.style.transform = 'translate(calc(-50% + ' + x.toFixed(1) + 'px), ' +
+      y.toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+    const l = $('.egn__lab', node); if (l) l.style.opacity = lab.toFixed(2);
+  });
 
-  /* ---- the surprise count, alone ---- */
-  const surf = el('div', 'eg-card f5surf');
-  surf.innerHTML =
-    /* KEY RIGHT, VALUE LEFT — the phone-sweep rule, and it decides the
-       DOM order: in RTL the first flex child renders rightmost, so the
-       label has to come first and the numeral second. */
-    '<p class="eg-stat">' +
-      '<span class="eg-stat__l">' + esc('פעמים שהכנסת הפתיעה אתכם') +   /* TAMAR */
-      '</span><b class="eg-num">' + N(s.surprises) + '</b></p>' +
-    '<p class="eg-stat__sub">' + esc('מתוך ') + N(s.asked) +           /* TAMAR */
-      esc(' ניחושים לאורך המשחק') + '</p>';                            /* TAMAR */
-  c.appendChild(surf);
-  requestAnimationFrame(() => surf.classList.add('is-in'));
-  await egStep(T.f5CoinHold);
+  const h = ov.clientHeight || 640;
+  const hero = $('.egov__hero', ov), sub = $('.egov__sub', ov);
+  const chair = $('.egov__chair', ov), doc = $('.egov__doc', ov);
+  const col = $('.egov__col', ov), go = $('.egov__go', ov);
+  /* the column's width is a term in the chair's position, so it is
+     computed once here and written once below rather than read back */
+  const colW = 358 - 96 * ease;
 
-  /* ---- the alignment line, second, and only if it can be true ----
-     alignOf is 0 when nothing the player finished carries a _tally, and
-     the line is then simply absent. A "0 מתוך 0" is not a fact about
-     the player, it is a fact about the content. */
-  if (s.alignOf > 0) {
-    const al = el('div', 'eg-card f5surf eg-card--quiet');
-    al.innerHTML =
-      '<p class="eg-stat eg-stat--sm">' +
-        '<span class="eg-stat__l">' + esc('הצבעתם עם הרוב') +          /* TAMAR */
-        '</span><b class="eg-num">' +
-        N(s.alignHits + '/' + s.alignOf) + '</b></p>' +
-      /* the denominator has to explain itself or it reads as a bug next
-         to eleven finished issues — Lion, 5 Sep */
-      '<p class="eg-stat__sub">' +
-        esc('מתוך ') + N(s.alignOf) +
-        esc(' סוגיות שבהן יש ספירת קולות') + '</p>';                   /* TAMAR */
-    c.appendChild(al);
-    requestAnimationFrame(() => al.classList.add('is-in'));
-    await egStep(T.f5CoinHold);
+  /* the headline leaves on the FIRST HALF of the curve, so the two
+     titles are never both legible. Its height is collapsed once it is
+     gone or the column would keep centring around an empty box. */
+  const hOp = Math.max(0, 1 - k / 0.5);
+  [hero, sub].forEach(x => {
+    if (!x) return;
+    x.style.opacity = hOp.toFixed(2);
+    x.style.transform = 'translateY(' + (-ease * 70).toFixed(1) + 'px)';
+    x.style.height = hOp <= 0 ? '0px' : '';
+    x.style.overflow = hOp <= 0 ? 'hidden' : '';
+  });
+  if (chair) {
+    const cOp = eg01((k - 0.18) / 0.42);              /* ~65ms -> 360ms */
+    chair.style.opacity = cOp.toFixed(2);
+    /* THE CHAIR IS ANCHORED TO THE COLUMN, NOT TO THE STAGE'S EDGE, and
+       that is a correction to the board rather than a copy of it. The
+       board's -58px inline offset is measured from the surface's padding
+       edge; the column is not, because it is 262px wide against whatever
+       the stage is. At 390 the two happen to agree and the chair's arm
+       tucks 20px behind the first stat card. At 360 the column moves 30px
+       inboard and the same -58 put the card straight through the seated
+       avatar — which is the one thing on step 2 that may not be covered,
+       since the seat is the whole subject of the screen.
+       So the offset is derived: the chair's inboard edge lands
+       EG_CHAIR_BITE inside the column at every width, and -58.3 is what
+       this expression returns at 390. */
+    const pad = parseFloat(getComputedStyle(ov).paddingLeft) || 16;
+    const inner = ov.clientWidth - pad * 2;
+    const cw = chair.offsetWidth || 210;
+    const rest = inner - colW + EG_CHAIR_BITE - cw * (1 + EG_CHAIR_S) / 2;
+    chair.style.transform = 'translate(' + (rest + (1 - ease) * -86).toFixed(1) + 'px,' +
+      ((1 - ease) * h * 0.42).toFixed(1) + 'px) scale(' + EG_CHAIR_S + ')';
   }
+  if (doc) {
+    const dOp = eg01((k - 0.46) / 0.44);              /* ~165ms -> 360ms */
+    doc.style.opacity = dOp.toFixed(2);
+    doc.style.transform = 'translateY(' + ((1 - ease) * h * 0.30).toFixed(1) + 'px)';
+    doc.style.height = dOp <= 0 ? '0px' : '';
+    doc.style.overflow = dOp <= 0 ? 'hidden' : '';
+  }
+  /* the column narrows and moves to the inline start as the chair takes
+     the other edge — 358 centred to 262 against the leading edge */
+  if (col) {
+    col.style.maxWidth = colW.toFixed(0) + 'px';
+    col.style.marginInlineEnd = ease > 0.02 ? 'auto' : '0';
+  }
+  /* THE BUTTON IS THE FIFTH THING ON THE SAME CLOCK. It fades out over
+     the first third and back in over the last, with the label swapped at
+     the turn — the same rule the two titles follow, for the same reason:
+     never two labels legible at once. */
+  if (go) {
+    const bOp = k < 0.5 ? 1 - k / 0.34 : (k - 0.66) / 0.34;
+    go.style.opacity = eg01(bOp).toFixed(2);
+    const want = k < 0.5 ? EG_GO1 : EG_GO2;
+    if (go.textContent !== want) go.textContent = want;
+  }
+}
 
-  const go = el('button', 'p-c eg-go', 'עכשיו תורכם ›');               /* TAMAR */
-  pressable(go).addEventListener('click', () => egBeat3());
-  c.appendChild(go);
-  requestAnimationFrame(() => go.classList.add('is-in'));
+const EG_GO1 = 'מה יצא לכם ›';                                        /* TAMAR */
+const EG_GO2 = 'עכשיו תורכם ›';                                       /* TAMAR */
+
+/* =====================================================================
+   STEP 1 · THE MAP COMPLETES.
+   Built once, posed at 0, and never rebuilt: the handoff and step 2 are
+   the same DOM at a different progress.
+   ===================================================================== */
+async function egOverlay() {
+  const done = topicsDone(), total = TOPICS().length;
+  const s = endStats();
+
+  /* the HUD's slots become the summary's — 6/6, the coin chip and the
+     avatar — while #scRound stays up behind the blur. showScreen does
+     both halves and #scEnd is put straight back to hidden: it is built
+     at the collapse, and two visible .screen children would each take
+     flex:1 and split the stage between them. */
+  showScreen('end');
+  $('#scEnd').hidden = true;
+  /* ONLY IF THERE IS SOMETHING BEHIND IT. ?screen=end drops straight in
+     from the intro and no round has been built; unhiding it would put an
+     empty round under the blur, which is a darker frame than the stage's
+     own ground and reads as a load. The test is #round rather than
+     #scRound because the section's three children — the chyron slot, the
+     helper and #round — are in index.html and are there from load. */
+  const sr = $('#scRound'), rd = $('#round');
+  if (sr && rd && rd.firstElementChild) sr.hidden = false;
+  paintHud();
+
+  const ov = el('div', 'ov ov--stage ov--end');
+  ov.innerHTML =
+    /* the confetti layer keeps its PLACE — before the column, at a lower
+       z-index — so "never over content" stays a stacking fact rather
+       than a timing promise. It is passed to egConfetti() by node
+       instead of by id; see the note there. */
+    '<div class="eg-fx egov__fx" aria-hidden="true"></div>' +
+    '<div class="egov__chair" aria-hidden="true">' +
+      '<img src="' + ROOT + (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
+      '<span class="egov__seat as-d">' + avatarSvg() + '</span>' +
+    '</div>' +
+    '<div class="egov__col" id="egovCol">' +
+      '<div class="egov__hero">' +
+        '<p class="eg-eyebrow">' + esc('סיימתם') + '</p>' +            /* TAMAR */
+        '<h1 class="eg-h1">' + esc('כל הנושאים') + '</h1>' +           /* TAMAR */
+      '</div>' +
+      '<div class="egov__map" id="egovMap">' +
+        TOPICS().map(egNodeHTML).join('') +
+      '</div>' +
+      '<p class="eg-sub egov__sub">' + N(done + '/' + total) + ' ' +
+        esc('נושאים · ') + N(Object.keys(RECORD).length) +             /* TAMAR */
+        esc(' סוגיות') + '</p>' +
+      '<div class="egov__doc">' +
+        '<h2 class="eg-h2 is-in egov__h2">' +
+          esc(PROFILE.name ? 'מה יצא לך, ' + PROFILE.name : 'מה יצא לכם') +  /* TAMAR */
+        '</h2>' +
+        '<div class="eg-card f5surf is-in">' +
+          '<p class="eg-stat">' +
+            '<span class="eg-stat__l">' + esc('פעמים שהכנסת הפתיעה אתכם') +  /* TAMAR */
+            '</span><b class="eg-num">' + N(s.surprises) + '</b></p>' +
+          '<p class="eg-stat__sub">' + esc('מתוך ') + N(s.asked) +     /* TAMAR */
+            esc(' ניחושים לאורך המשחק') + '</p>' +
+        '</div>' +
+        (s.alignOf > 0
+          ? '<div class="eg-card f5surf eg-card--quiet is-in">' +
+              '<p class="eg-stat eg-stat--sm">' +
+                '<span class="eg-stat__l">' + esc('הצבעתם עם הרוב') +  /* TAMAR */
+                '</span><b class="eg-num">' +
+                N(s.alignHits + '/' + s.alignOf) + '</b></p>' +
+              '<p class="eg-stat__sub">' +
+                esc('מתוך ') + N(s.alignOf) +
+                esc(' סוגיות שבהן יש ספירת קולות') + '</p>' +          /* TAMAR */
+            '</div>'
+          : '') +
+      '</div>' +
+      '<button type="button" class="p-c eg-go is-in egov__go"></button>' +
+    '</div>';
+  $('#stage').appendChild(ov);
+
+  /* one read, before the first pose, of what the labels actually came out
+     at — see EG_LAB. .egn is 74px wide with align-items:center, so a
+     label longer than that wraps rather than overflowing, which is why
+     this is a height question and not a width one. */
+  const labs = [].slice.call(ov.querySelectorAll('.egn__lab'));
+  EG_LAB = labs.reduce((m, l) => Math.max(m, l.offsetHeight + 4), EG_LAB_DEFAULT);
+
+  egPose(0);
+  const go = $('.egov__go', ov);
+  pressable(go).addEventListener('click', () => {
+    if (ov.dataset.step === '2') return egCollapse();
+    egHandoff();
+  });
+  ov.dataset.step = '1';
+
+  /* the celebration waits for the surface to stop moving, exactly as it
+     did on the old beat 1: the overlay's own ov-in first, the confetti
+     after it. Map completion is still the only confetti in the game. */
+  await egStep(T.ovIn + T.f5Gap);
+  egConfetti($('.egov__fx', ov));
+}
+
+/* =====================================================================
+   THE HANDOFF · ONE DURATION, ONE BACKDROP.
+   rAF rather than six CSS transitions because the four staggered things
+   have to be sampled from the SAME e as the nodes; six transitions plus
+   four more would be ten clocks agreeing by arithmetic instead of one
+   clock read ten times. The backdrop is on .ov--end and is not touched
+   here at all, which is what "painted once" means in practice.
+   ===================================================================== */
+function egHandoff() {
+  const ov = $('.ov--end'); if (!ov) return;
+  if (ov.dataset.step !== '1') return;
+  ov.dataset.step = 'x';                       /* neither, while it runs */
+  const go = $('.egov__go', ov);
+  if (go) go.disabled = true;
+  const land = () => {
+    egPose(1);
+    ov.dataset.step = '2';
+    /* the inline opacity is NOT cleared. egPose(1) writes opacity:1, and
+       handing the button back to .eg-go's class rule here would make the
+       overlay's settled state depend on HOW it was reached — the last
+       frame of the handoff has to be byte-identical to egPose(1) on a
+       fresh build, which is the whole claim this function makes. */
+    if (go) go.disabled = false;
+  };
+  if (egReduced()) return land();
+  const t0 = performance.now();
+  const tick = now => {
+    const k = Math.min(1, (now - t0) / T.ovSwap);
+    egPose(k);
+    if (k < 1) requestAnimationFrame(tick); else land();
+  };
+  requestAnimationFrame(tick);
+}
+
+/* =====================================================================
+   STEP 2 LEAVES THE OVERLAY · THE KEYBOARD ARGUMENT.
+   Beat 3 has a text field in it, and a field on a backdrop-filtered
+   layer is a field the keyboard slides under: the surface it is
+   filtering moves and the blur re-resolves on every frame of the
+   animation. So the allocation is built on the STAGE — --stage plus the
+   dot grid, the app's own ground — and the overlay leaves over it.
+   BUILT FIRST, COLLAPSED SECOND. The destination is painting before the
+   blur starts to lift, so the ground fades UP underneath rather than
+   arriving into an empty frame.
+   ===================================================================== */
+async function egCollapse() {
+  const ov = $('.ov--end');
+  const sr = $('#scRound');
+  $('#scEnd').hidden = false;
+  if (sr) { sr.hidden = true; sr.classList.remove('is-finale'); }
+  await egBeat3();
+  if (!ov) return;
+  ov.classList.add('ov--collapse');
+  ov.style.pointerEvents = 'none';
+  setTimeout(() => ov.remove(), (egReduced() ? 0 : T.ovCollapse) + 40);
 }
 
 /* =====================================================================
@@ -7174,6 +7580,8 @@ function egTopTopic() {
 async function egBeat3() {
   const c = egStage();
   c.innerHTML =
+    /* v30c · the letterhead crosses the ground change — see egStripHTML() */
+    egStripHTML() +
     '<h2 class="eg-h2 is-in">' + esc('במה להשקיע?') + '</h2>' +        /* TAMAR */
     '<p class="eg-lede">' +
       esc('חילקו את המטבעות שצברתם בין הנושאים ששיחקתם.') +            /* TAMAR */
@@ -7690,8 +8098,25 @@ async function egBeat4() {
   SH_KIND = 'C'; SH_ASPECT = '916';          /* the defaults, on every arrival */
   SH_BUSY = false;
 
+  /* v30c · THE HEADER ROW, AND THE BACK CONTROL IS ON ITS OWN ROW IN IT.
+     TOP RIGHT, which is the start edge in RTL and where iOS puts a back
+     control. OWN ROW rather than inline with the title, and that is on
+     evidence rather than taste: measured inline, the pill and the title
+     clear each other by 2px with the short label, and only at that exact
+     string in that exact weight and face. A longer word from Tamar, or
+     the system fallback on a cold load before SimplerPro arrives, moves
+     them into overlap with nothing to catch it.
+     IT IS THE HUD's TOPIC PILL VERBATIM — same height, same radius, same
+     paper, same keyline and extrusion — so the way back out of the
+     picker is the same object the player has had at the top of every
+     round. ON THE GROUND, never over the card: card D is cream and a
+     cream pill on it would vanish. */
   c.innerHTML =
-    '<h2 class="eg-h2 sh-title">' + esc(SH_COPY.title) + '</h2>' +
+    '<div class="sh-hd">' +
+      '<button type="button" class="sh-back" id="shBack">' +
+        '<i aria-hidden="true">›</i>' + esc(SH_COPY.back) + '</button>' +
+      '<h2 class="eg-h2 sh-title">' + esc(SH_COPY.title) + '</h2>' +
+    '</div>' +
     '<div class="sh-track" id="shTrack"><div class="sh-rail" id="shRail"></div></div>' +
     '<div class="sh-dots" id="shDots" role="tablist"></div>' +
     '<div class="sh-tg" id="shTg" role="radiogroup"></div>' +
@@ -7804,10 +8229,11 @@ async function egBeat4() {
   pressable(save ).addEventListener('click', () => shRun(save,  share, SH_COPY.saving,  shSave));
   acts.append(share, save);
   /* the way off the screen, quiet: the map is where every topic reopens */
-  const back = el('button', 'eg-clear sh-back', esc(SH_COPY.back));
-  back.type = 'button';
+  /* v30c · the back control moved into the header row above; this is the
+     wiring for it, and the old foot-of-column button is gone with the
+     row it sat in. */
+  const back = $('#shBack');
   pressable(back).addEventListener('click', () => goMap());
-  acts.appendChild(back);
 
   paintCards();
   place();
