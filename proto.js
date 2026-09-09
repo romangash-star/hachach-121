@@ -1363,7 +1363,7 @@ function placeChyron() {
   c.style.minHeight = r.height + 'px';
 }
 
-function pinVote(vote) {
+function pinVote(vote, q) {
   const c = $('#chyron');
   placeChyron();
   c.classList.remove('is-empty');
@@ -1374,13 +1374,33 @@ function pinVote(vote) {
      the band from 361px holding 119px of content to a pill that cannot be
      empty by construction. */
   c.innerHTML =
-    '<span class="bnr bnr--vote">' +
+    /* T26b · THE LABEL COMES OFF, THE MEANING DOES NOT. "הצבעת:" was 55px
+       of a 180px pill saying what the avatar beside it already says — the
+       token is the player's, so the vote is the player's, and the only
+       thing the pill carries that is not already on screen is WHICH way.
+       Dropping it takes the pill to ~125px and hands the difference to
+       the question next to it, which is the whole of T26's fit problem.
+       IT SURVIVES AS THE ACCESSIBLE NAME. The avatar is aria-hidden and a
+       bare "בעד" in a landmark-less span would read as one word with no
+       subject, so the sticker carries the full sentence as its label. The
+       string is unchanged; only its rendering moved. */
+    '<span class="bnr bnr--vote" role="img" aria-label="' +
+        esc('הצבעת: ' + (VOTE_PIN[vote] || '')) + '">' +   /* TAMAR */
       '<span class="chyron-av as-d" aria-hidden="true">' + avatarSvg() + '</span>' +
-      /* esc(), not ph(): written Hebrew pending Tamar, not a description
-         of copy that does not exist. */
-      '<span class="chyron-line">' + esc('הצבעת:') +   /* TAMAR */
+      '<span class="chyron-line" aria-hidden="true">' +
         '<b>' + esc(VOTE_PIN[vote] || '') + '</b></span>' +
-    '</span>';
+    '</span>' +
+    /* T26 · THE QUESTION, IN THE WIDTH THE BAND WAS ALREADY RESERVING.
+       .chyron is a 44px flex row that has held one ~140px pill since A7;
+       this takes the remaining ~200px as a second flex item and clamps to
+       two lines, so the band's height is what it always was. It is
+       rendered only when a line is passed — repin() passes none, so every
+       beat but the cascade is byte for byte what it was.
+       NO GLOSSARY MARKING HERE. markGlossary() would put a tappable-
+       looking marker on a line that is 13px, two-clamped and inside a
+       pointer-events:none band; T23 already reported the claim card's
+       version of that promise as a lie and this would be a second one. */
+    (q ? '<span class="chyron-q">' + esc(q) + '</span>' : '');
   return c;
 }
 /* the round re-renders on every beat; the chyron is outside #round and
@@ -3413,6 +3433,59 @@ function tapAffordance(ov) {
    the claim was already down to two lines. */
 const Q_TAIL = 'מה ההצבעה שלך?';                                       /* TAMAR */
 
+/* T26 · THE SPLIT, FACTORED OUT, because two surfaces now need it and a
+   second copy of the suffix test is a second thing to keep in step. The
+   rule is unchanged and is the one argued above: match the tail's own
+   words as an exact SUFFIX, never the dash, and trim only trailing
+   whitespace. A prompt without the run comes back whole. */
+function promptClaim(text) {
+  const t = String(text || '');
+  const i = t.indexOf(Q_TAIL);
+  if (i < 0 || i + Q_TAIL.length !== t.length) return t;
+  return t.slice(0, i).replace(/\s+$/, '');
+}
+
+/* =====================================================================
+   T26 · WHAT THE BAND SAYS DURING THE CASCADE, AND THE ONE PLACE IT IS
+   DECIDED.
+
+   THIS IS THE FALLBACK, NOT THE FINAL FORM. Tamar's sixteen condensed
+   lines do not exist yet, so the band carries the verbatim prompt with
+   beat 2's question stripped off it: correct at two lines for eleven of
+   the sixteen, truncated for five, and better than showing none of it on
+   all sixteen.
+
+   THE SWAP IS A DATA CHANGE. When the condensed strings land they go in
+   data.js as one field per issue and this function returns it, falling
+   back to today's behaviour for any issue that has not been written yet:
+
+       return issue.tachles_short || promptClaim(issue.tachles_prompt);
+
+   Nothing else moves — not the markup, not the CSS, not the clamp, not
+   the call site. See the report.
+
+   THE TAIL COMES OFF HERE AND NOT AT BEAT 2. "מה ההצבעה שלך?" is beat
+   2's question and is right where it is asked; on the cascade it is the
+   wrong question, asked again under a black tag that is already asking
+   the right one, once per card. */
+function bandQuestion(iss) {
+  if (!iss) return '';
+  /* T26b · AND THE HYPHEN GOES WITH IT, HERE AND NOT IN promptClaim().
+     v26 ruled the dash stays, and that ruling is about BEAT 2, where the
+     tail sits under it on its own line and the dash is what connects the
+     claim to it. On this band there is no tail, so the same character is
+     a hyphen with nothing after it — on all sixteen, and worst on the
+     four that FIT, where r1 renders its complete claim as "…עבור החרדים-"
+     and reads truncated on the one issue that is not.
+     Band-side only: promptClaim() is shared with beat 2 and is untouched,
+     so beat 2 still reads character for character as the CMS wrote it.
+     The class covers the ASCII hyphen, the Hebrew maqaf and both dashes,
+     because the set is Tamar's to grow and matching one of them would
+     have this coming back. */
+  return promptClaim(iss.tachles_prompt || '')
+           .replace(/[\s\u00A0]*[-\u05BE\u2013\u2014]\s*$/, '');
+}
+
 /* v26g · THE TAB IS CENTRED ON THE FIRST WORD OF LINE 1.
    v26f anchored to a fraction of line 1 — 20% along from the start end.
    That guaranteed contact on all sixteen and was still wrong: 20% of a
@@ -3773,13 +3846,13 @@ function qBlock(text, extra) {
       (pair ? pair.t : Math.round(DEV.qsize * 0.81)) + 'px"'
     : '';
   const t   = String(text || '');
-  const i   = t.indexOf(Q_TAIL);
+  const i   = t.indexOf(Q_TAIL);            /* the tail STAYS on beat 2 */
   /* the tab is drawn in every branch: it labels the question, not the
      string, and a placeholder question is still the question */
   const tab = '<span class="b2q__tab">' + esc('תכלס') + '</span>';     /* TAMAR */
   if (i < 0 || i + Q_TAIL.length !== t.length)
     return '<p class="' + cls + '"' + size + '>' + tab + markGlossary(t) + '</p>';
-  const claim = t.slice(0, i).replace(/\s+$/, '');
+  const claim = promptClaim(t);             /* T26 · the shared split */
   return '<p class="' + cls + '"' + size + '>' + tab + markGlossary(claim) +
          '<span class="b2q__tail">' + esc(Q_TAIL) + '</span></p>';
 }
@@ -3812,6 +3885,14 @@ async function beat3(ov) {
        happen: no empty state, no placeholder MKs, no error. */
     if (!S.dealt.length) return beat5();
     S.beat = 4;
+    /* T26 · THE QUESTION GOES UP WITH THE CASCADE and comes down with it.
+       Set once here rather than per card: armPredict() runs on every card
+       and re-rendering the band nine times would rebuild the pinned pill
+       — and its avatar — underneath a player who is looking at it. The
+       pre-reveal gate and beat 5 both call repin(), which passes no line,
+       so the band returns to the pill alone without anything having to
+       remember to clear it. */
+    pinVote(S.ownVote, bandQuestion(issue));
     /* the card the overlay was sitting on turns over in front of the
        player. It is the same element, not a replacement. */
     await flipUp();
