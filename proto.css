@@ -267,6 +267,12 @@
                    beat belongs to the reveal rather than to the exit. */
   --t-peel:      620ms;
   --t-peel-out:  460ms;
+  /* T27 · the question block demonstrates itself once, after the first
+     card has settled and the tag has slapped, and holds long enough to
+     be read as an object opening rather than as a flicker. */
+  --t-qbar:      260ms;
+  --t-qbar-at:  1100ms;
+  --t-qbar-hold:1400ms;
   --t-peel-land: 240ms;
   /* the first curve was cubic-bezier(.32,.72,.36,1) and it was wrong for
      this: front-loaded, so 27% of the duration had already peeled ~70% of
@@ -2487,7 +2493,83 @@ body.no-ph .ph{ display:none !important; }
 }
 /* the HUD's centre slot. Exactly one of the two children is ever in it,
    and the slot holds the same box either way so the row never jumps. */
-.hud-mid{ flex:1; min-width:0; display:flex; justify-content:center; align-items:center; }
+/* T27 · the centre slot is a positioning context now, and it STRETCHES
+   to the row so the block can be anchored to the row's own top edge
+   rather than to a box that is centred inside it. min-height keeps the
+   row exactly the height the topic pill gave it, so removing the pill
+   moves nothing. */
+.hud-mid{ flex:1; min-width:0; display:flex; justify-content:center;
+          align-items:center; position:relative; align-self:stretch;
+          min-height:36px; }
+
+/* =====================================================================
+   T27 · THE QUESTION BLOCK.
+
+   ABSOLUTE, SO THE ROUND NEVER MOVES. In flow this would grow .hud and
+   push the card down by however many rows the prompt happened to wrap
+   to. It is anchored to .hud-mid's stretched box instead and grows
+   DOWNWARD out of the row, over the chyron — the pinned vote is the one
+   thing it is allowed to cover.
+
+   CREAM AND INK IN BOTH STATES. The same --paper fill, keyline and hard
+   offset the coin pill and the old topic pill carry; the band reads as
+   one family and the open state is the same object taller, never a
+   second surface arriving.
+
+   13px / 400 IN BOTH STATES. The collapsed line and the expanded panel
+   are the same type at the same size and the same weight — the block
+   gets taller and the fade resolves, and that is the whole transition.
+   ===================================================================== */
+.qbar{
+  position:absolute; top:2px; inset-inline:0; z-index:1;
+  box-sizing:border-box;
+  min-height:36px; height:36px;
+  margin:0; padding:8px 12px; border:0;
+  border-radius:var(--r-pill, 999px);
+  background:var(--paper); color:var(--ink);
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  font-family:var(--font-body); font-weight:400;
+  font-size:13px; line-height:18px;
+  text-align:start;
+  display:flex; align-items:flex-start;
+  overflow:hidden;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:height var(--t-qbar) var(--e-settle);
+}
+/* display:flex above beats the UA's own [hidden] rule */
+.qbar[hidden]{ display:none; }
+.qbar__t{
+  display:block; width:100%;
+  white-space:nowrap; overflow:hidden;
+}
+
+/* THE OPEN STATE IS THE SAME BLOCK, TALLER. Only the wrap and the height
+   change; the radius softens because a 90px panel on a 999px pill radius
+   reads as a lozenge rather than as a block. */
+.qbar.is-open{ border-radius:18px; }
+.qbar.is-open .qbar__t{ white-space:normal; }
+
+/* THE FADE, NOT AN ELLIPSIS. An ellipsis says "abbreviated"; a fade says
+   "continues". It is a property of the text rather than a fourth object
+   in a band already at three, and it is applied ONLY when the line is
+   actually cut — qbarMeasure() decides that against the real width with
+   the real webfont, which is 13 of the 16 prompts at 390.
+   RTL: the line starts at the right and runs off the LEFT, so the fade
+   is toward the left — the end the text is actually cut at. */
+.qbar.is-cut .qbar__t{
+  -webkit-mask-image:linear-gradient(to left, #000 72%, transparent 100%);
+          mask-image:linear-gradient(to left, #000 72%, transparent 100%);
+}
+.qbar:active{ box-shadow:0 0 0 2px var(--keyline), 0 1px 0 rgba(0,0,0,.34); }
+
+/* BOTH STATES SURVIVE, THE MOTION DOES NOT. The panel still opens and
+   still closes on a tap; it simply arrives at its height instead of
+   travelling to it. The fade is not motion and is untouched. */
+@media (prefers-reduced-motion: reduce){
+  .qbar{ transition:none; }
+}
+
+
 /* T19 · THE PAIR. pairHudProgress() moves #hudProgress out of .hud-mid
    and in beside .hud-coins, so the two pills are siblings on the HUD's
    own row. .hud's gap is --sp-2 and reads as "these are separate
