@@ -2917,19 +2917,53 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    .b5stage fade, which the global prefers-reduced-motion rule already
    flattens along with everything else.
    ===================================================================== */
-.prereveal{ display:flex; flex-direction:column; }
-.pr-inner{
-  flex:1; min-height:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:var(--sp-3);
-  text-align:center;
+/* =====================================================================
+   T11 · THE GROUND, AND NOTHING ON TOP OF IT.
+   The backing sheet is gone and so are .pr-sheet, .pr-stack and their
+   dashed peel edge. A 340x620 kraft panel in the deck's exact footprint
+   was a card by every property that makes a card: same box, same shadow,
+   same die-cut edge. Putting one there when the last card leaves is a
+   replacement, not a reveal.
+   WHAT IS LEFT IS #stage. It paints the charcoal and .stage::before draws
+   the dot grid over it, and it has been under the deck since the round
+   opened. Every container between a card and it — .cardwrap, .stack,
+   .beat, .round, .screen — declares no background, so the ground needs no
+   uncovering and no drawing: the cards go and it is simply there. There
+   is deliberately no rule here that paints anything.
+   COMPOSED FOR THE SPACE, NOT FOR THE RECTANGLE. The beat centres its own
+   two objects in the round area. It does NOT reproduce where the card box
+   sat: that footprint was a consequence of card artwork, and inheriting
+   it would be inheriting a measurement with nothing left to measure. */
+.prereveal{
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:clamp(18px, 4.5vh, 34px);
+  padding-bottom:clamp(8px, 3vh, 26px);
 }
-/* .f5acts's geometry, restated rather than shared: that class also carries
-   beat 5's re-centring behaviour, which this screen has no use for. */
-.pr-acts{
-  margin-top:auto; padding-top:12px;
-  display:flex; flex-direction:column; align-items:stretch; gap:8px; flex:none;
+
+/* THE EXPLANATION. On the dark ground, so it takes the ground's own ink
+   rather than a card's — this is the one place in the round where display
+   copy sits on the charcoal with nothing behind it, and it can afford the
+   size because it is alone and appears once ever.
+   max-width in ch rather than px: the line is 33 characters and the job
+   of the measure is to break it near its middle, which is a property of
+   the string, not of the phone. */
+.pr-head{
+  margin:0; max-width:17ch;
+  font-family:var(--font-display); font-weight:900;
+  font-size:clamp(21px, 5.6vw, 25px); line-height:1.32;
+  color:var(--paper); text-align:center; text-wrap:balance;
 }
-.pr-go{ font-size:18px; min-height:0; padding:12px 0 13px; }
+
+/* THE BUTTON IS AN ORDINARY PRIMARY, WITH NOTHING LEFT TO OVERRIDE. It
+   carried width, font-size, line-height and padding overrides while the
+   long sentence was in it; the sentence has moved to .pr-head and all of
+   them went with it. What remains is .p-c exactly as beat 5's own go
+   button takes it — full content width, one line — so the two advancing
+   presses in the round are the same object, not two sizes of it.
+   .prereveal stretches it because align-items is centre for the head:
+   align-self is the one line that has to say so. */
+.pr-go{ align-self:stretch; }
 /* THE PLACEHOLDER, AND WHY IT IS NOT ph(). Same hazard treatment the .ph
    marker draws, so it reads as placeholder copy at a glance — but it is
    NOT hidden by body.no-ph. ph()'s marker is, and the default build sets
@@ -2938,6 +2972,8 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    replaces it. */
 .pr-ph{
   margin:0; display:inline-block; max-width:100%;
+  /* T11 · first run only, so it may be the tallest thing on the sheet
+     without costing the other rounds anything */
   background-color:var(--primary);
   background-image:repeating-linear-gradient(45deg,#FFE03D 0 8px,var(--primary) 8px 16px);
   color:var(--ink); border:2px dashed var(--ink); border-radius:4px;
