@@ -822,6 +822,19 @@ const COPY = {
     m: 'בטוח שאתה רוצה לצאת?',                                       /* TAMAR */
     f: 'בטוחה שאת רוצה לצאת?',                                       /* TAMAR */
   },
+  /* T27b · THE RESTART'S QUESTION, in this table for the reason exitQ is:
+     it addresses the player, so it agrees with them. PLURAL IS THE FORM,
+     not the fallback — t() reaches for p unless a gender is set, which is
+     the app-wide neutral voice rather than a default of last resort.
+     The other three strings of this confirm are NOT here and must not be:
+     the consequence names a fact and the two buttons are infinitives, and
+     none of the three has anybody to agree with. Same split EXIT_COPY
+     already draws. */
+  egRestartQ: {
+    p: 'בטוחים שאתם רוצים להתחיל את החלוקה מחדש?',                   /* TAMAR */
+    m: 'בטוח שאתה רוצה להתחיל את החלוקה מחדש?',                      /* TAMAR */
+    f: 'בטוחה שאת רוצה להתחיל את החלוקה מחדש?',                      /* TAMAR */
+  },
   /* T11 · THE PRE-FINALE EXPLANATION, first round only. It belongs in this
      table and the BUTTON does not, and the split is the whole point: this
      line addresses the player — it asks them to do something — so it
@@ -6434,6 +6447,30 @@ function exitRound() {
      and the teardown belongs to the door, not to the confirm. */
   if (!midRound) return goMap({ quiet: true });
 
+  confirmSheet({
+    q: t('exitQ'), note: EXIT_COPY.note, go: EXIT_COPY.go, stay: EXIT_COPY.stay,
+    onGo: () => {
+      if (window.HAC) HAC('round_exit', { beat: S ? S.beat : 0, issue_id: issue ? issue.id : '', score: wallet });
+      goMap({ quiet: true });
+    }
+  });
+}
+
+/* =====================================================================
+   T27b · THE CONFIRM, FACTORED OUT.
+
+   ONE SHAPE FOR EVERY DESTRUCTIVE ASK. .exitsheet was already the app's
+   answer to this question and its own note says why it is centred in
+   both axes rather than a bottom sheet: "a bottom sheet is the shape of
+   an options menu, and this is not one." The allocation's restart is the
+   second thing in the app that cannot be undone, so it gets the same
+   object rather than a second modal shape.
+
+   THREE WAYS TO CANCEL AND ONE TO PROCEED, unchanged from the round's:
+   the ✕, the ground and the stay button all dismiss; only `go` goes.
+   Every ambiguous gesture resolves toward not losing the thing.
+   ===================================================================== */
+function confirmSheet(o) {
   const sh = el('div', 'exitsheet');
   sh.innerHTML =
     '<div class="exitsheet__box" role="dialog" aria-modal="true">' +
@@ -6445,11 +6482,11 @@ function exitRound() {
          Struck through ph() they rendered at --fs-meta on a yellow
          hazard stripe, which is neither the 19px black question §3.3
          asked for nor legible on a cream sticker. */
-      '<p class="exitsheet__q">' + esc(t('exitQ')) + '</p>' +
-      '<p class="exitsheet__note">' + esc(EXIT_COPY.note) + '</p>' +
+      '<p class="exitsheet__q">' + esc(o.q) + '</p>' +
+      '<p class="exitsheet__note">' + esc(o.note) + '</p>' +
       '<div class="exitsheet__row">' +
-        '<button type="button" class="p-c" data-go>' + esc(EXIT_COPY.go) + '</button>' +
-        '<button type="button" class="r-b" data-stay>' + esc(EXIT_COPY.stay) + '</button>' +
+        '<button type="button" class="p-c" data-go>' + esc(o.go) + '</button>' +
+        '<button type="button" class="r-b" data-stay>' + esc(o.stay) + '</button>' +
       '</div>' +
     '</div>';
   let gone = false;
@@ -6462,8 +6499,8 @@ function exitRound() {
   const onKey = e => { if (e.key === 'Escape') close(); };
   addEventListener('keydown', onKey);
   pressable($('[data-go]', sh)).addEventListener('click', () => {
-    if (window.HAC) HAC('round_exit', { beat: S ? S.beat : 0, issue_id: issue ? issue.id : '', score: wallet });
-    removeEventListener('keydown', onKey); sh.remove(); goMap({ quiet: true });
+    removeEventListener('keydown', onKey); sh.remove();
+    if (o.onGo) o.onGo();
   });
   pressable($('[data-stay]', sh)).addEventListener('click', close);
   pressable($('.exitsheet__x', sh)).addEventListener('click', close);
@@ -8023,6 +8060,43 @@ function egNodeHTML(t, i) {
    with the layout box collapsed by margin so the pitch comes out at the
    strip's 38 — so screen 3's letterhead is pixel-identical to the one
    screen 2 landed on rather than a 31px rebuild that nearly matches. */
+/* T27b · THE RESTART MARK — the loop, chosen 09 Sep. A 300 degree sweep
+   with the tail turned back on itself, stroked on a 24 box and drawn at
+   20 with round caps and joins so it sits in the topic icons' hand
+   rather than reading as a system glyph. It is the one mark of the two
+   drawn with NO directional reading to get wrong in RTL, which is why
+   the alternative and the switch that carried it are both gone. */
+function egRestartMark() {
+  return '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" ' +
+    'fill="none" stroke="currentColor" stroke-width="2.4" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M20 12a8 8 0 1 1-2.6-5.9"/>' +
+    '<path d="M20.4 4.2v5.2h-5.2" />' +
+  '</svg>';
+}
+const EG_RESTART_LBL = 'התחלה מחדש של החלוקה';                        /* TAMAR */
+
+/* T27b · THE CONFIRM'S COPY, AND WHAT IT IS ALLOWED TO SAY.
+   IT NAMES WHAT ACTUALLY GOES AND NOTHING ELSE. The restart clears the
+   coins placed on every row — including the "אחר" row, whose coins live
+   in ALLOC under OTHER_KEY — and the word typed into "אחר". It does NOT
+   touch `wallet`: egRemaining() is wallet minus egPlaced(), so every
+   coin returns to the pool rather than being spent. It does not touch
+   PROGRESS, RECORD, PROFILE or anything in the save, because ALLOC and
+   ALLOC_OTHER_NAME are session state that never leaves this screen.
+   THE NINE PROFILE-SHEET RESET STRINGS ARE NOT REUSED, deliberately.
+   Those describe losing the whole game. A confirm that overstates what
+   is lost is how a player learns to dismiss confirms unread.
+   THE NAME LINE IS CONDITIONAL. A player who never opened "אחר" has no
+   word to lose, and telling them one will be erased is the same
+   overstatement one size smaller. */
+const EG_RESTART_COPY = {
+  note:     'המטבעות יחזרו לקופה',                                   /* TAMAR */
+  noteName: 'המטבעות יחזרו לקופה והשם שנכתב ב״אחר״ יימחק',           /* TAMAR */
+  go:       'להתחיל מחדש',                                           /* TAMAR */
+  stay:     'להמשיך'                                                 /* TAMAR */
+};
+
 function egStripHTML() {
   return '<div class="eg-strip" aria-hidden="true">' +
     TOPICS().map(egNodeHTML).join('') + '</div>';
@@ -8661,9 +8735,23 @@ async function egBeat3() {
   };
 
   const acts = $('#egActs', c);
-  const clear = el('button', 'eg-clear', 'התחלה מחדש');                /* TAMAR */
+  /* T27 · THE RESTART IS AN ICON BUTTON BESIDE THE CTA, not a text link
+     above it. Two marks are drawn and neither is chosen — ?restart=a|b
+     switches between them and the default here is arbitrary, awaiting a
+     pick. Both are die-cut sticker marks in the topic icons' hand,
+     monochrome at 20px, which is the size the HUD slot already proved.
+     ICON-ONLY IS NOT A LABEL, so it carries its accessible name and a
+     title; the name is the same sentence the link used to read. */
+  const clear = el('button', 'eg-restart');
   clear.type = 'button';
-  pressable(clear).addEventListener('click', () => {
+  clear.innerHTML = egRestartMark();
+  clear.setAttribute('aria-label', EG_RESTART_LBL);                  /* TAMAR */
+  clear.title = EG_RESTART_LBL;                                      /* TAMAR */
+  /* T27b · IT ASKS FIRST. The wipe itself is unchanged and is now the
+     confirm's callback; what changed is that an unlabelled square eight
+     pixels from the primary CTA can no longer undo the whole allocation
+     on one accidental contact. */
+  const doRestart = () => {
     ALLOC = {};
     ALLOC_OTHER_NAME = '';                         /* ITEM 19 · reset takes it too */
     const f = $('.eg-other__in'); if (f) { f.value = ''; f.hidden = true; }
@@ -8673,10 +8761,25 @@ async function egBeat3() {
        happens to land on it. */
     $$('.eg-chip', $('#egChips')).forEach(x => { delete x.dataset.hold; });
     egPaint();
+  };
+  pressable(clear).addEventListener('click', () => {
+    /* nothing placed means nothing to lose — but egPaint() hides the
+       control in that state, so this is the belt to that braces */
+    if (egPlaced() === 0) return;
+    confirmSheet({
+      q:    t('egRestartQ'),
+      note: ALLOC_OTHER_NAME ? EG_RESTART_COPY.noteName : EG_RESTART_COPY.note,
+      go:   EG_RESTART_COPY.go,
+      stay: EG_RESTART_COPY.stay,
+      onGo: doRestart
+    });
   });
   const go = el('button', 'p-c eg-go', t('egGo3'));                    /* TAMAR · T25 */
   pressable(go).addEventListener('click', () => egBeat4());
-  acts.append(clear, go);
+  /* THE CTA IS FIRST IN THE DOM, so in RTL it renders on the right and
+     the square sits at the left end of the row. The order matters: the
+     yellow button is the thing being answered and it leads. */
+  acts.append(go, clear);
 
   /* passive: this listener only reads and toggles a class, and marking it
      so keeps it off the critical path of a scroll it never cancels. */
@@ -8779,7 +8882,7 @@ function egPaint() {
        it is not an error state, it is the end of the supply */
     b.disabled = left <= 0;
   });
-  const clear = $('.eg-clear');
+  const clear = $('.eg-restart');                                    /* T27 */
   if (clear) clear.hidden = egPlaced() === 0;
   /* LAST, because the line above is what changes the list's height: the
      reset link appearing on the first tap is the single event that turns
@@ -8862,6 +8965,19 @@ const SH_SRC = {
 };
 
 let SH_KIND = 'C', SH_ASPECT = '916';
+/* T27b · THE RAIL ARRIVES ONE-SIDED, AND MOTION IS WHAT TEACHES IT.
+   C is index 0, so on arrival there is nothing to its right and the rail
+   can read as a single card rather than as three. Reordering would fix
+   the picture and break the product — C is safe at any score, D leads
+   with the prediction record and self-selects against low scorers — so
+   the affordance is taught instead: the rail settles from a small offset
+   with the card to the left briefly further into view, then rests at 0.
+   SESSION-SCOPED, NOT SAVED. "Never on re-entry" is about coming back to
+   this screen, and the end sequence is once per run — a save field would
+   be a sixth boolean bought for an entrance. */
+let SH_ARRIVED = false;
+const SH_ARRIVE_PX = 40;     /* +40 takes the left card's peek from 36 to 76 */
+const SH_ARRIVE_MS = 520;    /* slower than the 380ms snap: settling, not snapping */
 let SH_BUSY = false;
 
 /* ---- the pills: what the card is allowed to say ---------------------
@@ -9108,10 +9224,18 @@ async function egBeat4() {
     /* T25c · THE LETTERHEAD RUNS TO THE END. It crossed onto screen 3 in
        v30c and stopped there, so the one object carrying the ending's
        continuity abandoned it one screen early. */
-    egStripHTML() +
-    '<div class="sh-hd">' +
+    /* T27 · THE BACK CONTROL IS A HUD ROW NOW, above the letterhead
+       rather than under it. It is the same object it was — same pill,
+       same paper, same keyline — and it is right-aligned, which is where
+       the round's own ✕ sits in .hud-right. What it frees is the 10px
+       gap and the 36px pill out of the middle of the screen; the column
+       is centred, so the space returns to the card. */
+    '<div class="sh-hud">' +
       '<button type="button" class="sh-back" id="shBack">' +
         '<i aria-hidden="true">›</i>' + esc(SH_COPY.back) + '</button>' +
+    '</div>' +
+    egStripHTML() +
+    '<div class="sh-hd">' +
       '<h2 class="eg-h2 sh-title">' + esc(t('shTitle')) + '</h2>' +    /* TAMAR · T25 */
     '</div>' +
     '<div class="sh-track" id="shTrack"><div class="sh-rail" id="shRail"></div></div>' +
@@ -9149,6 +9273,26 @@ async function egBeat4() {
       $('.sh-scale', s).style.transform = 'scale(' + k + ')';
     });
     go(SH_KINDS.indexOf(SH_KIND), true);
+    arrive();
+  };
+  /* ONE SHOT, AND IT RUNS OFF place() BECAUSE place() IS WHERE step FIRST
+     HAS A VALUE. place() also runs on resize; the flag is what keeps this
+     to the first of those. Skipped entirely under reduced motion, the way
+     nudgeCover() skips the tape's wiggle — a demonstration that resolves
+     in 1ms is a flicker with no meaning, and the dots still say three. */
+  const arrive = () => {
+    if (SH_ARRIVED || !step) return;
+    SH_ARRIVED = true;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const i = SH_KINDS.indexOf(SH_KIND);
+    rail.classList.add('is-drag');                 /* no transition on the way out */
+    rail.style.transform = 'translateX(' + (i * step + SH_ARRIVE_PX) + 'px)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      rail.classList.remove('is-drag');
+      rail.classList.add('is-arriving');
+      rail.style.transform = 'translateX(' + (i * step) + 'px)';
+      setTimeout(() => rail.classList.remove('is-arriving'), SH_ARRIVE_MS + 60);
+    }));
   };
   const go = (i, silent) => {
     i = Math.max(0, Math.min(SH_KINDS.length - 1, i));
@@ -9180,8 +9324,14 @@ async function egBeat4() {
     if (!drag) return;
     const dx = e.clientX - drag.x;
     rail.classList.remove('is-drag');
-    /* finger moves LEFT → the next card, which sits to the left */
-    go(drag.i + (dx < -40 ? 1 : dx > 40 ? -1 : 0));
+    /* T27 · THE COMMIT NOW AGREES WITH THE PREVIEW, and that is the whole
+       of the swipe bug. The rail follows the finger (pointermove adds dx),
+       and slot i sits at -i·step — higher index is further LEFT. So to
+       bring the next card to the centre the rail travels RIGHT, which is
+       a finger moving RIGHT. The old line committed on a finger moving
+       LEFT: during the drag the card being reached for slid away, and on
+       release the rail jumped 326px the other way at 390. Measured. */
+    go(drag.i + (dx > 40 ? 1 : dx < -40 ? -1 : 0));
     drag = null;
   };
   track.addEventListener('pointerup', drop);

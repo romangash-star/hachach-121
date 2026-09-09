@@ -6069,18 +6069,43 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
   transition:opacity var(--t-f5-in) var(--e-settle), transform var(--t-f5-in) var(--e-settle);
 }
 .eg-go.is-in{ opacity:1; transform:none; }
+/* T27 · ONE ROW, NOT A STACK. The CTA takes the remaining width and the
+   restart is a fixed square at the CTA's exact height, so the yellow
+   button still dominates: at 390 it is 288 of the 358 available, at 360
+   it is 258 of 328 — 80% of the row at both widths, against a square
+   that is 64.5 either way. align-items:stretch is what makes "the CTA's
+   exact height" true without either of them being told a number. */
 .eg-acts{
-  display:flex; flex-direction:column; gap:8px; flex:none;
+  display:flex; flex-direction:row; align-items:stretch; gap:8px; flex:none;
   opacity:0; transform:translateY(6px);
   transition:opacity var(--t-f5-in) var(--e-settle), transform var(--t-f5-in) var(--e-settle);
 }
 .eg-acts.is-in{ opacity:1; transform:none; }
-.eg-acts .eg-go{ opacity:1; transform:none; }
-.eg-clear{
-  border:0; background:none; color:var(--ink-body);
-  font-family:var(--font-body); font-size:var(--fs-meta); font-weight:400;
-  padding:8px; cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+/* the CTA's own width:100% would fight flex:1 — the row is what sizes it
+   now, and it keeps flex:none nowhere near it. */
+.eg-acts .eg-go{ opacity:1; transform:none; flex:1 1 auto; width:auto; min-width:0; }
+
+/* THE RESTART. A square in the sticker family — paper, keyline, the same
+   hard offset every control on this screen carries — so it reads as a
+   button rather than as an icon someone dropped on the row. It is NOT
+   yellow: the primary fill is the CTA's and only the CTA's, and a second
+   yellow object in the row would make the row read as two answers. */
+.eg-restart{
+  flex:0 0 auto; aspect-ratio:1 / 1; align-self:stretch;
+  display:grid; place-items:center;
+  margin:0; padding:0; border:0;
+  border-radius:var(--r-pill, 999px);
+  background:var(--paper); color:var(--ink);
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:transform var(--t-press) linear, box-shadow var(--t-press) linear;
 }
+/* display:grid above beats the UA's own [hidden] rule, and egPaint()
+   hides this the moment nothing is placed — so it has to be said again
+   or the square sits in the row with nothing to undo. */
+.eg-restart[hidden]{ display:none; }
+.eg-restart:active{ transform:translateY(2px); box-shadow:0 0 0 2px var(--keyline), 0 1px 0 rgba(0,0,0,.34); }
+.eg-restart svg{ display:block; }
 .map-done{
   position:relative; z-index:1;
   border:0; border-radius:var(--r-pill); cursor:pointer;
@@ -6572,6 +6597,15 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    rejected. 12px to the carousel, which is the clearance asked for and
    is set here rather than on .sh-track's own margin so the header owns
    the space it opens. */
+/* T27 · THE HUD ROW. One row at the very top of the screen, above the
+   letterhead, holding the back control alone and right-aligned — which
+   in RTL is the start edge and is where the round's ✕ sits in .hud-right.
+   It is flex:none like every other band on this column, so what it costs
+   is its own 36px and nothing else. */
+.sh-hud{
+  flex:none; display:flex; justify-content:flex-start; align-items:center;
+  margin-bottom:calc(8px - clamp(8px, 1.6vh, 14px));
+}
 .sh-hd{
   flex:none; display:flex; flex-direction:column; align-items:stretch;
   gap:10px;
@@ -6622,6 +6656,16 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 .sh-rail{ position:absolute; left:50%; top:0; bottom:0; width:0; direction:ltr;
           transition:transform var(--t-flip) var(--e-settle); }
 .sh-rail.is-drag{ transition:none; }
+/* T27b · the arrival's own curve. Longer than the 380ms snap so it reads
+   as the rail settling rather than as a card being flicked, and on
+   --e-settle, which arrives and stops with no overshoot — a bounce here
+   would say "carousel" twice. */
+.sh-rail.is-arriving{ transition:transform 520ms var(--e-settle); }
+@media (prefers-reduced-motion: reduce){
+  /* the JS never adds the class under reduce; this is the belt to that
+     braces, and it kills the NAME rather than the duration. */
+  .sh-rail.is-arriving{ transition:none; }
+}
 .sh-slot{ position:absolute; transform:scale(.9); opacity:.5;
           transition:transform var(--t-flip) var(--e-settle), opacity var(--t-flip) linear; }
 .sh-slot.is-cur{ transform:none; opacity:1; z-index:2; }
@@ -6697,7 +6741,9 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
           border:2.6px solid currentColor; border-top-color:transparent;
           animation:sh-spin 820ms linear infinite; }
 @keyframes sh-spin{ to{ transform:rotate(360deg); } }
-.sh-back{ margin-top:2px; }
+/* T27 · the 2px was a column-layout nudge under the letterhead. In the
+   HUD row the button IS the row's height, so it centres on its own. */
+.sh-hud .sh-back{ margin-top:0; align-self:center; }
 @media (prefers-reduced-motion: reduce){
   /* a dead button with no indicator is worse than a slow one. !important
      because the global reduce rule (proto.css:3586) flattens every
