@@ -128,7 +128,9 @@ const T = {
   screen:      ms('--t-screen'),
   mapIn:       ms('--t-map-in'),
   gateHint:  ms('--gate-hint'),
-  gateGrow:  ms('--gate-grow')
+  gateGrow:  ms('--gate-grow'),
+  qbarAt:    ms('--t-qbar-at'),    /* T27 · the demo, after the card  */
+  qbarHold:  ms('--t-qbar-hold')   /* T27 · how long it stays open    */
 };
 
 /* ---------------------------------------------------------------------
@@ -246,6 +248,9 @@ const DEV = {
      spending the player's own setting. on/off force it WITHOUT writing
      the flag; null means "ask the save". */
   sound: qPick('sound', { on:true, off:false }, null),
+  /* T27 · and again, for the question block's one-shot demonstration.
+     on/off force it WITHOUT writing the flag. */
+  qbar: qPick('qbar', { on:true, off:false }, null),
   /* T20 · the claim's size on beat 2. 26 SHIPS as of 09 Sep — see .b2q in
      proto.css for why, and note it is a fit decision rather than a type
      one. 30 and 22 stay reachable so the three can be drawn beside each
@@ -4011,6 +4016,162 @@ function qBlock(text, extra) {
          '<span class="b2q__tail">' + esc(Q_TAIL) + '</span></p>';
 }
 
+/* =====================================================================
+   T27 · THE EXPANDING QUESTION BLOCK.
+
+   IT TAKES THE CENTRE HUD SLOT FROM THE TOPIC PILL, and the topic name
+   comes out with it: it is a filing label at the moment filing is
+   irrelevant, and the name is already on the map node and on the map the
+   player returns to.
+
+   WHERE THE QUESTION MOVED FROM. T26 put it in the chyron as a two-line
+   clamp beside the pinned vote. That is what the band is 8px shorter
+   without: the chyron falls back to its own 44px min-height and the band
+   goes 100 -> 92 at rest, while the question gains a state in which it
+   can be read in full — all sixteen prompts, against the two-row clamp's
+   six at 360.
+
+   CREAM FILL AND INK TYPE IN BOTH STATES. The HUD's own pill language,
+   not the black tag's: the coin pill beside it is cream and the band has
+   to read as one family. The transition is height and the fade
+   resolving, never a change of surface.
+
+   IT IS ABSOLUTE, AND THAT IS THE WHOLE REASON THE ROUND DOES NOT MOVE.
+   Expanding in flow would grow .hud and push the card down by the same
+   number of pixels on every open. .hud-mid keeps a 36px floor so the row
+   is the height it always was, and the panel grows out of it downward
+   over the chyron — which is the one thing it is allowed to cover.
+   ===================================================================== */
+const QBAR_LBL = {
+  /* the block names itself, because a bare question read out of context
+     gives a screen reader no idea what it is looking at */
+  name: 'השאלה של הסבב',                                        /* TAMAR */
+  open: 'פתיחת השאלה המלאה',                                    /* TAMAR */
+  shut: 'סגירת השאלה'                                           /* TAMAR */
+};
+/* T27 · THE DEMONSTRATION IS SPENT ONCE, EVER, on the same terms as
+   T13's beacon: additive in the save, no SAVE_VER bump, and a store
+   written before it restores false and demonstrates once. */
+let QBAR_SHOWN = false;
+let QBAR_OPEN  = false;
+
+function qbarEl() { return $('#qbar'); }
+
+/* THE CUT IS MEASURED, NOT ASSUMED. The fade is a property of a line
+   that is actually too long — 13 of the 16 prompts at 390 — and putting
+   it on the three that fit would be drawing an affordance for something
+   that does not happen. scrollWidth against clientWidth on the collapsed
+   single line is the only honest test, and it has to run after the
+   webfont has applied or it answers for a fallback. */
+function qbarMeasure() {
+  const b = qbarEl(); if (!b) return;
+  const t = $('.qbar__t', b); if (!t) return;
+  b.classList.toggle('is-cut', !QBAR_OPEN && t.scrollWidth > t.clientWidth + 1);
+}
+
+/* the open height is the text's own, measured on the real node in the
+   real width rather than derived from a line count — a prompt that wraps
+   to four rows at 360 and three at 390 needs no branch anywhere. */
+function qbarSetOpen(on) {
+  const b = qbarEl(); if (!b) return;
+  QBAR_OPEN = !!on;
+  b.classList.toggle('is-open', QBAR_OPEN);
+  b.setAttribute('aria-expanded', QBAR_OPEN ? 'true' : 'false');
+  b.setAttribute('aria-label', (QBAR_OPEN ? QBAR_LBL.shut : QBAR_LBL.open) +
+                               ' · ' + QBAR_LBL.name);
+  const t = $('.qbar__t', b);
+  if (QBAR_OPEN && t) {
+    b.classList.remove('is-cut');
+    b.style.height = (t.scrollHeight + QBAR_PAD) + 'px';
+  } else {
+    b.style.height = '';
+    qbarMeasure();
+  }
+}
+const QBAR_PAD = 16;                 /* 8px of padding top and bottom */
+
+/* SET ONCE PER CARD, NOT PER FRAME. armPredict() calls this on every card
+   of the cascade, which is also what closes a panel the player left open
+   — the next card arrives with the question collapsed, every time. */
+function qbarShow(text) {
+  const b = qbarEl(); if (!b) return;
+  const t = $('.qbar__t', b); if (!t) return;
+  if (t.textContent !== text) t.textContent = text;
+  b.hidden = false;
+  qbarSetOpen(false);
+}
+function qbarHide() {
+  const b = qbarEl(); if (!b) return;
+  b.hidden = true; qbarSetOpen(false);
+}
+
+/* THE GESTURE. A tap on the panel is a tap; anything with travel in it is
+   not, and must not be swallowed as one.
+
+   PRESS AND RELEASE UNDER 10px CLAIMS THE EVENT and nothing else does.
+   The toggle runs on pointerup rather than click so the decision is made
+   with the travel in hand, and the click that follows is suppressed —
+   without that, closing the question also registers as an interaction
+   with whatever is under it.
+
+   ANYTHING WITH MOVEMENT IS RELEASED. The panel drops pointer-events for
+   the rest of that gesture, so a swipe that begins on it continues onto
+   the card exactly as if the panel had not been there. */
+const QBAR_SLOP = 10;
+function wireQbar(b) {
+  let sx = 0, sy = 0, moved = false, live = false;
+  b.addEventListener('pointerdown', e => {
+    live = true; moved = false; sx = e.clientX; sy = e.clientY;
+  });
+  b.addEventListener('pointermove', e => {
+    if (!live || moved) return;
+    if (Math.abs(e.clientX - sx) > QBAR_SLOP || Math.abs(e.clientY - sy) > QBAR_SLOP) {
+      moved = true;
+      /* hand the rest of the gesture to whatever is underneath */
+      b.style.pointerEvents = 'none';
+    }
+  });
+  const end = e => {
+    if (!live) return;
+    live = false;
+    b.style.pointerEvents = '';
+    if (moved) return;                       /* a swipe, not a tap */
+    e.preventDefault(); e.stopPropagation();
+    qbarSetOpen(!QBAR_OPEN);
+  };
+  b.addEventListener('pointerup', end);
+  b.addEventListener('pointercancel', () => { live = false; b.style.pointerEvents = ''; });
+  /* the click is the echo of the tap this already handled */
+  b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+}
+
+function buildQbar() {
+  const mid = $('.hud-mid'); if (!mid || $('#qbar')) return;
+  const b = el('button', 'qbar');
+  b.id = 'qbar'; b.type = 'button'; b.hidden = true;
+  b.setAttribute('aria-expanded', 'false');
+  b.innerHTML = '<span class="qbar__t"></span>';
+  mid.appendChild(b);
+  wireQbar(b);
+}
+
+/* IT OPENS ITSELF ONCE, on the player's first card of the game: the same
+   motion the tap produces, run without one, so the affordance is
+   demonstrated rather than labelled. No chevron, no caret, no "more".
+   SKIPPED ENTIRELY UNDER REDUCED MOTION, the way nudgeCover() skips the
+   tape's wiggle — a demonstration that resolves in 1ms is a flicker with
+   no meaning, and the fade still says the line continues. */
+function qbarDemo() {
+  if (QBAR_SHOWN || DEV.qbar === false) return;
+  if (DEV.qbar === null) { QBAR_SHOWN = true; saveState(); }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  setTimeout(() => {
+    if (!qbarEl() || qbarEl().hidden) return;
+    qbarSetOpen(true);
+    setTimeout(() => { if (QBAR_OPEN) qbarSetOpen(false); }, T.qbarHold);
+  }, T.qbarAt);
+}
+
 /* ===================== BEAT 3 · THE BILL ============================ */
 /* bill_title + bill_date ONLY, on the surface beat 2 already put up, over
    the MK card the bill is about. No new backdrop: the content swaps on
@@ -4046,7 +4207,11 @@ async function beat3(ov) {
        pre-reveal gate and beat 5 both call repin(), which passes no line,
        so the band returns to the pill alone without anything having to
        remember to clear it. */
-    pinVote(S.ownVote, bandQuestion(issue));
+    /* T27 · THE BAND KEEPS THE VOTE AND GIVES UP THE QUESTION. Passing
+       no line here is what takes .chyron back to its own 44px min-height
+       and the band from 100 to 92; the question is the block's now. */
+    pinVote(S.ownVote);
+    qbarShow(bandQuestion(issue));                             /* T27 */
     /* the card the overlay was sitting on turns over in front of the
        player. It is the same element, not a replacement. */
     await flipUp();
@@ -4075,6 +4240,12 @@ function armPredict(first) {
      stated risk for this option ("it repeats on every card, which is
      where it may wear out"); one slap is the version that answers it. */
   if (first) slapAsk(ASK.mk);
+  /* T27 · THE NEXT CARD CLOSES THE QUESTION. armPredict() runs once per
+     card, so a panel the player left open on card three is collapsed by
+     card four without a timeout anywhere — a timeout would fire while
+     they were still reading it. */
+  qbarSetOpen(false);
+  if (first) qbarDemo();                                       /* T27 */
   helper('');
 
   foot.querySelectorAll('[data-pred]').forEach(btn =>
@@ -4090,6 +4261,15 @@ async function verdict(guess, foot, card) {
   const ok = guess === p.vote;
 
   foot.querySelectorAll('.v-a').forEach(b => b.disabled = true);
+
+  /* T27 · THE BLACK TAG RETIRES ON THE FIRST VERDICT. "נחשו מה הוא/היא
+     הצביע/ה" earns card one and nothing after it: the card shows a face,
+     a name and three buttons reading בעד · נמנע · נגד, and by card two
+     the tag is the loudest object on the screen sitting directly under
+     the block this item added to make room. It cannot re-slap — slapAsk()
+     is called only under `first` in armPredict(), and retireAsk() removes
+     the node — so this runs once and the cascade continues without it. */
+  retireAsk();                                                 /* T27 */
 
   /* §1.2 the player's choice sits alone before the truth arrives */
   await wait(T.hold);
@@ -6009,6 +6189,7 @@ function saveState() {
       ab: AV_BEACON_SPENT,                                       /* T13 */
       pr: PRE_HOW_SEEN,                                          /* T11 */
       snd: SND_ON,                                               /* SOUND */
+      qb: QBAR_SHOWN,                                            /* T27 */
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -6061,6 +6242,7 @@ function restoreSave() {
      this has no `snd` and restores FALSE — which is not a fallback here,
      it is the shipped default. Sound is off until somebody asks for it. */
   SND_ON          = s.snd === true;                              /* SOUND */
+  QBAR_SHOWN      = s.qb === true;                               /* T27 */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
@@ -6166,7 +6348,10 @@ function showScreen(name) {
      6/6 there, which is the thing that just happened, and the coin chip
      is the subject of beat 3. Only the round's two slots stay hidden. */
   const t = $('#hudTopic'), pr = $('#hudProgress');
-  if (t)  t.hidden  = (name !== 'round');
+  if (t)  t.hidden  = true;                                    /* T27 */
+  /* T27 · the block belongs to the cascade and to nothing else, so the
+     router takes it off every screen and beat4 puts it back. */
+  if (name !== 'round') qbarHide();
   if (pr) pr.hidden = !(name === 'map' || name === 'end');
   const av = $('#hudAvatar'), x = $('#hudX');
   if (av) av.hidden = (name === 'round');
@@ -9033,10 +9218,14 @@ function startRound(issueId) {
      the right, leading the title, and it carries the issue id as its hook
      so per-issue art can be attached in CSS alone. esc() on the title
      because it is data.js content going through innerHTML. */
+  /* T27 · THE TOPIC PILL IS RETIRED. The slot it held is the question
+     block's now, and the topic name is a filing label at the moment
+     filing is irrelevant — it is on the map node the player came from
+     and on the map they return to. The element is index.html's and
+     cannot be deleted from here, so it is emptied and pinned hidden;
+     showScreen() no longer unhides it. */
   const t = $('#hudTopic');
-  if (t) t.innerHTML =
-    '<i class="hud-topic__slot" data-issue-icon="' + esc(issue.id) + '" aria-hidden="true"></i>' +
-    '<span class="hud-topic__t">' + esc(issue.title || issue.bill_title || '') + '</span>';
+  if (t) { t.innerHTML = ''; t.hidden = true; }
   showScreen('round');
   beat1();
   sizeStage();
@@ -9067,6 +9256,7 @@ function boot() {
   /* SOUND · built once, before the first screen, so the router has
      something to show or hide on its very first call. */
   buildSndToggle();
+  buildQbar();                                                 /* T27 */
   pressable($('#hudAvatar')).addEventListener('click', () => {
     /* T13 · SPENT BEFORE THE GUARD, NOT AFTER. The double-tap that lands
        while 2b is already open is still a tap on the avatar, and a beacon
