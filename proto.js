@@ -2709,7 +2709,24 @@ function resetConfirm() {
    an MK who is in that round's own cascade. Tamar's copy is not edited
    and no MK is dropped; both issues carry `spoiler_risk:true` in data.js
    and stay on her list. The treatment cannot fix that; only her copy can.  */
-function stickerModal(o) {
+/* the nested sticker's back control. Icon only on screen — this is its
+   accessible name, and it is the word the app already uses for the
+   builder's way back rather than a second synonym for the same move. */
+const BACK_LABEL = 'חזרה';                 /* TAMAR · the nested modal's back control */
+
+/* T34 · THE BOX'S CONTENTS, AS A FUNCTION, SO THEY CAN BE RE-RENDERED.
+   This was inline in stickerModal() and could therefore only ever be
+   built once. A glossary term tapped inside the disclosure has to replace
+   what is in the box rather than open a second box on top of it, and
+   replacing means building the same markup again from a different options
+   object. Nothing about the markup changed in the move — only `nested`
+   is new, and it is false everywhere the old code ran.
+
+   THE BACK CONTROL IS THE ONE THING `nested` ADDS. It is rendered ONLY
+   when there is somewhere to go back to, which is why it is a parameter
+   and not a field on `o`: a caller cannot get it wrong, because a caller
+   never passes it. */
+function stickerFill(o, nested) {
   o = o || {};
   /* ITEM 9 · THE RESERVED HERO. 96px at the top of every sticker, held
      whether or not there is art to put in it, so the modal has one
@@ -2730,10 +2747,18 @@ function stickerModal(o) {
         ? '<img class="sthero__art" src="' + o.art + '" alt="">'
         : '<span class="sthero__q" aria-hidden="true">?</span>') +
     '</div>';
-  const m = el('div', 'stmodal');
-  m.innerHTML =
-    '<div class="stmodal__box" role="dialog" aria-modal="true">' +
+  return '' +
       '<button type="button" class="stmodal__x" aria-label="סגירה">✕</button>' +
+      /* TOP-LEFT, WHICH IN THIS RTL DOCUMENT IS THE PHYSICAL LEFT — the
+         opposite corner from the ✕, so the two controls can never be
+         mistaken for each other. The chevron is DRAWN and it is CHEV_R:
+         › and ‹ are bidi-mirrored glyphs and would render the wrong way
+         round, and CHEV_R is already what this app's other back control
+         uses (the builder's הקודם), so back points one way everywhere. */
+      (nested
+        ? '<button type="button" class="stmodal__back" aria-label="' +
+            esc(BACK_LABEL) + '">' + CHEV_R + '</button>'
+        : '') +
       hero +
       '<h2 class="stmodal__title">' + esc(o.title || '') + '</h2>' +
       /* T7 · the label is a child of the meta line, not a line of its own:
@@ -2756,8 +2781,39 @@ function stickerModal(o) {
          reuse it instead of getting a second modal shape of its own. It
          is markup rather than text — chips and links, escaped by their
          own builder. Callers that pass nothing are unaffected. */
-      (o.extra || '') +
-    '</div>';
+      (o.extra || '');
+}
+
+/* T34 · ONE MODAL SURFACE, AND THE DEPTH IS CAPPED AT ONE.
+   stickerPush() replaces what is in an OPEN sticker and remembers what
+   was there; m._pop() puts it back. It is deliberately not a stack: the
+   guard below refuses a second push, and the only content that can be
+   pushed — a glossary definition — is rendered through `body`, which is
+   escaped, so it carries no .gt markers and offers no second door. Belt
+   and braces, because the two failures look identical on screen.
+
+   THE BOX'S HEIGHT MOVES THROUGH stickerSwap() (P2). Content swapping
+   inside a box that jumps height reads as a bug, and there is exactly one
+   mechanism for that in this file. */
+function stickerPush(m, o) {
+  const box = m && $('.stmodal__box', m);
+  if (!box || m._depth) return;
+  const prev = box.innerHTML;
+  stickerSwap(m, () => { box.innerHTML = stickerFill(o, true); });
+  m._depth = 1;
+  m._pop = () => {
+    stickerSwap(m, () => { box.innerHTML = prev; });
+    m._depth = 0; m._pop = null;
+    m._wire();
+  };
+  m._wire();
+}
+
+function stickerModal(o) {
+  o = o || {};
+  const m = el('div', 'stmodal');
+  m.innerHTML = '<div class="stmodal__box" role="dialog" aria-modal="true">' +
+    stickerFill(o, false) + '</div>';
   let gone = false;
   /* ITEM 43 · ONE HOOK, FIRED ON EVERY WAY OUT. The ✕, the ground and
      Escape all funnel through close(), so a caller that needs to know the
@@ -2777,7 +2833,19 @@ function stickerModal(o) {
   m._close = close;
   const onKey = e => { if (e.key === 'Escape') close(); };
   addEventListener('keydown', onKey);
-  pressable($('.stmodal__x', m)).addEventListener('click', close);
+  /* T34 · RE-WIRED AFTER EVERY CONTENT SWAP. Replacing the box's innerHTML
+     destroys the ✕ and its listener with it, so the wiring is a function
+     the swap can call again rather than a line that runs once. ✕ closes
+     the WHOLE modal from any depth — it is bound to close(), which knows
+     nothing about depth — and the back control, which exists only while
+     nested, calls m._pop(). Tap-outside is on `m` itself and survives
+     untouched, so it too closes from any depth. */
+  m._wire = () => {
+    pressable($('.stmodal__x', m)).addEventListener('click', close);
+    const bk = $('.stmodal__back', m);
+    if (bk) pressable(bk).addEventListener('click', () => { if (m._pop) m._pop(); });
+  };
+  m._wire();
   m.addEventListener('click', e => { if (e.target === m) close(); });
   $('#stage').appendChild(m);
   requestAnimationFrame(() => m.classList.add('is-in'));
@@ -2898,8 +2966,17 @@ function lawModal() {
    light surface with its own radius and its own padding, sitting inside
    a paragraph and pushing the explanation around as it opened and shut.
    The definition is data.js's own; nothing is written here. */
+/* T34 · ONE DEFINITION OF WHAT A GLOSSARY STICKER IS, read by both the
+   standalone opener and the in-place swap, so the two can never drift
+   into being two different surfaces wearing the same name. `body` and
+   not `bodyHtml`: the definition is escaped, carries no .gt markers, and
+   therefore offers no second door out — which is what caps the depth at
+   one in the markup as well as in stickerPush()'s guard. */
+function glossOpts(term) {
+  return { title: term, body: (DATA.glossary || {})[term] || '' };
+}
 function glossModal(term) {
-  return stickerModal({ title: term, body: (DATA.glossary || {})[term] || '' });
+  return stickerModal(glossOpts(term));
 }
 
 /* ===== §B · 2b THE CHARACTER, 2a THE STICKER SHEET ==================
@@ -6130,17 +6207,19 @@ function moreModal(text, terms, links) {
     bodyHtml: text ? markGlossary(text) : '',
     extra: extra
   });
-  /* a chip opens its definition on the SAME component, which is exactly
-     what glossModal() already is — one surface opened twice, rather than
-     a definition panel nested inside a dialog. An inline .gt marker in
-     the body is the same door by another route, so it is the same
-     handler: one listener, two selectors, one glossModal(). */
+  /* T34 · IT SWAPS, IT DOES NOT STACK. This used to call glossModal(),
+     which builds a whole second .stmodal and drops it on the stage — two
+     boxes, two ✕, two scrims, and a ✕ that closed only the top one. The
+     definition is the SAME surface showing different content now: one
+     box on screen at every depth, a back control top-left while there is
+     somewhere to go back to, and the box easing between the two heights
+     rather than jumping. One listener, two selectors, as before. */
   m.addEventListener('click', e => {
     const c = e.target.closest('.f5chip');
     const g = c ? null : e.target.closest('.gt');
     if (!c && !g) return;
     e.stopPropagation();
-    glossModal(c ? c.dataset.term : g.dataset.gt);
+    stickerPush(m, glossOpts(c ? c.dataset.term : g.dataset.gt));
   });
   return m;
 }
