@@ -4551,10 +4551,24 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    far too little to read as a continuous sharpen. The step has to stay
    a step, because a step is the thing the player decides against. */
 
-.inv-tray{ display:flex; flex-direction:column; gap:var(--sp-2); }
+/* T32 · THE ONE CONTROL IN THE GAME THAT COMMITS ON CONTACT. invResolve()
+   sets the phase to verdict and stamps on the click — no confirm, no
+   second tap, and a confirm is explicitly not the fix: this is a guess in
+   the middle of the fastest beat and a two-tap commit is friction on the
+   mechanic. So the geometry has to carry it.
+   THE NUMBERS ARE UNSCALED CARD SPACE, AND THAT IS THE WHOLE PROBLEM.
+   .stack is scaled to fit the shortest phone — 0.7177 at 360x640 — so
+   min-height:52 rendered 37.3 and the 8px gap rendered 5.8, putting the
+   pitch at 43.1 and every pair of 44px targets 0.9px inside each other.
+   62 and 12 render 44.5 and 8.6 at that scale, which is a 53.1 pitch:
+   the rows are their own targets and nothing overlaps.
+   IT GROWS UPWARD INTO THE BLURRED PORTRAIT, which is the one part of
+   this card with nothing to lose — the face is withheld by design. The
+   tray is bottom-anchored, so the card's own box does not move. */
+.inv-tray{ display:flex; flex-direction:column; gap:12px; }
 /* .v-a is flex:1, which in a COLUMN stretches each name to fill the
    foot instead of sizing to its type. */
-.inv-name{ flex:none; width:100%; min-height:52px; font-size:19px; }
+.inv-name{ flex:none; width:100%; min-height:62px; font-size:19px; }
 .inv-name.is-picked{ box-shadow:0 0 0 3px var(--edge), 0 0 0 6px var(--ink); }
 
 /* SUBORDINATE. Half the type of the names, no fill, no edge, no
@@ -4562,7 +4576,12 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    under the answers, and neither may look like a fourth option. */
 .inv-bar{
   display:flex; align-items:center; justify-content:space-between;
-  gap:var(--sp-2); padding:5px 9px 6px; margin-top:2px;
+  gap:var(--sp-2); padding:5px 9px 6px;
+  /* T32 · 2 -> 10. The hint is 16.9 rendered, so its own 44px target
+     reaches 13.6 ABOVE its box — at a 2px margin that target sat 6.1px
+     inside the bottom name's. The tray's 12px gap plus this puts the
+     hint's box 22 unscaled below the last row, which clears it. */
+  margin-top:10px;
   /* A GROUND, because what is behind it is a photograph. The bar sits on
      the portrait at the card's foot, and the portrait is different behind
      every MK — on this deal it lands on a red tie. Cream type on an
@@ -6708,7 +6727,20 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 .sh-dots{ display:flex; gap:38px; justify-content:center; margin-top:14px; flex:none; }
 .sh-dot{ width:7px; height:7px; border-radius:50%; background:var(--paper); opacity:.3;
          border:0; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent;
+         position:relative;
          transition:width var(--t-press) linear, opacity var(--t-press) linear; }
+/* T32 · THE HIT AREA, NOW THAT THERE IS ROOM FOR ONE. T29b took the
+   centres to 45px apart so a miss did nothing instead of changing the
+   card; this makes a miss unlikely. 40x40 centred on a 7x7 dot leaves
+   5px between adjacent targets at the 45px pitch and more at the 51.5px
+   one beside the active pill — so nothing intersects and the dots
+   themselves are untouched, exactly as they were.
+   ::after and not padding: padding would grow the dot. */
+.sh-dot::after{
+  content:""; position:absolute; left:50%; top:50%;
+  width:40px; height:40px; transform:translate(-50%,-50%);
+  /* no fill — it catches taps and paints nothing */
+}
 .sh-dot.is-on{ opacity:1; background:var(--primary); width:20px; border-radius:4px; }
 
 /* the aspect toggle: ONE CONTROL DIVIDED IN TWO. A single container
