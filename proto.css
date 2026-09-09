@@ -4897,6 +4897,47 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
   opacity:0; transition:opacity var(--t-f5-in) var(--e-settle);
 }
 .eg-chips.is-in{ opacity:1; }
+
+/* THE FADE, AND IT IS THE REVEAL PANEL'S — see .creveal__scroll above for
+   why a mask rather than a pseudo-element, and egFade() for the two
+   classes. Nothing here is a new device; the screen had no way at rest to
+   say a row existed below the cut, and this is the way the app already
+   says it.
+   THE ONE VALUE THAT IS RE-DERIVED IS THE CUT. The panel's 34px is a
+   little over one line of 15.5px/1.5 body copy. The repeating unit here
+   is not a line, it is a 42px row plus the 9px gap, and 34px of fade
+   would take four fifths of a row — a fully tappable row rendered as if
+   it were going out, which on a list of controls reads as disabled
+   rather than as continued. 26px is half the row-and-gap unit, so a row
+   under the cut is half-there rather than half-gone, which is the same
+   sentence the panel's own note ends on, and the last row that IS fully
+   in view keeps its top two thirds at full strength.
+   .is-atend clears the mask at the bottom of the scroll so a list the
+   player has read to the end stops on a hard edge, exactly as a list with
+   nothing hidden does. */
+/* BOTH ENDS, AND IT HAS TO BE ONE MASK. The obvious mirror — a second
+   rule setting its own mask-image for the top — does not work and fails
+   quietly: two rules of equal specificity on the same element do not
+   compose, the later one simply wins, so mid-scroll, the one moment both
+   fades are wanted, only one would draw. Multiple mask LAYERS do not
+   help either; they composite with `add` by default, which is the union
+   of two mostly-opaque masks and therefore no fade at all.
+   So the two ends are two custom properties feeding ONE gradient. Each
+   class sets its own end's cut and the other end is left at 0, where the
+   two stops collapse onto the same position and the ramp has no width —
+   an opaque edge, drawn by the same declaration that draws the soft one.
+   Nothing can fight because there is only ever one mask. */
+.eg-chips{ --eg-cut-top:0px; --eg-cut-bot:0px; }
+.eg-chips.has-more:not(.is-atstart){ --eg-cut-top:26px; }
+.eg-chips.has-more:not(.is-atend)  { --eg-cut-bot:26px; }
+.eg-chips.has-more{
+  -webkit-mask-image:linear-gradient(to bottom,
+    transparent 0, #000 var(--eg-cut-top),
+    #000 calc(100% - var(--eg-cut-bot)), transparent 100%);
+          mask-image:linear-gradient(to bottom,
+    transparent 0, #000 var(--eg-cut-top),
+    #000 calc(100% - var(--eg-cut-bot)), transparent 100%);
+}
 /* KEY RIGHT, VALUE LEFT — the phone-sweep rule. The topic reads from the
    right edge and its number anchors left, like every other key/value row
    in the app. */
