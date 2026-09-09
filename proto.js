@@ -275,7 +275,7 @@ let issue, topic, S;
    --card-scale shrinks the 620px card assembly to whatever height the
    round actually has, so a short phone never needs a scrollbar to see a
    whole card. Nothing in the app scrolls except .scrolls — the map, the
-   character grid and the end-game allocation list.
+   character grid, the end-game allocation list and the claim reveal.
    --------------------------------------------------------------------- */
 /* THE STACK IS THE CARD AND NOTHING ELSE. The axis strip is inside the
    card now and the stamp paints on top of it, so there is no box below
@@ -451,9 +451,9 @@ addEventListener('scroll', () => {
 addEventListener('focusin', () => setTimeout(kbSync, 50));
 /* activeElement is body again only AFTER focusout has run */
 addEventListener('focusout', () => setTimeout(kbSync, 0));
-/* belt and braces against rubber-band: the body never pans. The three
-   surfaces that may (map, character, the end-game allocation list) carry
-   .scrolls and opt back in.
+/* belt and braces against rubber-band: the body never pans. The four
+   surfaces that may (map, character, the end-game allocation list, the
+   claim card's explanation panel) carry .scrolls and opt back in.
    THE ALLOCATION LIST WAS THE THIRD AND WAS MISSING. It is worth stating
    why that was invisible for so long: this handler does not fail loudly.
    A surface that forgets the class keeps its overflow, keeps its
@@ -2139,7 +2139,16 @@ async function claimReveal(ans, card) {
      explanation instead of inside it. */
   const panel = el('div', 'creveal__exp');
   panel.innerHTML =
-    '<div class="creveal__scroll"><p class="creveal__text">' +
+    /* T21 · .scrolls IS THE FIX AND .edgefade IS THE REST OF IT. This
+       block's own comment above has said "IT SCROLLS, and that is a
+       requirement rather than a nicety" since it was written, and it
+       never opted into the policy that makes scrolling possible: the
+       global touchmove handler cancels outside .scrolls, so on e1 at
+       360x640 the panel showed 76px of a 219px explanation, drew the
+       fade that says there is more, and refused the finger. Third
+       instance of the same omission after the map's grid and the
+       allocation list. */
+    '<div class="creveal__scroll scrolls edgefade"><p class="creveal__text">' +
       markGlossary(issue.tf_explain || '') + '</p></div>' +
     '<button type="button" class="p-c creveal__go">' +
       esc('לשלב הבא') + ' <i aria-hidden="true">›</i></button>';   /* TAMAR · T14 */
@@ -2179,14 +2188,8 @@ async function claimReveal(ans, card) {
      and neither the scroll container nor the mask is touched while it
      runs. The state is re-read on scroll and on nothing else. */
   const scEl = $('.creveal__scroll', panel);
-  const syncFade = () => {
-    const over = scEl.scrollHeight - scEl.clientHeight > 1;
-    panel.classList.toggle('has-more', over);
-    panel.classList.toggle('is-atend',
-      over && scEl.scrollTop + scEl.clientHeight >= scEl.scrollHeight - 2);
-  };
-  syncFade();
-  scEl.addEventListener('scroll', syncFade, { passive: true });
+  edgeFade(scEl);
+  scEl.addEventListener('scroll', () => edgeFade(scEl), { passive: true });
 
   requestAnimationFrame(() => panel.classList.add('is-in'));
 
@@ -6855,7 +6858,7 @@ async function egBeat3() {
        last row goes under the clip line the moment the first tap adds the
        reset link, and there was no way to bring it back. One class opts
        into both policies at once; nothing else was needed. */
-    '<div class="eg-chips scrolls" id="egChips"></div>' +
+    '<div class="eg-chips scrolls edgefade" id="egChips"></div>' +
     '<div class="eg-acts" id="egActs"></div>';
 
   const chips = $('#egChips', c);
@@ -6991,21 +6994,29 @@ async function egBeat3() {
    egPaint() toggles the reset link forces the layout that toggle just
    invalidated, which is exactly what is wanted: the answer is about the
    list as it is now, not as it was before the link arrived. */
-function egFade() {
-  const c = $('#egChips');
+/* T21 · ONE SYNC FOR EVERY .edgefade, and it is this one. The MK reveal
+   panel had a second copy of it as a closure, toggling the same two class
+   names on a different node against the same arithmetic; that copy is
+   gone. Anything that scrolls calls this, on build and on scroll.
+   IT WRITES TO THE ELEMENT IT MEASURES. The reveal panel's copy wrote to
+   the scroller's PARENT because its mask was a descendant selector; the
+   shared rule reads the classes off the masked element, so there is one
+   node holding the state and it is the one the state is about. */
+function edgeFade(c) {
   if (!c) return;
   const over = c.scrollHeight - c.clientHeight > 1;
   c.classList.toggle('has-more', over);
   c.classList.toggle('is-atend',
     over && c.scrollTop + c.clientHeight >= c.scrollHeight - 2);
-  /* THE MIRROR, AND IT IS THE HALF THAT ACTUALLY STRANDS ROWS. A bottom
-     fade answers "there is more below", which is states 1 and 2. State 3
-     is the opposite shape: tapping אחר opens its field, the browser
-     scrolls the list to bring the field into view, and the list arrives
-     at the END of its own range with two topics above the cut and
-     is-atend suppressing the only signal there was. Same tolerance as
-     the line above, same `over` gate, read in the other direction. */
   c.classList.toggle('is-atstart', over && c.scrollTop <= 2);
+}
+/* the allocation list's call site keeps its name: egPaint() is the one
+   place that knows when this screen's height has changed, and it should
+   not have to know how to find the scroller. */
+function egFade() {
+  const c = $('#egChips');
+  if (!c) return;
+  edgeFade(c);
 }
 
 /* one painter for the whole screen, so the left-to-place line and every
