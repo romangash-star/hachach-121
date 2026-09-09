@@ -2287,9 +2287,9 @@ async function claimReveal(ans, card) {
       card.style.transform = CARD_EXIT_T;
       card.style.opacity = .2;              /* the deck's own exit value */
       unhold(mark);                       /* T23 · d2-land-mk, fill:both */
+      /* T24 · the transform and the fade are .d2.is-leaving's now, and
+         both stamps take them from there. See the note beside that rule. */
       mark.classList.add('is-leaving');
-      mark.style.transform = CARD_EXIT_T;
-      mark.style.opacity = .2;
       /* ITEM 50 · THE PILL RIDES OUT WITH THEM. It is on .cardwrap now, so
          nothing else takes it off screen.
          THE RESTING ANGLE IS CARRIED INTO THE EXIT ROTATION rather than
@@ -3821,9 +3821,14 @@ async function verdict(guess, foot, card) {
   /* THE RESOLVED CARD IS SWIPED OFF, then the next one turns over. The
      player never sees a card replaced in place. */
   S.ci++;
+  /* T24 · THE GATE GOES DOWN BEFORE THE THROW, not after it. On the last
+     card the ground the deck is sitting on has to already carry the gate,
+     or the throw reveals nothing and a screen has to arrive instead. */
+  const last = S.ci >= S.dealt.length;
+  if (last) layGate();
   leaveCard();
   await wait(T.cardExit);
-  if (S.ci >= S.dealt.length) return preReveal();
+  if (last) return preReveal();
   const spent = $('.deckcard.is-leaving'); if (spent) spent.remove();
   const spentStamp = $('.d2.is-leaving');  if (spentStamp) spentStamp.remove();
   await flipUp();
@@ -3987,6 +3992,7 @@ async function invResolve(pid, foot, card, btn) {
 
   await wait(T.stamp + T.flip);
   S.ci++;
+  layGate();                          /* T24 · see the cascade's tail */
   leaveCard();
   await wait(T.cardExit);
   return preReveal();
@@ -4057,7 +4063,12 @@ async function runAxis(g, guess, vote) {
      than by two branches that have to be kept in step. Guessed בעד /
      voted נגד and guessed נגד / voted בעד both give 2 and therefore the
      same class; there is no code path where the direction is read.
-     It codes HOW FAR OFF, never WHICH WAY, so the locked rule holds. */
+     It codes HOW FAR OFF, never WHICH WAY.
+     T24 · AND THE HUE IS NO LONGER A VERDICT HUE, which is a separate
+     point from this one and does not change a line here. The symmetry
+     above was verified across all nine pairs and held; what did not hold
+     was the AGREEMENT state, which tinted the whole track lime under
+     stops labelled בעד · נמנע · נגד. See the note beside .gx-fill. */
   const dist = Math.abs(VOTES.indexOf(vote) - VOTES.indexOf(guess));
   g.classList.add('gx--d' + dist);
   const from = stopPct(guess), to = stopPct(vote);
@@ -4421,15 +4432,69 @@ function markPreHowSeen() {
   saveState();
 }
 
-async function preReveal() {
-  S.beat = 4.5;
-  const r = $('#round'); r.innerHTML = '';
-  helper('');
-  repin();
+/* =====================================================================
+   T24 · THE GATE IS ALREADY LYING ON THE GROUND, AND THE DECK IS ON TOP
+   OF IT.
+
+   WHAT IT REPLACES. preReveal() opened with r.innerHTML = '' and then
+   faded its three parts up on an empty ground. So the last card left, the
+   round went black for the length of one frame, and a screen ARRIVED —
+   two events with a join in them. That is the opposite of the reading
+   T11 settled for this screen: what is left when the deck goes is the
+   ground, and the ground was always there.
+
+   NOW IT IS LAID DOWN BEFORE THE LAST CARD IS THROWN, underneath the
+   deck, and the throw REVEALS it. Nothing arrives, so nothing has to
+   fade: the three parts lose .b5stage entirely.
+
+   THE STACKING. .round is a flex column and .beat is flex:1, so two beats
+   would sit one above the other. .has-gate switches .round to a one-cell
+   grid and puts both beats in that cell, which is the SAME BOX flex:1
+   gave them — that is the whole reason it is a grid and not an absolute
+   inset, which would have resolved against the padding box and dropped
+   the gate 26px. So there is no reflow when the deck goes and the class
+   comes off: the gate's box is identical before and after.
+   UNDER MEANS UNDER. .is-under takes z-index 0 against the cascade's 1
+   and pointer-events:none, so a gate that is half visible around a
+   340px card cannot take the tap meant for the card on top of it.
+   ===================================================================== */
+function layGate() {
+  const r = $('#round');
+  const had = $('.prereveal', r);
+  if (had) return had;
 
   const firstTime = !seenPreHow();
   if (firstTime) markPreHowSeen();
+  const b = buildGate(firstTime);
+  r.classList.add('has-gate');
+  /* FIRST child, so it is under the cascade in paint order as well as in
+     z-index — one of the two would be enough and both is cheaper than
+     explaining which. */
+  r.insertBefore(b, r.firstChild);
+  fitPreReveal(b);
+  return b;
+}
 
+async function preReveal() {
+  S.beat = 4.5;
+  const r = $('#round');
+  /* laid down already on the cascade's path; built here for any other —
+     ?screen deep links and the inverted round's early exits — so this
+     function still works when nothing has laid a gate for it. */
+  const b = layGate();
+  /* THE DECK GOES AND THE GATE IS WHAT IS LEFT. Not innerHTML = '': that
+     would take the gate with it and put us back to building a screen. */
+  [].slice.call(r.children).forEach(n => { if (n !== b) n.remove(); });
+  r.classList.remove('has-gate');
+  b.classList.remove('is-under');
+  helper('');
+  repin();
+  armGate(b);
+}
+
+/* the gate's own markup, built once and unchanged by T24 — it is only
+   built EARLIER now, and by layGate() rather than here. */
+function buildGate(firstTime) {
   /* NO BOX. Not a sheet, not a card, not the deck's rectangle — the first
      attempt built a 340x620 kraft panel in the cardwrap and it read as
      one more card being dealt, which is the opposite of what the beat is
@@ -4444,7 +4509,7 @@ async function preReveal() {
      box sat: the deck's footprint was a consequence of card artwork, and
      inheriting it here would be inheriting a measurement that no longer
      has anything to measure. */
-  const b = el('div', 'beat prereveal');
+  const b = el('div', 'beat prereveal is-under');
   b.innerHTML =
     /* T22 · THE CHAIR, AT REST, AND IT IS BEAT 2'S. Same asset off the
        same manifest entry, so there is one chair in the game and this is
@@ -4470,13 +4535,18 @@ async function preReveal() {
        there is nothing here to agree with. */
     '<button type="button" class="p-c pr-go">' +
       esc('לתוצאות ›') + '</button>';                          /* TAMAR */
-  r.appendChild(b);
+  return b;
+}
+
+/* the rest of preReveal(), after the deck has gone. */
+function armGate(b) {
   sizeStage();
   fitPreReveal(b);
-
-  const parts = [$('.pr-chair', b), $('.pr-head', b), $('.pr-go', b)].filter(Boolean);
-  parts.forEach(n => n.classList.add('b5stage'));
-  requestAnimationFrame(() => parts.forEach(n => n.classList.add('is-in')));
+  /* T24 · NO .b5stage HERE ANY MORE. The three parts used to be added
+     with opacity 0 and faded up one frame later, because they were
+     arriving. They were already on the ground before the last card was
+     thrown, so there is nothing to arrive and a fade would be the screen
+     asserting an entrance it did not make. */
 
   /* T21 · THE INTRO'S BREATH, THE SAME ONE. startBreath() is the whole
      policy in three lines — it refuses under reduced motion and it stops

@@ -1746,25 +1746,49 @@ body.no-ph .ph{ display:none !important; }
    already said that.
    ONE HUE, THREE STRENGTHS, and that is deliberate: the strengths are the
    only variable, so the three states cannot be misread as three different
-   kinds of thing. The hue is --verdict-surprise, which is already the
-   system's "you were surprised" colour, so a wide gap says the same word
-   the stamp does rather than introducing a fourth verdict colour.
+   kinds of thing.
    SYMMETRY IS STRUCTURAL. runAxis() keys the class off Math.abs(), so
    בעד->נגד and נגד->בעד are the same class and there is no branch that
-   could drift. Verified in the report against all 9 guess/vote pairs.
-   DISTANCE 0 NEVER PAINTS A FILL — there is nowhere to travel — so
-   agreement is carried by a lime tint on the TRACK instead, which is the
-   "neutral/positive, no alarm" end of the scale. */
+   could drift.
+
+   T24 · THE HUE IS NOT A VERDICT HUE ANY MORE, and the reason is not that
+   §3.1's argument was wrong. It was right and it was checked: all nine
+   guess/vote pairs were rendered and measured, and the two distance-2
+   cases come back identical — same hex, same alpha, same 216px — one
+   growing toward בעד and one toward נגד. A colour that never differs when
+   only the direction differs is not reading the direction, so the locked
+   rule was not being broken by the fill.
+   IT WAS BEING BROKEN BY THE AGREEMENT STATE. Distance 0 paints no fill,
+   so agreement was carried by tinting the ENTIRE TRACK lime — and the
+   track's three stops are labelled בעד · נמנע · נגד. Full-width
+   correctness lime under a vote scale reads as endorsement whatever the
+   arithmetic behind it is doing, and one player sees one case rather than
+   nine. The fill had a quieter version of the same problem: at distance 2
+   the bar runs the full width and TERMINATES ON a vote position, with the
+   MK's own token sitting on that end.
+   THE PAIR IS THE SEAT GRID'S, NOT A NEW ONE. --vf-ink and --vf-paper
+   were derived and verified for exactly this problem on the finale bar —
+   separated on LUMINANCE, which is the channel no dichromacy touches —
+   so the two surfaces that had it now answer it the same way. Structure,
+   strengths, lengths and travel are all unchanged; only the hue moved.
+   AND THE TRACK NO LONGER HAS TO CARRY CORRECTNESS AT ALL, which is the
+   real argument: the stamp lands one --t-gx-stamp-lag later and says the
+   same word. Lion, 09 Sep. */
 .gx-fill{
   position:absolute; top:0; bottom:0; width:0; border-radius:19px;
   background:var(--gx-gap, rgba(34,31,23,.26)); pointer-events:none;
   transition:background var(--t-flip) linear;
 }
-.gx--d1{ --gx-gap:color-mix(in srgb, var(--verdict-surprise) 30%, transparent); }
-.gx--d2{ --gx-gap:color-mix(in srgb, var(--verdict-surprise) 62%, transparent); }
+.gx--d1{ --gx-gap:color-mix(in srgb, var(--vf-ink) 30%, transparent); }
+.gx--d2{ --gx-gap:color-mix(in srgb, var(--vf-ink) 62%, transparent); }
+/* 34%, not the lime's 22%: --vf-paper is a light warm neutral against the
+   lime's saturated hue, so the same alpha would have been invisible on
+   this track. It is still the quietest of the three states, which is
+   right — agreement is the one with nothing to report, and the settle
+   pulse and the paired tokens are what carry it. */
 .gx--d0 .gx-track,
 .gx.is-agreed .gx-track{
-  background:color-mix(in srgb, var(--verdict-correct) 22%, rgba(34,31,23,.26));
+  background:color-mix(in srgb, var(--vf-paper) 34%, rgba(34,31,23,.26));
 }
 .gx-m{ position:absolute; top:50%; translate:50% -50%; width:38px; height:38px; display:block;
   transition:right var(--t-flip) var(--e-settle); z-index:2; }
@@ -1978,14 +2002,24 @@ body.no-ph .ph{ display:none !important; }
    (0.194 vs 0.721 — a channel no dichromacy touches), dE2000 53.0
    normal / 58.3 deuteranopia / 56.3 protanopia / 43.2 tritanopia, and
    neither carries valence. */
+/* T24 · THE VALENCE-FREE PAIR, NAMED ONCE. It was derived for the finale
+   bar and it is now also the guess-vs-reality axis's — two surfaces that
+   had the same problem, answered in one language rather than in two
+   copies of the same two hexes. The derivation stays written above this,
+   where it was done. Defining the tokens changes no pixel anywhere: the
+   bar's shipping palette is the spec one below and is untouched, and the
+   neutral branch resolves to exactly the values it already carried. */
 :root{
+  --vf-ink:   #4E6BFF;        /* luminance 0.194 — the marked half      */
+  --vf-paper: #E8DCC0;        /* luminance 0.721 — the unmarked half    */
+
   --f5-for: #B6E521;
   --f5-ag:  #FF7A6B;
   --f5-rem: #2A2822;          /* the unfilled remainder of 120          */
 }
 [data-f5bar="neutral"]{
-  --f5-for: #4E6BFF;
-  --f5-ag:  #E8DCC0;
+  --f5-for: var(--vf-ink);
+  --f5-ag:  var(--vf-paper);
 }
 
 /* the seat grid's stylesheet went with seatBoard() — .b5board, .b5seats,
@@ -3274,7 +3308,35 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   box-shadow:0 0 0 1.5px rgba(0,0,0,.5);
 }
 .d2--neutral .d2__art circle{ stroke:var(--ink); }
-.d2--claim.is-leaving{
+/* =====================================================================
+   T24 · THE STAMP LEAVES WITH THE CARD IT WAS STRUCK ON, and the rule is
+   .d2's now rather than .d2--claim's.
+
+   THE BUG T23 FOUND. leaveCard() adds .is-leaving to the cascade's stamp
+   so that it rides out with the card, and the only stamp rule in this
+   file was .d2--claim.is-leaving. The cascade's stamp is built as
+   `d2 d2--correct` or `d2 d2--surprise` and never carries d2--claim, so
+   the class it was handed matched nothing: it held its position while the
+   card slid out from under it and was removed 320ms later by cascade()'s
+   own cleanup, with nothing in between.
+
+   IT TRAVELS, AND THAT IS A DECISION RATHER THAN A REPAIR. Three
+   arguments, in the order they carry weight. The stamp is ink struck ON
+   that card, not a screen-level annotation — an object applied to a thing
+   leaves with the thing or it stops having been applied to it. The CLAIM
+   stamp already travels, one beat earlier, so leaving this one behind
+   gives one object two behaviours, which is the drift this file spends
+   most of its comments refusing. And a stamp that stays hangs over the
+   NEXT card as it flips up, asserting the previous MK's verdict about a
+   new MK for the length of the flip.
+
+   ONE RULE FOR BOTH STAMPS. The claim variant carried only the transition
+   and its transform was written inline in JS beside CARD_EXIT_T; the
+   values are the deck's own, so they are stated here once and both stamps
+   take them. .d2 has no transform at rest — d2-land-mk's last frame is
+   scale(1) rotate(0) — so there is nothing here to overwrite. */
+.d2.is-leaving{
+  transform:translate(-420px,8px) rotate(-13deg); opacity:.2;
   transition:transform var(--t-card-exit) var(--e-in), opacity 100ms linear 220ms;
 }
 
@@ -3310,6 +3372,27 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   gap:clamp(18px, 4.5vh, 34px);
   padding-bottom:clamp(8px, 3vh, 26px);
 }
+/* =====================================================================
+   T24 · THE GATE UNDER THE DECK.
+
+   ONE CELL, NOT AN ABSOLUTE INSET. .round is a flex column and .beat is
+   flex:1, so the gate and the cascade would sit one above the other.
+   Switching .round to a one-cell grid puts both in the SAME BOX flex:1
+   was giving them — .round's padding-top is honoured by a grid track
+   exactly as it is by a flex line, which an absolutely positioned child
+   would not do: `inset:0` resolves against the padding BOX and would have
+   hung the gate 26px high. The box is therefore identical with the class
+   on and with it off, so removing it when the deck goes reflows nothing.
+
+   UNDER MEANS UNDER, IN BOTH SENSES. z-index 0 against the cascade's 1
+   for paint, and pointer-events:none so a gate that is visible around the
+   edges of a 340px card cannot take a tap meant for the card. The button
+   is armed by armGate() after the deck has gone, so it is inert here by
+   construction as well as by CSS.
+   ===================================================================== */
+.round.has-gate{ display:grid; grid-template-rows:1fr; }
+.round.has-gate > .beat{ grid-area:1 / 1; min-height:0; z-index:1; }
+.round.has-gate > .prereveal.is-under{ z-index:0; pointer-events:none; }
 /* T21 · THE GATE LEAVES DOWNWARD, and the direction is the whole reason
    this exists. The board it hands over to arrives from ABOVE, travelling
    down; if the gate went up the two would pass each other and read as two
