@@ -1728,6 +1728,15 @@ body.no-ph .ph{ display:none !important; }
 
 .gt{ background:rgba(55,196,255,.22); border-bottom:2px dotted #9FD9F2;
   color:#EFECE4; padding:0 3px; font-weight:900; cursor:pointer; }
+/* T12 · THE SAME MARKER ON PAPER. .gt was written for the dark board and
+   its near-white ink is invisible on --paper; the terms now live inside
+   the sticker, so the marker needs the light-ground half it never had.
+   Same hue, same dotted underline, ink flipped — it stays recognisably
+   the one marker rather than becoming a second convention. */
+.stmodal__body .gt{
+  color:var(--ink); background:rgba(55,196,255,.30);
+  border-bottom-color:#3EA6D8;
+}
 /* §3.1 .gdef IS GONE. Tapping a term opened a plain white panel inline,
    under the term, inside the paragraph — so the sentence the player was
    reading reflowed around it as it opened and again as it shut. The term
@@ -4271,15 +4280,33 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 
 .f5shape{ margin:0; font-size:14px; font-weight:700; color:#E6E2D8; text-align:center; }
 
-/* ---- the reading. 15px, up from 12.5px. ---- */
+/* ---- the reading. T12 · THERE IS NO READING ON THE BOARD ANY MORE.
+   .f5exp is gone with the sentence it styled — the whole explanation is
+   in the modal now, where .stmodal__body carries it. Tombstone kept so
+   the next person searching for the class finds out where it went. ---- */
 .f5read{ margin:0; }
-.f5exp{ margin:0; font-size:15px; line-height:1.55; color:#F2EFE7; }
+
+/* T12 · .f5more IS A LINK NOW, NOT A PILL. It used to be a cream
+   capsule sitting under a paragraph, where it was plainly the smaller of
+   two things on the surface. Alone on the surface a capsule reads as the
+   beat's ACTION — and the beat's action is the yellow CTA directly
+   below it, so two filled controls in a row would compete for the same
+   press. Underlined display text is the same register as .f5back, which
+   is the other non-primary way off this screen, and it cannot be
+   mistaken for the CTA at any size.
+   THE BUTTON IS THE WHOLE PLATE. It keeps <button> — it opens a dialog
+   and navigates nowhere, so it is not an <a> — and takes the surface's
+   own padding as its own, so the entire lit block is the tap target and
+   there is no dead border around a 20px line. */
 .f5more{
-  display:inline-flex; align-items:center; gap:5px; margin-top:9px;
-  border:0; cursor:pointer; font-family:var(--font-display); font-weight:900;
-  font-size:14px; color:#131310; background:#D8D2C4; border-radius:999px;
-  padding:5px 13px 6px; box-shadow:0 2px 0 rgba(0,0,0,.4);
+  display:block; width:100%; border:0; background:none; cursor:pointer;
+  font-family:var(--font-display); font-weight:900; font-size:15px;
+  line-height:1.35; color:#E8E3D6; text-align:center;
+  text-decoration:underline; text-underline-offset:3px;
+  text-decoration-thickness:2px; text-decoration-color:rgba(232,227,214,.45);
+  padding:13px 14px 14px;
 }
+.f5more:active{ color:#FBF7EE; text-decoration-color:rgba(251,247,238,.8); }
 
 /* ---- the coin moment ---- */
 /* OUT OF FLOW, because it is a MOMENT and not a block. In the column it
@@ -4557,8 +4584,9 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
    footnote. */
 .f5outcome{ display:flex; flex-direction:column; gap:7px; }
 .f5outcome .f5res, .f5outcome .f5shape{ margin:0; }
-.f5read{ padding:12px 14px 13px; }
-.f5read .f5more{ margin-top:11px; }
+/* T12 · the padding moved INTO .f5more (see above), so the surface sets
+   none of its own and the plate has no untappable margin. */
+.f5read{ padding:0; }
 
 /* ---- PART 4 · THE GLOW ----------------------------------------------
    WARM YELLOW-CREAM, and it is neither of the two colours it could have

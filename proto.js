@@ -2251,7 +2251,16 @@ function stickerModal(o) {
       (o.meta ? '<p class="stmodal__meta">' +
         (o.metaLabel ? '<span class="stmodal__metalab">' + esc(o.metaLabel) + '</span>' : '') +
         esc(o.meta) + '</p>' : '') +
-      (o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
+      /* T12 · bodyHtml IS THE SAME SLOT WITH THE ESCAPING ALREADY DONE.
+         The explanation moved in here carries glossary <span class="gt">
+         markers from markGlossary(), and esc() would print the tags. It
+         is a SECOND field rather than a flag on the first so that no
+         existing caller can reach the unescaped path by accident: every
+         one of them passes `body` and is still escaped exactly as
+         before. Callers that pass bodyHtml own their own escaping —
+         markGlossary() esc()s the text before it marks it. */
+      (o.bodyHtml ? '<p class="stmodal__body">' + o.bodyHtml + '</p>'
+                  : o.body ? '<p class="stmodal__body">' + esc(o.body) + '</p>' : '') +
       /* the ONE field this component grew, so beat 5's disclosure could
          reuse it instead of getting a second modal shape of its own. It
          is markup rather than text — chips and links, escaped by their
@@ -4192,27 +4201,47 @@ async function beat5() {
     }
   }
 
-  /* THE FIRST SENTENCE ONLY, and the rest goes behind one tap. That is
-     what fixes the old lower section: seven items competed in the bottom
-     third and the part players skip was the part taking the room. The
-     beat still explains itself with no tap; the tap is for the rest. */
-  const ex = explainSplit(issue.tf_explain);
+  /* T12 · THE SENTENCE LEAVES THE BOARD ENTIRELY AND THE BLOCK BECOMES
+     ONE LINE. The first sentence used to sit here with the rest behind a
+     tap, which split one explanation across two surfaces and still spent
+     the bottom third of the beat on the part players skip. The whole
+     explanation is behind the tap now and the board carries the door.
+
+     WHAT GOES IN IS ex.first + ex.rest, IN THAT ORDER — not the raw
+     tf_explain. The two differ by exactly one thing: explainSplit()
+     strips the "זה נכון" / "זה לא נכון" opener, which the claim
+     resolution has already said on this same screen. Passing the raw
+     field would restate the verdict inside its own explanation, so
+     "whole" means every sentence the board and the modal were showing
+     between them, in order, and nothing that was already deliberately
+     removed. Flagged in the report. */
+  const ex    = explainSplit(issue.tf_explain);
+  const full  = [ex.first, ex.rest].filter(Boolean).join(' ');
   const terms = issue.glossary_terms || [];
   const links = (issue.further_links || []).slice();
   if (issue.knesset_url) links.push({ label:'ההצבעה באתר הכנסת', url:issue.knesset_url }); /* TAMAR */
-  const hasMore = !!(ex.rest || terms.length || links.length);
+  const hasMore = !!(full || terms.length || links.length);
 
-  if (ex.first || hasMore) {
+  /* THE LINE CANNOT PROMISE WHAT THE MODAL HAS NOT GOT. v2 and s2 carry
+     no further_links and no knesset_url — links is empty on both, and on
+     those two the modal is the explanation and nothing else. A line
+     reading לסרטונים there offers a video that does not exist, so the
+     no-links case keeps the wording the button already shipped with:
+     approved copy, no new promise, INTERIM until Tamar rules. The
+     three-way split by what the issue actually has — video vs article vs
+     Knesset page — is hers to make and is NOT made here; only 3 of the
+     16 issues carry a video at all. See the report. */
+  if (hasMore) {
     const read = el('div', 'f5read f5surf b5stage f5late');
     read.innerHTML =
-      (ex.first ? '<p class="f5exp">' + markGlossary(ex.first) + '</p>' : '') +
-      (hasMore ? '<button type="button" class="f5more">' +
-                   esc('עוד על ההצבעה ›') + '</button>' : '');       /* TAMAR */
+      '<button type="button" class="f5more">' +
+        esc(links.length ? 'לסרטונים ועוד מידע על הנושא'   /* TAMAR */
+                         : 'עוד על ההצבעה') +                    /* TAMAR */
+      '</button>';
     b.appendChild(read);
     late.push(read);
-    const more = $('.f5more', read);
-    if (more) pressable(more).addEventListener('click',
-      () => moreModal(ex.rest, terms, links));
+    pressable($('.f5more', read)).addEventListener('click',
+      () => moreModal(full, terms, links));
   }
 
   /* ---- the way out. Unchanged: if the topic has another unplayed
@@ -4728,7 +4757,10 @@ async function coinMoment(b, topicsWas) {
    — `extra`, appended inside the same box under the body — rather than a
    variant of itself. lawModal() and glossModal() pass no `extra` and
    render byte-identically to before. */
-function moreModal(rest, terms, links) {
+/* T12 · IT TAKES THE WHOLE EXPLANATION NOW, not the remainder. The
+   parameter is renamed with it: `rest` was true when the board kept the
+   first sentence and is a lie now that it does not. */
+function moreModal(text, terms, links) {
   const extra =
     (terms.length ? '<div class="f5chips">' + terms.map(x =>
       '<button type="button" class="f5chip" data-term="' + esc(x) + '">' +
@@ -4744,16 +4776,26 @@ function moreModal(rest, terms, links) {
 
   const m = stickerModal({
     title: issue.title || issue.bill_title || '',
-    body:  rest || '',
+    /* THE TERMS COME IN WITH THE TEXT. They were marked on the board and
+       the board no longer has the sentence, so marking here is what
+       keeps them from being lost with it — and it now covers the WHOLE
+       explanation rather than only its first sentence, which is a gain:
+       a term that happened to fall in the remainder was never marked at
+       all, because stickerModal escaped `body`. */
+    bodyHtml: text ? markGlossary(text) : '',
     extra: extra
   });
   /* a chip opens its definition on the SAME component, which is exactly
      what glossModal() already is — one surface opened twice, rather than
-     a definition panel nested inside a dialog. */
+     a definition panel nested inside a dialog. An inline .gt marker in
+     the body is the same door by another route, so it is the same
+     handler: one listener, two selectors, one glossModal(). */
   m.addEventListener('click', e => {
-    const c = e.target.closest('.f5chip'); if (!c) return;
+    const c = e.target.closest('.f5chip');
+    const g = c ? null : e.target.closest('.gt');
+    if (!c && !g) return;
     e.stopPropagation();
-    glossModal(c.dataset.term);
+    glossModal(c ? c.dataset.term : g.dataset.gt);
   });
   return m;
 }
