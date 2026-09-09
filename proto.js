@@ -1682,7 +1682,7 @@ function beat1() {
     (tfLen > 120 ? ' b1card--long' : tfLen > 70 ? ' b1card--mid' : ''));
   card.innerHTML =
     claimArt() +
-    '<p class="b1claim">' + esc(issue.tf) + '</p>' +
+    '<p class="b1claim">' + markGlossary(issue.tf || '') + '</p>' +
     /* data-label is the fill layer's copy — see .b1ans .v-a::after. It is
        the SAME string as the button's own text and must stay that way. */
     '<div class="v-a-row b1ans">' +
@@ -3282,9 +3282,9 @@ function qBlock(text, extra) {
      string, and a placeholder question is still the question */
   const tab = '<span class="b2q__tab">' + esc('תכלס') + '</span>';     /* TAMAR */
   if (i < 0 || i + Q_TAIL.length !== t.length)
-    return '<p class="' + cls + '">' + tab + esc(t) + '</p>';
+    return '<p class="' + cls + '">' + tab + markGlossary(t) + '</p>';
   const claim = t.slice(0, i).replace(/\s+$/, '');
-  return '<p class="' + cls + '">' + tab + esc(claim) +
+  return '<p class="' + cls + '">' + tab + markGlossary(claim) +
          '<span class="b2q__tail">' + esc(Q_TAIL) + '</span></p>';
 }
 
