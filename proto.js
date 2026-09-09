@@ -233,6 +233,11 @@ const DEV = {
      thing cannot otherwise be looked at twice. on/off force the beacon
      WITHOUT writing the flag. */
   beacon: qPick('beacon', { on:true, off:false }, null),
+  /* T11 · and again, for the pre-finale explainer. Same reason a third
+     time: a screen that by definition happens once cannot otherwise be
+     looked at twice, and resetting the save to see it spends the whole
+     run. on/off force it WITHOUT writing the flag. */
+  preHow: qPick('prehow', { on:true, off:false }, null),
   /* §3 · the title's sticker edge. `solid` is the shipped white and the
      default; `keyline-multi` adds a coloured outer stroke per glyph from
      the topic palette; `keyline-one` adds the same in a single accent.
@@ -796,6 +801,20 @@ const COPY = {
     p: 'בטוחים שאתם רוצים לצאת?',                                    /* TAMAR */
     m: 'בטוח שאתה רוצה לצאת?',                                       /* TAMAR */
     f: 'בטוחה שאת רוצה לצאת?',                                       /* TAMAR */
+  },
+  /* T11 · THE PRE-FINALE EXPLANATION, first round only. It belongs in this
+     table and the BUTTON does not, and the split is the whole point: this
+     line addresses the player — it asks them to do something — so it
+     agrees with them, while לתוצאות names a place and has nobody to
+     agree with. A destination has no voice.
+     THE NAME IS revealHow, NOT revealGate. It was briefly the latter
+     while the string was in the button; leaving that name on it would
+     say the gate is gendered, which is the thing this split exists to
+     deny. Three slots, all filled, differing by one word. */
+  revealHow: {
+    p: 'חשפו את התוצאות הסופיות של ההצבעה',                          /* TAMAR · T11 */
+    m: 'חשוף את התוצאות הסופיות של ההצבעה',                          /* TAMAR · T11 */
+    f: 'חשפי את התוצאות הסופיות של ההצבעה',                          /* TAMAR · T11 */
   },
 };
 function t(key) {
@@ -3872,45 +3891,95 @@ function explainSplit(text) {
    rather than something that arrives while the last card is still
    leaving.
 
+   T11 · WHAT THE SCREEN IS NOW. The last card flies off and what is left
+   is THE GROUND — the same charcoal dot-grid surface that has been behind
+   the deck since the round opened. Not a panel on the ground and not a
+   card-shaped object on it: nothing is drawn here at all, because the
+   surface is already painted by #stage and .stage::before and every
+   container between a card and the stage is transparent. The deck's exit
+   is therefore the whole reveal; there is nothing to uncover and nothing
+   to fade in behind it.
+
+   TWO THINGS ON IT, AND THEY HAVE DIFFERENT LIFETIMES.
+     · THE GATE IS EVERY ROUND. It is the press that asks for the result
+       and the round does not advance without it.
+     · THE EXPLANATION IS ONCE EVER. It answers "what is about to happen"
+       and that question is only asked the first time. PRE_HOW_SEEN is
+       written when it is SHOWN, not when the gate is pressed — the same
+       contract maybeMapIntro() uses — because a player who reads it and
+       leaves has still read it.
+   Those two are deliberately not one condition. Gating the whole screen
+   on the flag would delete the press, and the press is the item.
+
    NO CONFETTI AND NO COUNT-UP. Both belong elsewhere and both are locked:
    confetti to 8/8 map completion, the count to the finale board. This
    screen holds still.
 
-   THE COPY IS NOT WRITTEN. Tamar has not supplied either string, so both
-   are placeholders and both are marked. They do NOT go through ph():
-   that helper's marker is hidden by body.no-ph, which is the default
-   build, and a screen whose only two strings vanish is not a placeholder
-   screen, it is an empty one with a button. .pr-ph therefore carries the
-   same hazard treatment ph() draws but is not subject to that switch —
-   it is meant to be impossible to miss and impossible to ship.
+   BOTH STRINGS ARE WRITTEN. The hazard placeholder this screen used to
+   carry is gone: Tamar's line is the EXPLANATION and לתוצאות › is the
+   button, which is the way round they were always meant to be. .pr-ph is
+   no longer used here — it still exists for beat 3's unwritten line and
+   is untouched.
 
    S.beat is 4.5 on purpose: exitRound() treats > 1 and < 5 as mid-round,
    so leaving here still asks for confirmation, which is right — the
    record is written by beat 5 and nothing is saved yet. */
+function seenPreHow() {
+  if (DEV.preHow !== null) return !DEV.preHow;
+  return PRE_HOW_SEEN;
+}
+function markPreHowSeen() {
+  /* an override never spends the player's one first run — the same
+     contract markMapIntroSeen() and spendAvBeacon() keep */
+  if (DEV.preHow !== null) return;
+  if (PRE_HOW_SEEN) return;
+  PRE_HOW_SEEN = true;
+  saveState();
+}
+
 async function preReveal() {
   S.beat = 4.5;
   const r = $('#round'); r.innerHTML = '';
   helper('');
   repin();
 
+  const firstTime = !seenPreHow();
+  if (firstTime) markPreHowSeen();
+
+  /* NO BOX. Not a sheet, not a card, not the deck's rectangle — the first
+     attempt built a 340x620 kraft panel in the cardwrap and it read as
+     one more card being dealt, which is the opposite of what the beat is
+     for. What is left when the deck goes is the GROUND, and the ground is
+     already there: #stage paints it and .stage::before draws the dot grid
+     over it, and every container between a card and the stage — .cardwrap,
+     .stack, .beat, .round, .screen — paints nothing at all. So this
+     builds no surface. It puts two objects on the one that is already
+     under them.
+     COMPOSED FOR THE SPACE, NOT FOR THE RECTANGLE. .prereveal centres its
+     own content in the round area rather than reproducing where the card
+     box sat: the deck's footprint was a consequence of card artwork, and
+     inheriting it here would be inheriting a measurement that no longer
+     has anything to measure. */
   const b = el('div', 'beat prereveal');
   b.innerHTML =
-    '<div class="pr-inner">' +
-      '<p class="pr-ph pr-head">' + esc('[טקסט — תמר: כותרת מסך הגילוי]') + '</p>' +
-    '</div>' +
-    '<div class="pr-acts">' +
-      '<button type="button" class="p-c pr-go">' +
-        esc('[טקסט — תמר: כפתור הגילוי]') + '</button>' +
-    '</div>';
+    /* THE EXPLANATION, FIRST ROUND ONLY, and it is written now — the
+       hazard placeholder this screen carried is gone with it. It goes
+       through t() because it speaks to the player; see COPY.revealHow. */
+    (firstTime
+      ? '<p class="pr-head">' + esc(t('revealHow')) + '</p>'   /* TAMAR */
+      : '') +
+    /* T11 · לתוצאות › — a destination, one line at every width, and the
+       chevron is the same one לשלב הבא › carries so the two advancing
+       presses in the round read as the same gesture. NOT through t():
+       there is nothing here to agree with. */
+    '<button type="button" class="p-c pr-go">' +
+      esc('לתוצאות ›') + '</button>';                          /* TAMAR */
   r.appendChild(b);
   sizeStage();
 
-  const head = $('.pr-head', b), acts = $('.pr-acts', b);
-  head.classList.add('b5stage'); acts.classList.add('b5stage');
-  requestAnimationFrame(() => {
-    head.classList.add('is-in');
-    acts.classList.add('is-in');
-  });
+  const parts = [$('.pr-head', b), $('.pr-go', b)].filter(Boolean);
+  parts.forEach(n => n.classList.add('b5stage'));
+  requestAnimationFrame(() => parts.forEach(n => n.classList.add('is-in')));
 
   pressable($('.pr-go', b)).addEventListener('click', () => beat5(), { once:true });
 }
@@ -4973,6 +5042,16 @@ let MAP_INTRO_SEEN = false;
    that tap and it has not got it yet. */
 let AV_BEACON_SPENT = false;
 
+/* T11 · THE PRE-FINALE EXPLAINER, ONCE EVER. The fourth flag on the same
+   terms as `mi` and `ab` above: in the save rather than a key of its own,
+   additive and optional so no SAVE_VER bump, and a save written before it
+   simply has no `pr` and explains itself once more.
+   WHAT IS ONCE IS THE EXPLANATION, NOT THE GATE. The button that reveals
+   the finale is on this screen EVERY round — see preReveal(), where the
+   flag gates one paragraph and nothing else. If a later change makes the
+   whole screen conditional on this flag, that is the bug, not the fix. */
+let PRE_HOW_SEEN = false;
+
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
    playable, so every access is wrapped and every failure is "no save". */
@@ -4987,6 +5066,7 @@ function saveState() {
       cf: EG_CONFETTI_SPENT,
       mi: MAP_INTRO_SEEN,
       ab: AV_BEACON_SPENT,                                       /* T13 */
+      pr: PRE_HOW_SEEN,                                          /* T11 */
       profile: PROFILE
     }));
   } catch (e) { /* fails open — a full or disabled store must not break play */ }
@@ -5033,6 +5113,7 @@ function restoreSave() {
      `mi` shows one sticker again and must not cost a run. */
   MAP_INTRO_SEEN = s.mi === true;
   AV_BEACON_SPENT = s.ab === true;                               /* T13 */
+  PRE_HOW_SEEN    = s.pr === true;                               /* T11 */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
