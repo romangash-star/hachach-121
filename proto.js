@@ -5914,8 +5914,8 @@ async function beat5() {
        rejected issues with a bare 'עם הקול שלכם' and no statement of the
        outcome at all — trading a wrong sentence for a missing one. */
     res.innerHTML =
-      (passed ? esc('ההצעה עברה.')
-              : esc('ההצעה לא עברה.')) +
+      (passed ? esc('ההצעה עברה.')                                     /* TAMAR */
+              : esc('ההצעה לא עברה.')) +                              /* TAMAR */
       /* ITEM 52 · THE PAIR IS WRITTEN IN THE BOARD'S ORDER, נגד FIRST.
          It was for—against, which renders 64—57 left-to-right because .num
          is direction:ltr — while the board above it renders נגד then בעד,
