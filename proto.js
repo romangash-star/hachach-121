@@ -7753,7 +7753,11 @@ function nodeHTML(t, i, h, cur) {
       '<button type="button" class="node-face" ' +
         'aria-label="' + esc(t.label + ' — ' + segs + ' מתוך ' + n) + '">' +
         face +
-        '<span class="node-num" aria-hidden="true">' + (i + 1) + '</span>' +
+        /* T42 · NO ORDINAL BADGE. It carried the map index and nothing
+           else -- no state variant, no aria (it was aria-hidden), no
+           handler. The four states are already carried between the ring's
+           segments, the current node's keyline and halo, .node-check and
+           the status line, so there was nothing to migrate off it. */
         (done ? '<span class="node-check" aria-hidden="true">✓</span>' : '') +
       '</button>' +
     '</span>' +

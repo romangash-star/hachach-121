@@ -3625,22 +3625,16 @@ body.no-ph .ph{ display:none !important; }
 /* the emoji fallback has no die-cut to give it — it is a glyph, not art */
 span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.28)); }
 
-/* the two badges. The number is always there — nodes are numbered, and a
-   number that vanishes on completion stops being an address. */
-.node-num{
-  position:absolute; left:6px; bottom:6px; z-index:3;
-  width:24px; height:24px; border-radius:50%;
-  display:grid; place-items:center;
-  direction:ltr; font-family:var(--font-display); font-weight:900; font-size:14px;
-  background:var(--paper); color:var(--ink);
-  box-shadow:0 0 0 1.5px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.3);
-}
-/* THE BADGES CLEAR THE RING, halo included, and they still do at 15%.
-   24px inset 6px on an 87px face puts a badge's far corner 50.3px from
-   the RING centre — 51.8 with its 1.5px casing — against the ring's
-   54.5px inner edge. That is 2.7px of clearance where the board's
-   21/5 against r=50.5 had 1.7px, so the rule "nothing may overlap the
-   ring, shadows included" holds by a wider margin than before. */
+/* T42 · THE ORDINAL BADGE IS GONE. .node-num sat bottom-left carrying the
+   map index; it had no state variant, was aria-hidden, and nothing read it,
+   so removing it took no signal with it. The completion check below is now
+   the only badge on a node.
+   THE CHECK CLEARS THE RING, halo included, and it still does at 15%.
+   24px inset 6px on an 87px face puts its far corner 50.3px from the RING
+   centre — 51.8 with its 1.5px casing — against the ring's 54.5px inner
+   edge. That is 2.7px of clearance where the board's 21/5 against r=50.5
+   had 1.7px, so the rule "nothing may overlap the ring, shadows included"
+   holds by a wider margin than before. Geometry unchanged by T42. */
 .node-check{
   position:absolute; right:6px; bottom:6px; z-index:3;
   width:24px; height:24px; border-radius:50%;
