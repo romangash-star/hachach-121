@@ -827,9 +827,20 @@ body{
    .exitsheet__q. */
 /* T35b · balanced too, so the three titles are one object again rather
    than two behaviours. Measured either way — see the report. */
+/* T35c · 21px -> 19px, AND IT IS THE LAST THING KEEPING THE THREE HEADS
+   APART. T35 centred this one and T35c centred the other two, which left
+   size as the only difference between them: one sheet's question was set
+   a step larger than the same question on the other two, for no reason
+   either pass wrote down. 19px is .exitsheet__q's and therefore the
+   pair's, so the smaller set moves nothing and the odd one out joins it.
+   line-height 1.2 is kept rather than taken to .exitsheet__q's 1.18: this
+   title is the only one of the three that carries a note AND four cost
+   chips under it, and the 0.02 is worth more as breathing room here than
+   as a fourth decimal of agreement. Wrap re-measured at both widths —
+   see the report; the break does not move. */
 .rs__q{ margin:0; padding-inline:48px;
   font-family:var(--font-display); font-weight:900;
-  font-size:21px; line-height:1.2; text-align:center; text-wrap:balance; }
+  font-size:19px; line-height:1.2; text-align:center; text-wrap:balance; }
 /* T35 · THE CONSEQUENCE LINE IS THE WARNING, so it is no longer the
    quietest thing in the box. 14px/400 in --ink-soft lost to two large
    verb buttons; it is the app's display face at 900 in full --ink now,
@@ -945,24 +956,57 @@ body{
    centred was that a 46px control and a 19px first line occupy the same
    band when nothing separates them. */
 /* T35b · text-wrap:balance, AND IT IS NOT A WRAP FIX BY THE BACK DOOR.
-   The longest of the three titles has broken 170/163/62 since before this
-   pass — מחדש? alone on line three — and the type may not shrink to solve
-   it. Balancing evens the lines instead: same 19px, same column, same
-   line count, 120/145/131. The orphan is a distribution problem and this
-   is the property that distributes. */
+   The longest of the three titles had broken 170/163/62 — מחדש? alone on
+   line three — and the type may not shrink to solve it. Balancing evens
+   the lines instead: same 19px, same column, 120/145/131. The orphan is a
+   distribution problem and this is the property that distributes.
+   T35c · AND TODAY IT IS DORMANT, WHICH THE NOTE ABOVE NO LONGER CLAIMS
+   OTHERWISE. Measured in Chrome 152 at the 162px column, all three titles
+   break to exactly the same widths with balance ON, with it OFF
+   (text-wrap-style:auto, computed style checked, not just unset) and with
+   the alignment forced back to start: 120/108, 120/145/131, 105/145. The
+   natural break already lands where balancing would, so this property is
+   currently preventing nothing. Either the column has changed since T35b
+   measured or the line breaker has; the 170/163/62 above is kept as the
+   record of what was seen, not as a description of today.
+   IT STAYS, AND NOT OUT OF CAUTION-BY-DEFAULT. It is doing no work in
+   ONE engine at ONE column width against THREE fixed strings — every one
+   of which can change without this file changing. Copy Tamar has not
+   approved yet, a different breaker, a narrower gutter: any of them puts
+   the orphan back, and the property is what catches it. What must not
+   happen is someone reading the paragraph above, measuring no difference,
+   and deleting it as dead. */
+/* T35c · CENTRED, AND THE PADDING HAD TO BECOME SYMMETRIC WITH IT.
+   .rs__q has been centred since T35 and this was still text-align:start,
+   so the app's one confirm shape had two head treatments depending on
+   which door opened it. Centring here is what makes the three sheets one
+   object again.
+   padding-right -> padding-inline, and that is not tidying: .rs__q's own
+   T35 note says why, and it applies verbatim the moment this line
+   centres — "a one-sided inset on centred type moves the text off the
+   box's centre line, which trades a collision for a misalignment". The
+   ✕'s 48px clearance is now reserved at BOTH ends, so the column the
+   title centres in is the box's own centre. 48px is still the ✕'s
+   measured footprint and the ✕ has not moved.
+   text-wrap:balance was already here (T35b) and stays: centring changes
+   where the lines sit, not how they break. Re-measured at both widths and
+   the breaks do not move — see the note on the property itself above for
+   what it is and is not doing today. */
 .exitsheet__q{
-  margin:0; padding-right:48px;   /* clears the ✕, which is physically right */
+  margin:0; padding-inline:48px;   /* both ends: the title is centred */
   font-family:var(--font-display); font-weight:900;
-  font-size:19px; line-height:1.18; color:var(--ink); text-align:start;
+  font-size:19px; line-height:1.18; color:var(--ink); text-align:center;
   text-wrap:balance;
 }
 /* T35 · SEE .rs__note. The same inversion, the same fix: this was 13px at
    weight 700 in --ink-soft, the smallest and greyest thing in a box whose
    two largest objects were the words "leave" and "stay". 700 was also the
    third weight in a two-weight build; 900 puts it back on the sheet. */
+/* T35c · centred with the title above it, matching .rs__note. The two
+   lines are one head block and they may not disagree about their axis. */
 .exitsheet__note{
   margin:-2px 0 0; font-family:var(--font-display); font-size:16px; font-weight:900;
-  line-height:1.4; color:var(--ink); text-align:start;
+  line-height:1.4; color:var(--ink); text-align:center;
 }
 /* §1b · EQUAL HEIGHTS AND A REAL GAP. .p-c is min-height:56px and .r-b is
    52px, so the yellow was 4px taller than the outline and the pair read as
@@ -985,9 +1029,16 @@ body{
    outline at 17px, and its own comment says the two boxes have to agree
    while the type sizes should differ. Rendered 58px there, measured. This
    is that rule, applied to the same two controls.
-   THE DESTRUCTIVE VERB STAYS ON THE YELLOW. data-go is .p-c and is not
-   swapped — exitRound() built it that way and the pair is consistent
-   across all three sheets. */
+   THE DESTRUCTIVE VERB STAYS ON THE YELLOW ON THIS ROW. data-go is .p-c
+   and is not swapped — exitRound() built it that way.
+   T35c · THE LAST CLAUSE OF THIS NOTE USED TO READ "and the pair is
+   consistent across all three sheets", AND THAT WAS NOT TRUE. The whole-
+   game reset inverts the pair on purpose: .rs__safe is the yellow and
+   .rs__go is demoted below the perforation. Left standing, the sentence
+   licensed exactly the wrong correction. The reasoning for the
+   asymmetry — the more severe the loss, the more the primary defends
+   against it — is written out beside confirmSheet() in proto.js, which
+   is where both sheets are reached from. */
 .exitsheet__row > *{
   min-height:52px;
   display:flex; align-items:center; justify-content:center;
@@ -1832,11 +1883,52 @@ body.no-ph .ph{ display:none !important; }
   margin:0; font-family:var(--font-display); font-weight:900;
   font-size:26px; line-height:1.2; color:#F6F1E2; text-wrap:balance;
 }
-.ov--collapse{ animation:ov-collapse var(--t-ov-collapse) var(--e-out) both;
+/* THE SECOND SELECTOR IS THE WHOLE FIX AND IT IS NOT DECORATION.
+   Beat 2 leaves .is-held on this same element — tapAffordance() adds it
+   and nothing takes it off — so by the time beat 3 is dismissed the
+   surface is carrying .ov--stage.is-held, and that rule declares an
+   animation of its own (tc-breathe, further down the file at the
+   affordance). (0,2,0) beats (0,1,0), so .ov--collapse never won the
+   `animation` property: the overlay went on breathing and was then
+   removed outright at T.ovCollapse. No fade, no scale, on the surface
+   the player crosses twelve times a session.
+   NAMING .is-held RATHER THAN RAISING THE WEIGHT BLINDLY. (0,3,0) is
+   the smallest thing that beats it, and writing the class out says
+   which rule is being out-specified instead of leaving a mystery
+   `.ov--collapse.ov--collapse` behind. !important is not available
+   here: the global reduce flattener is the one legitimate !important
+   on animation in this file and a second one would race it.
+   .ov--end IS UNTOUCHED. It never carries .is-held — tapAffordance()
+   is beat 2's only — so .ov--end.ov--collapse at (0,2,0) still wins
+   over the (0,1,0) base and keeps its own egov-collapse. */
+.ov--collapse,
+.ov--stage.is-held.ov--collapse{
+  animation:ov-collapse var(--t-ov-collapse) var(--e-out) both;
   transform-origin:50% 62%; }
+/* T36 · THE BLUR HAS NO `from` AND THAT IS THE POINT.
+   It used to start at 16, which was written when the only surface that
+   reached this keyframe rested at .ov--stage's 9 — already a rise, and
+   invisible only because the animation never ran (see the selector note
+   above). Once it ran, beat 3's real resting value is .is-held's 3px, so
+   frame 1 snapped 3 -> 16: the card RECEDED for the first ~75ms of a
+   220ms dismiss, while opacity was already falling. A dismiss collapses
+   the surface INTO the card; it must never push the card away first.
+   OMITTING THE PROPERTY FROM THE 0% KEYFRAME IS THE FIX, not writing 3
+   in place of 16. A property absent from a keyframe gets an IMPLICIT
+   one whose value is the element's own underlying computed value — so
+   `from` is literally "whatever this surface is resting at", read at the
+   moment the dismiss starts. Held it is 3px/.94; unheld — a beat 3
+   reached without the cascade, and .ov--end if it is ever re-armed — it
+   is .ov--stage's own 9px/.9. Both collapse to 0 and neither can drift:
+   retune .is-held's tier, or add a third, and this follows on its own
+   with nothing here to remember.
+   BOTH SPELLINGS GO. Leaving the -webkit- one behind would have pinned
+   a 16px `from` on exactly the engine this matters most on.
+   opacity and transform KEEP their explicit `from`: their resting values
+   are 1 and none on every path, so writing them costs nothing and says
+   what the collapse is. */
 @keyframes ov-collapse{
-  from{ opacity:1; transform:scale(1);
-        -webkit-backdrop-filter:blur(16px) saturate(.9); backdrop-filter:blur(16px) saturate(.9) }
+  from{ opacity:1; transform:scale(1) }
   to  { opacity:0; transform:scale(.86);
         -webkit-backdrop-filter:blur(0) saturate(1); backdrop-filter:blur(0) saturate(1) }
 }
@@ -5955,11 +6047,25 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
 }
 
 /* THE COLLAPSE IS NOT BEAT 3'S. ov-collapse scales to .86 INTO the card
-   beneath it and starts its blur at 16; there is no card beneath this
-   one and its blur is 9, so scaling would read as a dismissal into a
-   point that is not there. This lifts the blur to 0 and fades, and the
-   allocation's ground — --stage plus the dot grid — is already painted
-   underneath when it starts. */
+   beneath it and there is no card beneath this one, so scaling would
+   read as a dismissal into a point that is not there. This lifts the
+   blur to 0 and fades, and the allocation's ground — --stage plus the
+   dot grid — is already painted underneath when it starts.
+
+   T36 · DORMANT, AND KEPT ON PURPOSE. Nothing reaches this rule today.
+   `ov--collapse` is added in exactly ONE place in proto.js — beat 3's
+   dismiss — and T25c took the end-game off this path: egCollapse() tears
+   the round down and hands over to egBeat3(), and screens 1 and 2 leave
+   by egSwapIn() on the surface they arrived on, so .ov--end is never
+   given the class. See the T25c note above egCollapse().
+   IT IS NOT DELETED because it is not wrong, it is unused: the day the
+   ending wants a real dismissal again this is the collapse it should
+   get, and re-deriving "not beat 3's, because there is no card beneath"
+   from scratch is how the wrong one gets written instead. Its
+   specificity still does work as documentation — (0,2,0) is what keeps
+   .ov--collapse's (0,1,0) base off this surface, which is why the T36
+   selector above had to be checked against it. If the ending is ever
+   re-armed, verify this and egov-collapse before trusting either. */
 .ov--end.ov--collapse{
   animation:egov-collapse var(--t-ov-collapse) var(--e-out) both;
   transform:none;
@@ -6304,8 +6410,50 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
    button rather than as an icon someone dropped on the row. It is NOT
    yellow: the primary fill is the CTA's and only the CTA's, and a second
    yellow object in the row would make the row read as two answers. */
+/* T35c · THE SQUARE HAS A FLOOR NOW, AND THE FLOOR IS WHAT MAKES IT
+   ENGINE-INDEPENDENT.
+   aspect-ratio:1/1 with align-self:stretch asks the layout to take the
+   height the row gives it and derive the WIDTH from it. Chrome does that
+   — measured 65x65 at 390 and at 360, and 102x102 when the CTA is forced
+   to two lines, so the coupling is real. An engine that resolves the
+   flex main size BEFORE the cross-axis stretch instead reads the width
+   off the icon, and the control draws 20x65: the tall narrow pill T35c
+   reported. Neutralising aspect-ratio here reproduces exactly that, 20x65
+   at both widths, with the CTA jumping to 92% of the row.
+   min-width IS THE FIX AND IT IS A NO-OP WHERE THE RATIO ALREADY WORKS.
+   65px is the CTA's own rendered height — .p-c's 14px block padding
+   twice over plus one line of --fs-action — so where the ratio resolves,
+   65 is what the width already was and nothing moves; where it does not,
+   the floor alone makes the control square against the same 65px row.
+   flex-shrink stays 0, so the floor cannot be negotiated away, and the
+   CTA is not touched: it absorbs the remainder exactly as before.
+   IT IS A FLOOR, NOT THE SIDE. aspect-ratio is still what sizes this —
+   a taller row still gives a bigger square. Do not swap the pair for a
+   flat width/height, which would decouple the two controls.
+   THE NUMBER IS TIED TO THE CTA'S TYPE. If --fs-action or .p-c's block
+   padding moves, re-measure the row and move this with it, or the floor
+   becomes wider than the row is tall.
+
+   ── TRAP · aspect-ratio DOES NOT REACH THE MAIN AXIS UNDER
+      align-self:stretch ON iOS SAFARI. Chrome does apply it; WebKit
+      resolves the flex MAIN size before the cross-axis stretch, so the
+      ratio has no definite cross size to derive a width from and the
+      item falls back to its content — here, the icon, at 20px against a
+      65px row. Chrome-only testing cannot see this: the control measures
+      a correct 65x65 there in every state, which is why it was reported
+      from a device and not from a browser.
+      THE PAIRING IS THE TRAP, NOT aspect-ratio. A ratio with a DEFINITE
+      size on either axis is fine everywhere — every other ratio in this
+      file is that shape and none of them need a floor: .b2chair and
+      .i-chair take height:clamp(), .pr-chair takes height:0, .avp-well
+      and .avp-st take width:100%. The dangerous shape is a ratio whose
+      only cross size comes from a stretch, and as of T35c this is the
+      one place in the build with it.
+      IF YOU ADD ANOTHER, GIVE IT A FLOOR THE SAME WAY, or give it a
+      definite side and let the ratio derive the other. Do not assume a
+      Chrome screenshot proves it. */
 .eg-restart{
-  flex:0 0 auto; aspect-ratio:1 / 1; align-self:stretch;
+  flex:0 0 auto; aspect-ratio:1 / 1; align-self:stretch; min-width:65px;
   display:grid; place-items:center;
   margin:0; padding:0; border:0;
   border-radius:var(--r-pill, 999px);

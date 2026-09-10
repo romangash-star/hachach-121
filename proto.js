@@ -1805,6 +1805,20 @@ function markIntroSeen() {
   if (DEV.intro !== null) return;
   try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) { /* fails open */ }
 }
+/* T36 · AND IT HAS TO BE CLEARABLE. SEEN_KEY predates the save and is the
+   one flag that lives outside it — clearSave() removes SAVE_KEY and only
+   SAVE_KEY, so a wipe left this set and the next run skipped .b1intro.
+   Two things were wrong with that: the reset sheet lists what it is about
+   to destroy and this was not on the list while surviving anyway, which is
+   exactly the honesty T35 spent a section buying; and a playtest could not
+   reach a genuine first run without opening devtools.
+   IT IS NOT CALLED BY clearSave(). See wipeAll() below — discardSave()
+   also calls clearSave(), and a corrupt save is a recovery, not a reset:
+   it must not spend or refund anybody's first run. Same fails-open
+   contract as the other two accessors. */
+function clearIntroSeen() {
+  try { localStorage.removeItem(SEEN_KEY); } catch (e) { /* fails open */ }
+}
 
 /* COPY IS PLACEHOLDER except the heading, which is the same string the
    claim sticker carries — one question, asked once big and then kept
@@ -2679,8 +2693,11 @@ function resetConfirm() {
   sh.addEventListener('click', e => { if (e.target === sh) close(); });
   pressable($('[data-wipe]', sh)).addEventListener('click', () => {
     /* the same wipe ?reset performs, so there is one definition of what
-       a clean slate is and this cannot drift from it */
-    clearSave();
+       a clean slate is and this cannot drift from it. T36 · that
+       definition is wipeAll(), not clearSave(): the sheet above promises
+       the card and the run are gone, and .b1intro's seen-flag lives
+       outside the save object. */
+    wipeAll();
     location.href = location.pathname;
   });
   $('#stage').appendChild(sh);
@@ -6495,6 +6512,23 @@ function clearSave() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* fails open */ }
 }
 
+/* T36 · THE CLEAN SLATE, AND IT IS ONE FUNCTION BECAUSE THERE ARE TWO
+   DOORS. ?reset and the reset sheet's tear-off both mean "start as a
+   first-ever visit", and resetConfirm() already says in a comment that
+   the two cannot be allowed to drift. They were both calling clearSave(),
+   which is not the whole store: SEEN_KEY sits outside the save object and
+   survived, so neither door delivered the first run it promised.
+   clearSave() KEEPS ITS NARROWER MEANING. discardSave() calls it to throw
+   away a save it cannot read, and that is a silent recovery — the player
+   gets a clean map, not a re-run of the instruction overlay they have
+   already been through. Anything that is genuinely once-ever and NOT in
+   the save object belongs on this list; everything else already goes with
+   SAVE_KEY, and the in-memory flags go with the reload both doors do. */
+function wipeAll() {
+  clearSave();
+  clearIntroSeen();
+}
+
 function saveState() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
@@ -6751,6 +6785,24 @@ function exitRound() {
    THREE WAYS TO CANCEL AND ONE TO PROCEED, unchanged from the round's:
    the ✕, the ground and the stay button all dismiss; only `go` goes.
    Every ambiguous gesture resolves toward not losing the thing.
+
+   T35c · THE YELLOW IS NOT IN THE SAME PLACE ON ALL THREE SHEETS, AND
+   THAT ASYMMETRY IS THE DESIGN. Do not "fix" it into consistency.
+     · This sheet — leaving a round, restarting an allocation — puts the
+       DESTRUCTIVE verb on the primary. What is lost is one round or one
+       screen's worth of taps, both of which the player can simply do
+       again, so the sheet's job is to confirm quickly and get out of the
+       way.
+     · resetConfirm() — the whole game — inverts it: .rs__safe (keep
+       playing) is the yellow primary and .rs__go (wipe) is demoted below
+       the perforation, ringed and unlifted. What is lost there is the
+       whole run and it cannot be re-earned.
+   The rule the pair encodes: THE MORE SEVERE THE LOSS, THE MORE THE
+   PRIMARY DEFENDS AGAINST IT. A sheet whose yellow always meant "yes"
+   would make the gravest button in the game the easiest one to hit.
+   The HEAD is the half that is shared — same box, same ✕, same centred
+   title and consequence line as of T35c. The FOOT is where the two
+   deliberately part.
    ===================================================================== */
 function confirmSheet(o) {
   const sh = el('div', 'exitsheet');
@@ -9764,7 +9816,7 @@ function boot() {
      wallet, and restoring after the draw would render a clean map and
      then correct it. ?reset clears first, so the restore that follows
      finds nothing and the session starts as a first-ever visit. */
-  if (DEV.reset) clearSave();
+  if (DEV.reset) wipeAll();                    /* T36 · the save AND SEEN_KEY */
   restoreSave();
   /* §B the default is the first preset, written down so the save carries
      an explicit id rather than "whatever is first"; restoreSave() has
