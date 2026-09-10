@@ -32,7 +32,36 @@
      a 667px window and the document scrolls by 26px no matter what the stage
      does. The stage keeps its 390 ceiling with max-width instead. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14'%3E%F0%9F%AA%91%3C/text%3E%3C/svg%3E">
+<!-- T47 · THE MARK IS THE GOLD COIN WITH THE CHAIR. What was here before
+     was an inline SVG holding the chair emoji, U+1FA91, so the tab drew
+     whatever emoji font the platform happened to have — a different picture
+     per device, and no control over it at all.
+     .ico FIRST AND AT THE WEB ROOT. Browsers and crawlers probe /favicon.ico
+     without being told to, so it has to be there whatever the links say; it
+     carries 16, 32 and 48 as separate PNG payloads rather than one 16 the
+     bookmark bar has to upscale.
+     apple-touch-icon IS OPAQUE ON PURPOSE — iOS ignores alpha and composites
+     onto black, so the paper ground is baked in. It is at the root as well
+     because iOS probes for it there when a page is added to the home screen
+     from a context that never saw this markup. -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16"   href="/assets/favicon/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32"   href="/assets/favicon/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48"   href="/assets/favicon/favicon-48.png">
+<link rel="icon" type="image/png" sizes="96x96"   href="/assets/favicon/favicon-96.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon/favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<!-- site.webmanifest, NOT manifest.json — the app already has a manifest.json
+     at explorations/v16/prototype/ and that one is the ASSET index proto.js
+     fetches. Two different files with one name would be a trap; the web app
+     manifest takes the .webmanifest extension so the two can never be
+     confused by name alone.
+     ITS name AND short_name ARE HEBREW — the same string as <title> above,
+     not a new one. JSON carries no comments, so the marker lives in a
+     "_tamar" key inside the file. /* TAMAR */ -->
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#2E2A26">
 <title>הח״כ ה-121</title>
 
 <!-- The v16 handoff stylesheet, verbatim. Tokens in :root, then the components.
