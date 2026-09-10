@@ -1758,7 +1758,9 @@ function deckCard(i) {
         '<button type="button" class="pcov" aria-label="' +
           esc('גילוי המפלגה') + '">' +                       /* TAMAR */
           '<i class="pcov__face" aria-hidden="true">' +
-            '<b class="pcov__lab">' + esc('מפלגה') + '</b>' + /* TAMAR */
+            '<b class="pcov__lab">' + esc('מפלגה') +
+              '<span class="pcov__arr" aria-hidden="true">↑</span>' +
+            '</b>' +
           '</i>' +
           '<i class="pcov__curl" aria-hidden="true"></i>' +
         '</button>' +
@@ -5912,8 +5914,8 @@ async function beat5() {
        rejected issues with a bare 'עם הקול שלכם' and no statement of the
        outcome at all — trading a wrong sentence for a missing one. */
     res.innerHTML =
-      (passed ? esc('ההצעה עברה.')                                     /* TAMAR */
-              : ph('[טקסט — תמר: הפועל להצעה שנדחתה]')) +              /* TAMAR */
+      (passed ? esc('ההצעה עברה.')
+              : esc('ההצעה לא עברה.')) +
       /* ITEM 52 · THE PAIR IS WRITTEN IN THE BOARD'S ORDER, נגד FIRST.
          It was for—against, which renders 64—57 left-to-right because .num
          is direction:ltr — while the board above it renders נגד then בעד,
@@ -6348,6 +6350,13 @@ function runCount(board, tally) {
       sfx('tick');
     };
     (function tick(now) {
+      if (document.hidden) {
+        document.addEventListener('visibilitychange', function once() {
+          document.removeEventListener('visibilitychange', once);
+          requestAnimationFrame(tick);
+        });
+        return;
+      }
       if (held && now < holdUntil) return requestAnimationFrame(tick);
       const k = Math.min(1, (now - t0 - (held ? T.f5Flare : 0)) / RUN);
       let p = curve(k);
