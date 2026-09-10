@@ -1832,11 +1832,52 @@ body.no-ph .ph{ display:none !important; }
   margin:0; font-family:var(--font-display); font-weight:900;
   font-size:26px; line-height:1.2; color:#F6F1E2; text-wrap:balance;
 }
-.ov--collapse{ animation:ov-collapse var(--t-ov-collapse) var(--e-out) both;
+/* THE SECOND SELECTOR IS THE WHOLE FIX AND IT IS NOT DECORATION.
+   Beat 2 leaves .is-held on this same element — tapAffordance() adds it
+   and nothing takes it off — so by the time beat 3 is dismissed the
+   surface is carrying .ov--stage.is-held, and that rule declares an
+   animation of its own (tc-breathe, further down the file at the
+   affordance). (0,2,0) beats (0,1,0), so .ov--collapse never won the
+   `animation` property: the overlay went on breathing and was then
+   removed outright at T.ovCollapse. No fade, no scale, on the surface
+   the player crosses twelve times a session.
+   NAMING .is-held RATHER THAN RAISING THE WEIGHT BLINDLY. (0,3,0) is
+   the smallest thing that beats it, and writing the class out says
+   which rule is being out-specified instead of leaving a mystery
+   `.ov--collapse.ov--collapse` behind. !important is not available
+   here: the global reduce flattener is the one legitimate !important
+   on animation in this file and a second one would race it.
+   .ov--end IS UNTOUCHED. It never carries .is-held — tapAffordance()
+   is beat 2's only — so .ov--end.ov--collapse at (0,2,0) still wins
+   over the (0,1,0) base and keeps its own egov-collapse. */
+.ov--collapse,
+.ov--stage.is-held.ov--collapse{
+  animation:ov-collapse var(--t-ov-collapse) var(--e-out) both;
   transform-origin:50% 62%; }
+/* T36 · THE BLUR HAS NO `from` AND THAT IS THE POINT.
+   It used to start at 16, which was written when the only surface that
+   reached this keyframe rested at .ov--stage's 9 — already a rise, and
+   invisible only because the animation never ran (see the selector note
+   above). Once it ran, beat 3's real resting value is .is-held's 3px, so
+   frame 1 snapped 3 -> 16: the card RECEDED for the first ~75ms of a
+   220ms dismiss, while opacity was already falling. A dismiss collapses
+   the surface INTO the card; it must never push the card away first.
+   OMITTING THE PROPERTY FROM THE 0% KEYFRAME IS THE FIX, not writing 3
+   in place of 16. A property absent from a keyframe gets an IMPLICIT
+   one whose value is the element's own underlying computed value — so
+   `from` is literally "whatever this surface is resting at", read at the
+   moment the dismiss starts. Held it is 3px/.94; unheld — a beat 3
+   reached without the cascade, and .ov--end if it is ever re-armed — it
+   is .ov--stage's own 9px/.9. Both collapse to 0 and neither can drift:
+   retune .is-held's tier, or add a third, and this follows on its own
+   with nothing here to remember.
+   BOTH SPELLINGS GO. Leaving the -webkit- one behind would have pinned
+   a 16px `from` on exactly the engine this matters most on.
+   opacity and transform KEEP their explicit `from`: their resting values
+   are 1 and none on every path, so writing them costs nothing and says
+   what the collapse is. */
 @keyframes ov-collapse{
-  from{ opacity:1; transform:scale(1);
-        -webkit-backdrop-filter:blur(16px) saturate(.9); backdrop-filter:blur(16px) saturate(.9) }
+  from{ opacity:1; transform:scale(1) }
   to  { opacity:0; transform:scale(.86);
         -webkit-backdrop-filter:blur(0) saturate(1); backdrop-filter:blur(0) saturate(1) }
 }
@@ -5955,11 +5996,25 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
 }
 
 /* THE COLLAPSE IS NOT BEAT 3'S. ov-collapse scales to .86 INTO the card
-   beneath it and starts its blur at 16; there is no card beneath this
-   one and its blur is 9, so scaling would read as a dismissal into a
-   point that is not there. This lifts the blur to 0 and fades, and the
-   allocation's ground — --stage plus the dot grid — is already painted
-   underneath when it starts. */
+   beneath it and there is no card beneath this one, so scaling would
+   read as a dismissal into a point that is not there. This lifts the
+   blur to 0 and fades, and the allocation's ground — --stage plus the
+   dot grid — is already painted underneath when it starts.
+
+   T36 · DORMANT, AND KEPT ON PURPOSE. Nothing reaches this rule today.
+   `ov--collapse` is added in exactly ONE place in proto.js — beat 3's
+   dismiss — and T25c took the end-game off this path: egCollapse() tears
+   the round down and hands over to egBeat3(), and screens 1 and 2 leave
+   by egSwapIn() on the surface they arrived on, so .ov--end is never
+   given the class. See the T25c note above egCollapse().
+   IT IS NOT DELETED because it is not wrong, it is unused: the day the
+   ending wants a real dismissal again this is the collapse it should
+   get, and re-deriving "not beat 3's, because there is no card beneath"
+   from scratch is how the wrong one gets written instead. Its
+   specificity still does work as documentation — (0,2,0) is what keeps
+   .ov--collapse's (0,1,0) base off this surface, which is why the T36
+   selector above had to be checked against it. If the ending is ever
+   re-armed, verify this and egov-collapse before trusting either. */
 .ov--end.ov--collapse{
   animation:egov-collapse var(--t-ov-collapse) var(--e-out) both;
   transform:none;
