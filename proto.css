@@ -1555,7 +1555,12 @@ body.no-ph .ph{ display:none !important; }
      own 4.6px extrusion, written by fitBeat2() beside --ov-top. The
      fallback is the old literal so any .ov--stage that never reaches the
      JS is exactly what it was. */
-  padding:var(--ov-top, calc(18px + env(safe-area-inset-top))) 16px
+  /* T39 · THE INLINE INSET IS A VARIABLE SO ONE THING CAN CANCEL IT.
+     The share rail bleeds full-width by taking a negative margin-inline of
+     exactly this, and a bleed that guesses at 16 would come apart the day
+     this number moves. Same computed value as the literal it replaces. */
+  --ov-inline:16px;
+  padding:var(--ov-top, calc(18px + env(safe-area-inset-top))) var(--ov-inline)
           calc(var(--ov-bot, 16px) + env(safe-area-inset-bottom));
   /* softer than beat 3's: what is behind it — the answer just given and
      the cards ahead — is meant to be recognisable as those things */
@@ -7423,7 +7428,26 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 /* the track owns the gesture; touch-action keeps a vertical drag the
    browser's. The rail is LTR and zero-width at the track's centre, and the
    slots are placed off it in JS — see place() in egBeat4() for why. */
+/* T39 · THE TRACK IS FULL-BLEED, THE COLUMN IS NOT. Everything else on
+   this screen — title, toggle, buttons, dots — stays inside .ov--stage's
+   inline padding; only the track reaches past it, so the neighbours run
+   off both edges instead of stopping 16px short with a strip of ground
+   beside them.
+   MARGIN-INLINE, NOT 100vw. The stage is capped at 390 and centred, so
+   100vw would be the WINDOW's width and would overrun the stage on any
+   wider viewport; and it counts the scrollbar, which is how a bleed earns
+   a horizontal scrollbar. A negative margin of exactly the inset cannot
+   exceed the stage by construction. .ov--stage is overflow:hidden, so
+   even if it did there is nothing for the document to scroll.
+   LOGICAL, NOT PHYSICAL. margin-inline is one declaration that cancels
+   the inset on both sides under either direction; margin-left/right would
+   bleed one side and clip the other the moment dir flips.
+   THE CARD DOES NOT GROW WITH THE TRACK. place() sizes the card from the
+   track's width, so a wider track would have widened the 4:5 card — its
+   width cap binds where 9:16's height cap does. place() subtracts this
+   margin back out, so the card's box is what it was to the pixel. */
 .sh-track{ flex:1; min-height:0; position:relative; overflow:hidden; margin-top:0;
+           margin-inline:calc(-1 * var(--ov-inline, 16px));
            touch-action:pan-y; cursor:grab; -webkit-user-select:none; user-select:none; }
 .sh-rail{ position:absolute; left:50%; top:0; bottom:0; width:0; direction:ltr;
           transition:transform var(--t-flip) var(--e-settle); }

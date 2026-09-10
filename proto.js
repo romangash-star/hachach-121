@@ -10091,7 +10091,16 @@ async function egBeat4() {
   const paintCards = () => slots.forEach(s => { $('.sh-scale', s).innerHTML = shCardHTML(s.dataset.k, SH_ASPECT); });
   const place = () => {
     const [W, H] = SH_ASPECTS[SH_ASPECT];
-    const tw = track.clientWidth, th = track.clientHeight;
+    /* T39 · THE SIZING WIDTH IS THE PADDED ONE, NOT THE BLED ONE. The track
+       now carries a negative margin-inline so it reaches the screen edges,
+       which grew clientWidth by twice the inset. Left alone, that would
+       have grown the CARD: the 4:5 cap is (tw * 0.78) * H / W and binds
+       where 9:16's th cap does, so 4:5 would have gone 349.05 -> 380.25 at
+       390 while 9:16 stayed put — a bleed that silently resized one aspect
+       and not the other. Reading the margin back off the element keeps one
+       source of truth in the CSS: change --ov-inline and both follow. */
+    const bleed = -parseFloat(getComputedStyle(track).marginInlineStart) || 0;
+    const tw = track.clientWidth - bleed * 2, th = track.clientHeight;
     if (!tw || !th) return;
     /* T37 · 1 · THE DIE-CUT IS PAINTED OUTSIDE THE CARD'S BOX AND HAS TO
        BE PAID FOR OUT OF THE TRACK. .sh-hold draws the sticker edge as
