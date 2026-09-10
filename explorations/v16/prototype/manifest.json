@@ -318,34 +318,34 @@
   },
   "topics": {
     "accountability": {
-      "128": "assets/topics/topic_glass_128.webp",
-      "256": "assets/topics/topic_glass_256.webp",
-      "512": "assets/topics/topic_glass_512.webp",
+      "128": "assets/topics/v2/accountability_128.webp",
+      "256": "assets/topics/v2/accountability_256.webp",
+      "512": "assets/topics/v2/accountability_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
-      "aspect": 0.8398,
-      "node_scale": 0.987,
-      "source": "topic_glass"
+      "aspect": 0.8008,
+      "node_scale": 1.127,
+      "source": "accountability (v2)"
     },
     "branches": {
-      "128": "assets/topics/topic_tag_128.webp",
-      "256": "assets/topics/topic_tag_256.webp",
-      "512": "assets/topics/topic_tag_512.webp",
+      "128": "assets/topics/v2/branches_128.webp",
+      "256": "assets/topics/v2/branches_256.webp",
+      "512": "assets/topics/v2/branches_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
-      "aspect": 0.6367,
-      "node_scale": 1.0537,
-      "source": "topic_tag"
+      "aspect": 1.0119,
+      "node_scale": 1.1669,
+      "source": "branches (v2)"
     },
     "economy": {
-      "128": "assets/topics/topic_rostrum_128.webp",
-      "256": "assets/topics/topic_rostrum_256.webp",
-      "512": "assets/topics/topic_rostrum_512.webp",
+      "128": "assets/topics/v2/economy_128.webp",
+      "256": "assets/topics/v2/economy_256.webp",
+      "512": "assets/topics/v2/economy_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
       "aspect": 0.9766,
-      "node_scale": 0.8374,
-      "source": "topic_rostrum"
+      "node_scale": 0.9714,
+      "source": "economy (v2)"
     },
     "environment": {
       "40": "assets/topics/environment_40.webp",
@@ -363,14 +363,14 @@
       "reads_down_to": 40
     },
     "gender": {
-      "128": "assets/topics/topic_gavel_128.webp",
-      "256": "assets/topics/topic_gavel_256.webp",
-      "512": "assets/topics/topic_gavel_512.webp",
+      "128": "assets/topics/v2/gender_128.webp",
+      "256": "assets/topics/v2/gender_256.webp",
+      "512": "assets/topics/v2/gender_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
-      "aspect": 1.0407,
-      "node_scale": 1.0,
-      "source": "topic_gavel"
+      "aspect": 1.0,
+      "node_scale": 0.9525,
+      "source": "gender (v2)"
     },
     "internal_sec": {
       "40": "assets/topics/policehat_40.webp",
@@ -388,24 +388,24 @@
       "reads_down_to": 40
     },
     "military": {
-      "128": "assets/topics/topic_scroll_128.webp",
-      "256": "assets/topics/topic_scroll_256.webp",
-      "512": "assets/topics/topic_scroll_512.webp",
+      "128": "assets/topics/v2/military_128.webp",
+      "256": "assets/topics/v2/military_256.webp",
+      "512": "assets/topics/v2/military_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
-      "aspect": 1.4382,
-      "node_scale": 1.1096,
-      "source": "topic_scroll"
+      "aspect": 1.1907,
+      "node_scale": 0.9686,
+      "source": "military (v2)"
     },
     "religion": {
-      "128": "assets/topics/topic_scale_128.webp",
-      "256": "assets/topics/topic_scale_256.webp",
-      "512": "assets/topics/topic_scale_512.webp",
+      "128": "assets/topics/v2/religion_128.webp",
+      "256": "assets/topics/v2/religion_256.webp",
+      "512": "assets/topics/v2/religion_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
-      "aspect": 1.4066,
-      "node_scale": 1.115,
-      "source": "topic_scale"
+      "aspect": 1.3128,
+      "node_scale": 1.0855,
+      "source": "religion (v2)"
     }
   },
   "issues": {
