@@ -9731,6 +9731,11 @@ const SH_ICON = {
   spin:  '<span class="sh-spin" aria-hidden="true"></span>',
 };
 const SH_SRC = {
+  /* T43 · the coin joins the inlined set. It has to: the pill's coin is an
+     <img> precisely so shExport() can rewrite its src to base64, the way
+     the chair and the logos are. A CSS url() inside @ec-start/@ec-end
+     cannot resolve inside the export's data: SVG. */
+  coin:    'assets/coin_128.webp',
   chair:   'assets/mk/knesset_chair_300_shadow.webp',  /* the BAKED shadow — see the note at .ec-c-chair */
   logo:    'assets/share/logo-mono-900.png',
   logoInk: 'assets/share/logo-mono-900-ink.png',       /* pre-inked for kraft; no filter */
@@ -9783,10 +9788,14 @@ function shPillsHTML(aspect) {
            '<span class="ec-pill__n">' + esc(x.t.label) + '</span>' +
            '<span class="ec-pill__r"></span>' +
            '<span class="ec-pill__c">' + shNum(x.v) +
-             /* THE COIN IS .coin-t, THE REAL TOKEN, restated in em so the
-                2/19 keyline and offset hold at every tier — proto.css:4760:
-                "a second coin drawn a second way would be a second currency" */
-             '<i class="coin-t ec-pill__coin" aria-hidden="true"></i></span>' +
+             /* THE COIN IS .coin-t, THE REAL TOKEN — proto.css:4760:
+                "a second coin drawn a second way would be a second currency".
+                T43 · it is now one IMAGE at every site rather than a disc
+                drawn four ways, so the em sizing carries the whole coin
+                across the tiers instead of a keyline that had to be
+                restated. An <img> rather than a background so shExport()
+                can inline it; see SH_SRC.coin. */
+             '<img class="coin-t ec-pill__coin" src="' + SH_SRC.coin + '" alt="" aria-hidden="true"></span>' +
          '</span>';
   });
   if (p.more) h += '<span class="ec-pill ec-pill--more">' + esc(SH_COPY.more) + ' ' + p.more + '</span>';
@@ -9863,9 +9872,10 @@ const shB64 = async url => {
 function shWarm() {
   if (SH_WARM) return SH_WARM;
   SH_WARM = (async () => {
-    const [black, regular, chair, logo, logoInk, cssText] = await Promise.all([
+    const [black, regular, chair, logo, logoInk, coin, cssText] = await Promise.all([
       shB64(SH_SRC.black), shB64(SH_SRC.regular),
       shB64(SH_SRC.chair), shB64(SH_SRC.logo), shB64(SH_SRC.logoInk),
+      shB64(SH_SRC.coin),
       fetch('proto.css').then(r => r.text()),
     ]);
     /* the card's own rules, cut from proto.css between the markers */
@@ -9874,7 +9884,8 @@ function shWarm() {
       "@font-face{font-family:'SimplerPro';src:url(" + black + ") format('woff2');font-weight:900}" +
       "@font-face{font-family:'SimplerPro';src:url(" + regular + ") format('woff2');font-weight:400}" +
       (m ? m[1] : '');
-    return { css, img: { [SH_SRC.chair]: chair, [SH_SRC.logo]: logo, [SH_SRC.logoInk]: logoInk } };
+    return { css, img: { [SH_SRC.chair]: chair, [SH_SRC.logo]: logo,
+                        [SH_SRC.logoInk]: logoInk, [SH_SRC.coin]: coin } };
   })();
   SH_WARM.catch(() => { SH_WARM = null; });      /* a failed warm is retried by the next call */
   return SH_WARM;
