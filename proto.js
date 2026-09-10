@@ -2709,7 +2709,24 @@ function resetConfirm() {
    an MK who is in that round's own cascade. Tamar's copy is not edited
    and no MK is dropped; both issues carry `spoiler_risk:true` in data.js
    and stay on her list. The treatment cannot fix that; only her copy can.  */
-function stickerModal(o) {
+/* the nested sticker's back control. Icon only on screen — this is its
+   accessible name, and it is the word the app already uses for the
+   builder's way back rather than a second synonym for the same move. */
+const BACK_LABEL = 'חזרה';                 /* TAMAR · the nested modal's back control */
+
+/* T34 · THE BOX'S CONTENTS, AS A FUNCTION, SO THEY CAN BE RE-RENDERED.
+   This was inline in stickerModal() and could therefore only ever be
+   built once. A glossary term tapped inside the disclosure has to replace
+   what is in the box rather than open a second box on top of it, and
+   replacing means building the same markup again from a different options
+   object. Nothing about the markup changed in the move — only `nested`
+   is new, and it is false everywhere the old code ran.
+
+   THE BACK CONTROL IS THE ONE THING `nested` ADDS. It is rendered ONLY
+   when there is somewhere to go back to, which is why it is a parameter
+   and not a field on `o`: a caller cannot get it wrong, because a caller
+   never passes it. */
+function stickerFill(o, nested) {
   o = o || {};
   /* ITEM 9 · THE RESERVED HERO. 96px at the top of every sticker, held
      whether or not there is art to put in it, so the modal has one
@@ -2730,10 +2747,18 @@ function stickerModal(o) {
         ? '<img class="sthero__art" src="' + o.art + '" alt="">'
         : '<span class="sthero__q" aria-hidden="true">?</span>') +
     '</div>';
-  const m = el('div', 'stmodal');
-  m.innerHTML =
-    '<div class="stmodal__box" role="dialog" aria-modal="true">' +
+  return '' +
       '<button type="button" class="stmodal__x" aria-label="סגירה">✕</button>' +
+      /* TOP-LEFT, WHICH IN THIS RTL DOCUMENT IS THE PHYSICAL LEFT — the
+         opposite corner from the ✕, so the two controls can never be
+         mistaken for each other. The chevron is DRAWN and it is CHEV_R:
+         › and ‹ are bidi-mirrored glyphs and would render the wrong way
+         round, and CHEV_R is already what this app's other back control
+         uses (the builder's הקודם), so back points one way everywhere. */
+      (nested
+        ? '<button type="button" class="stmodal__back" aria-label="' +
+            esc(BACK_LABEL) + '">' + CHEV_R + '</button>'
+        : '') +
       hero +
       '<h2 class="stmodal__title">' + esc(o.title || '') + '</h2>' +
       /* T7 · the label is a child of the meta line, not a line of its own:
@@ -2756,8 +2781,39 @@ function stickerModal(o) {
          reuse it instead of getting a second modal shape of its own. It
          is markup rather than text — chips and links, escaped by their
          own builder. Callers that pass nothing are unaffected. */
-      (o.extra || '') +
-    '</div>';
+      (o.extra || '');
+}
+
+/* T34 · ONE MODAL SURFACE, AND THE DEPTH IS CAPPED AT ONE.
+   stickerPush() replaces what is in an OPEN sticker and remembers what
+   was there; m._pop() puts it back. It is deliberately not a stack: the
+   guard below refuses a second push, and the only content that can be
+   pushed — a glossary definition — is rendered through `body`, which is
+   escaped, so it carries no .gt markers and offers no second door. Belt
+   and braces, because the two failures look identical on screen.
+
+   THE BOX'S HEIGHT MOVES THROUGH stickerSwap() (P2). Content swapping
+   inside a box that jumps height reads as a bug, and there is exactly one
+   mechanism for that in this file. */
+function stickerPush(m, o) {
+  const box = m && $('.stmodal__box', m);
+  if (!box || m._depth) return;
+  const prev = box.innerHTML;
+  stickerSwap(m, () => { box.innerHTML = stickerFill(o, true); });
+  m._depth = 1;
+  m._pop = () => {
+    stickerSwap(m, () => { box.innerHTML = prev; });
+    m._depth = 0; m._pop = null;
+    m._wire();
+  };
+  m._wire();
+}
+
+function stickerModal(o) {
+  o = o || {};
+  const m = el('div', 'stmodal');
+  m.innerHTML = '<div class="stmodal__box" role="dialog" aria-modal="true">' +
+    stickerFill(o, false) + '</div>';
   let gone = false;
   /* ITEM 43 · ONE HOOK, FIRED ON EVERY WAY OUT. The ✕, the ground and
      Escape all funnel through close(), so a caller that needs to know the
@@ -2777,7 +2833,19 @@ function stickerModal(o) {
   m._close = close;
   const onKey = e => { if (e.key === 'Escape') close(); };
   addEventListener('keydown', onKey);
-  pressable($('.stmodal__x', m)).addEventListener('click', close);
+  /* T34 · RE-WIRED AFTER EVERY CONTENT SWAP. Replacing the box's innerHTML
+     destroys the ✕ and its listener with it, so the wiring is a function
+     the swap can call again rather than a line that runs once. ✕ closes
+     the WHOLE modal from any depth — it is bound to close(), which knows
+     nothing about depth — and the back control, which exists only while
+     nested, calls m._pop(). Tap-outside is on `m` itself and survives
+     untouched, so it too closes from any depth. */
+  m._wire = () => {
+    pressable($('.stmodal__x', m)).addEventListener('click', close);
+    const bk = $('.stmodal__back', m);
+    if (bk) pressable(bk).addEventListener('click', () => { if (m._pop) m._pop(); });
+  };
+  m._wire();
   m.addEventListener('click', e => { if (e.target === m) close(); });
   $('#stage').appendChild(m);
   requestAnimationFrame(() => m.classList.add('is-in'));
@@ -2898,8 +2966,17 @@ function lawModal() {
    light surface with its own radius and its own padding, sitting inside
    a paragraph and pushing the explanation around as it opened and shut.
    The definition is data.js's own; nothing is written here. */
+/* T34 · ONE DEFINITION OF WHAT A GLOSSARY STICKER IS, read by both the
+   standalone opener and the in-place swap, so the two can never drift
+   into being two different surfaces wearing the same name. `body` and
+   not `bodyHtml`: the definition is escaped, carries no .gt markers, and
+   therefore offers no second door out — which is what caps the depth at
+   one in the markup as well as in stickerPush()'s guard. */
+function glossOpts(term) {
+  return { title: term, body: (DATA.glossary || {})[term] || '' };
+}
 function glossModal(term) {
-  return stickerModal({ title: term, body: (DATA.glossary || {})[term] || '' });
+  return stickerModal(glossOpts(term));
 }
 
 /* ===== §B · 2b THE CHARACTER, 2a THE STICKER SHEET ==================
@@ -4923,17 +5000,102 @@ const MAJORITY = 61, PLENUM = 120;
    what is left; a remainder under 40 characters is joined to the next
    one rather than shown alone, which is what rescues g1's dangling
    'וזה מפתיע הרבה אנשים.' */
-const VERDICT_OPENER = /^\s*זה\s+(?:לא\s+)?נכון\s*[!.,–—-]*\s*/;   /* TAMAR */
+/* T34b · זה IS OPTIONAL. The pattern required it, and three issues open
+   with the bare form — v2 "נכון.", s1 "לא נכון —", s2 "נכון —" — so the
+   stripper matched nothing on them and their modals opened by restating
+   the verdict, which is the single thing this regex exists to prevent.
+   It was survivable while the sentence sat mid-board; it is the modal's
+   first line since T12. Not a copy change: the decision was already
+   taken, this is the decision actually reaching all sixteen issues. */
+const VERDICT_OPENER = /^\s*(?:זה\s+)?(?:לא\s+)?נכון\s*[!.,–—-]*\s*/;   /* TAMAR */
+/* T34c · WHAT MAKES A REMAINDER UNABLE TO STAND ALONE. A vav bound to
+   the front of a word IS the conjunction "and" in Hebrew — it is not a
+   separate token — so the test is the prefix, not a word list. The three
+   standalone conjunctions are named because they are words in their own
+   right and no prefix rule would catch them.
+   THE ONE FALSE POSITIVE THIS RULE CAN HAVE is a noun whose root simply
+   begins with vav: ועדה / ועדת, "committee", occurs in these sixteen
+   explanations. It never occurs in FIRST position, which is the only
+   position this tests, so the rule is correct on all sixteen today —
+   but a rewrite that opens a remainder on ועדת חקירה would keep an
+   opener it does not need. Measured, and in the report. */
+const LEADING_CONJ = /^(?:ו[א-ת]|אבל\s|אך\s|אלא\s)/;                   /* TAMAR */
 function explainSplit(text) {
   const t = (text || '').trim();
   if (!t) return { first:'', rest:'' };
-  const body = t.replace(VERDICT_OPENER, '') || t;
+  /* T34c · DO NOT STRIP INTO A DANGLING CONJUNCTION. s1 reads
+     "לא נכון — ובג״ץ דאג שזה יישאר ככה", where the ו־ conjoins the clause
+     to the verdict; take the verdict away and the sentence opens on an
+     "and" with nothing behind it. Weighed the two failures: a modal that
+     opens mid-sentence reads as broken to every player who gets that
+     issue, and a modal that restates the verdict is an impurity only we
+     notice. The second is the lesser evil, so the whole opener stays.
+     A RULE, NOT A CASE FOR s1: any remainder that cannot stand on its own
+     keeps its opener. It fires on TWO of the sixteen — see the report. */
+  const cut  = t.replace(VERDICT_OPENER, '');
+  const body = (!cut || LEADING_CONJ.test(cut)) ? t : cut;
   const parts = body.split(/(?<=[.!?])\s+/).filter(p => p.trim());
   if (!parts.length) return { first:'', rest:'' };
   let first = parts[0], rest;
   if (first.length < 40 && parts.length > 1) { first += ' ' + parts[1]; rest = parts.slice(2).join(' '); }
   else rest = parts.slice(1).join(' ');
   return { first: first.trim(), rest: rest.trim() };
+}
+
+/* T34b · WHAT THE BOARD'S ONE LINE IS ALLOWED TO PROMISE.
+   The line used to branch on links.length, which asks "is there anything
+   behind this door" and answers with a sentence about VIDEO. Seven of the
+   sixteen issues have something behind the door and no video in it —
+   e1, v1, s1 and m1 carry only the Knesset vote page, b1, g1 and g2 carry
+   only articles — so nearly half the game offered a video it did not
+   have. Four states now, and the test is the content itself.
+
+   A LINK IS A VIDEO BY ITS HOST, WITH THE LABEL AS A SECOND CHANCE.
+   Host first because that is what the player will actually get: a2's one
+   link is labelled כתבה and points at YouTube, and it is a video whatever
+   the label calls it. The label test catches the reverse case — a video
+   on a host not in this list — and costs nothing today, because every
+   issue it would catch the host test already catches. */
+const VIDEO_HOST =
+  /(?:^|\.)(?:youtube\.com|youtu\.be|vimeo\.com|facebook\.com|fb\.watch)$/i;
+function isVideoLink(l) {
+  if (!l) return false;
+  if (/^\s*סרטון/.test(l.label || '')) return true;          /* TAMAR's own word */
+  let h = '';
+  try { h = new URL(l.url).hostname; } catch (e) { return false; }
+  return VIDEO_HOST.test(h);
+}
+/* `links` is further_links PLUS the synthesised Knesset row, so the
+   Knesset-only case is read off further_links rather than off the merged
+   list — otherwise "one link" and "one link that this function put there
+   itself" are indistinguishable. */
+function readKind(iss, links) {
+  if (!links.length) return 'none';
+  const fl = iss.further_links || [];
+  if (fl.some(isVideoLink)) return 'video';
+  return fl.length ? 'article' : 'knesset';
+}
+/* TWO OF THE FOUR ARE PLACEHOLDERS AND THEY LOOK LIKE IT.
+   ph()'s hazard fill, in the [טקסט — תמר: …] form the pre-round sheet
+   already uses, and the text describes the BRANCH rather than proposing
+   copy for it — nothing here is a guess at what the line should say.
+   body.no-ph is the default build and hides .ph, which would leave the
+   board with an empty button, so beat 5's line takes the same narrowly
+   scoped exception .f5res and .pr-ph already take. When Tamar's two
+   strings land, both ph() calls go and the CSS exception goes with
+   them. */
+const F5_LINE = {
+  video:   'לסרטונים ועוד מידע על הנושא',   /* TAMAR · shipped, and now only where it is true */
+  none:    'עוד על ההצבעה',                 /* TAMAR · shipped; v2 and s2, nothing behind the door but the explanation */
+  article: null,                             /* TAMAR — placeholder, see below */
+  knesset: null,                             /* TAMAR — placeholder, see below */
+};
+const F5_LINE_PH = {
+  article: '[טקסט — תמר: כתבות בלבד, אין סרטון]',        /* TAMAR — placeholder */
+  knesset: '[טקסט — תמר: רק ההצבעה באתר הכנסת]',        /* TAMAR — placeholder */
+};
+function f5LineHtml(kind) {
+  return F5_LINE[kind] ? esc(F5_LINE[kind]) : ph(F5_LINE_PH[kind]);
 }
 
 /* ===================== 4.5 · THE PRE-REVEAL =========================
@@ -5537,22 +5699,16 @@ async function beat5() {
   if (issue.knesset_url) links.push({ label:'ההצבעה באתר הכנסת', url:issue.knesset_url }); /* TAMAR */
   const hasMore = !!(full || terms.length || links.length);
 
-  /* THE LINE CANNOT PROMISE WHAT THE MODAL HAS NOT GOT. v2 and s2 carry
-     no further_links and no knesset_url — links is empty on both, and on
-     those two the modal is the explanation and nothing else. A line
-     reading לסרטונים there offers a video that does not exist, so the
-     no-links case keeps the wording the button already shipped with:
-     approved copy, no new promise, INTERIM until Tamar rules. The
-     three-way split by what the issue actually has — video vs article vs
-     Knesset page — is hers to make and is NOT made here; only 3 of the
-     16 issues carry a video at all. See the report. */
+  /* T34b · THE LINE NOW SAYS WHAT THE ISSUE ACTUALLY HAS. It was one
+     test — links.length — and it was wrong on SEVEN of the sixteen: four
+     issues carry only the Knesset vote page and three carry only
+     articles, and all seven were offering the player a video. See
+     readKind(). */
   if (hasMore) {
+    const kind = readKind(issue, links);
     const read = el('div', 'f5read f5surf b5stage f5late');
     read.innerHTML =
-      '<button type="button" class="f5more">' +
-        esc(links.length ? 'לסרטונים ועוד מידע על הנושא'   /* TAMAR */
-                         : 'עוד על ההצבעה') +                    /* TAMAR */
-      '</button>';
+      '<button type="button" class="f5more">' + f5LineHtml(kind) + '</button>';
     b.appendChild(read);
     late.push(read);
     pressable($('.f5more', read)).addEventListener('click',
@@ -6111,7 +6267,12 @@ function moreModal(text, terms, links) {
       '<button type="button" class="f5chip" data-term="' + esc(x) + '">' +
         esc(x) + '</button>').join('') + '</div>' : '') +
     (links.length ? '<div class="f5links">' + links.map(l => {
-      const icon = /^\s*סרטון/.test(l.label || '') ? '▶' : '🔗';
+      /* T34c · THE SAME TEST THE BOARD'S LINE USES, and now the only one.
+         This read the label alone, so b2's and a2's YouTube links drew
+         🔗 while the line above the door promised video — the same
+         overstatement T34b took out of the line, one layer down. One
+         source of truth for "is this a video": isVideoLink(). */
+      const icon = isVideoLink(l) ? '▶' : '🔗';
       return l.url
         ? '<a class="f5link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
             '<i aria-hidden="true">' + icon + '</i>' + esc(l.label) + '</a>'
@@ -6130,17 +6291,19 @@ function moreModal(text, terms, links) {
     bodyHtml: text ? markGlossary(text) : '',
     extra: extra
   });
-  /* a chip opens its definition on the SAME component, which is exactly
-     what glossModal() already is — one surface opened twice, rather than
-     a definition panel nested inside a dialog. An inline .gt marker in
-     the body is the same door by another route, so it is the same
-     handler: one listener, two selectors, one glossModal(). */
+  /* T34 · IT SWAPS, IT DOES NOT STACK. This used to call glossModal(),
+     which builds a whole second .stmodal and drops it on the stage — two
+     boxes, two ✕, two scrims, and a ✕ that closed only the top one. The
+     definition is the SAME surface showing different content now: one
+     box on screen at every depth, a back control top-left while there is
+     somewhere to go back to, and the box easing between the two heights
+     rather than jumping. One listener, two selectors, as before. */
   m.addEventListener('click', e => {
     const c = e.target.closest('.f5chip');
     const g = c ? null : e.target.closest('.gt');
     if (!c && !g) return;
     e.stopPropagation();
-    glossModal(c ? c.dataset.term : g.dataset.gt);
+    stickerPush(m, glossOpts(c ? c.dataset.term : g.dataset.gt));
   });
   return m;
 }

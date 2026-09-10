@@ -92,6 +92,12 @@
      --e-settle lands it within a pixel of target well before that, which
      is the figure that actually matters and is measured in the report. */
   --t-swap:        200ms;  /* a sticker resizing between two contents    */
+
+  /* T34 · BEAT 5'S TWO VERTICAL GAPS. Boards are one group, actions are
+     another, and the second figure is what says so. Measured before:
+     11 / 11 / 11 with 184px of bare ground under the buttons at 390. */
+  --f5-gap-board:  11px;   /* board to board — unchanged, it was tuned   */
+  --f5-gap-acts:   32px;   /* the board STACK to the button group        */
   --t-snapback:    160ms;  /* release below the drag threshold           */
   --t-resolve:     450ms;  /* the pinned claim resolving. A moment.      */
   --t-coin:        400ms;  /* one coin award counting up                 */
@@ -4046,6 +4052,20 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   width:19px; height:3px; border-radius:2px; background:currentColor;
   margin:-1.5px 0 0 -9.5px;
 }
+/* T34 · THE NESTED STICKER'S BACK CONTROL. Same 46px target as the ✕ and
+   the opposite corner: top-LEFT physically, which in this RTL document is
+   `left`, so the two are never confused for one another. It renders only
+   while there is somewhere to go back to — stickerFill()'s `nested` — so
+   an unnested sticker is byte-identical to what it was before T34. */
+.stmodal__back{
+  position:absolute; top:2px; left:2px; right:auto; z-index:4;
+  width:46px; height:46px; margin:0;
+  border:0; background:none; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ink); opacity:.72;
+}
+.stmodal__back:active{ opacity:1; }
+.stmodal__back svg{ width:24px; height:24px; display:block; }
 .stmodal__x::before, .exitsheet__x::before{ transform:rotate(45deg); }
 .stmodal__x::after,  .exitsheet__x::after { transform:rotate(-45deg); }
 .stmodal__x:active, .exitsheet__x:active{ opacity:1; }
@@ -4819,7 +4839,14 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    the board is alone, and afterwards the SMALLER of that and whatever
    the content actually leaves, so the board holds until the content
    genuinely needs the room and then rises by exactly that much. */
-.f5 .b5fit{ display:flex; flex-direction:column; gap:11px; position:relative;
+/* T34 · TWO GAPS, NOT ONE. Every block in this column sat 11px from the
+   next one, the buttons included, which is what made the whole beat read
+   as one clump with the ground empty under it: equal spacing says
+   "these are all the same kind of thing", and a board and a button are
+   not. The boards keep 11 — they ARE one group. The button group gets
+   its own, larger figure, and it is the real edge-to-edge gap rather
+   than a number that has to be added to a padding somewhere else. */
+.f5 .b5fit{ display:flex; flex-direction:column; gap:var(--f5-gap-board); position:relative;
   justify-content:flex-start;
   transition:padding-top var(--t-f5-in) var(--e-settle); }
 
@@ -5089,6 +5116,13 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    string lands, the ph() call goes and this rule goes with it. */
 body.no-ph .f5res .ph{ display:inline-block !important; }
 .f5res .ph{ font-family:var(--font-ui); }
+/* T34b · THE THIRD AND LAST EXCEPTION, for the same reason as the other
+   two. The board's one line IS the button; hiding its marker does not
+   leave a cosmetic gap, it leaves a control with nothing written on it
+   and no way to know the door is there. Scoped to .f5more so no other
+   placeholder is affected, and it goes when Tamar's two strings land. */
+body.no-ph .f5more .ph{ display:inline-block !important; }
+.f5more .ph{ font-family:var(--font-ui); font-size:12px; padding:2px 7px 3px; }
 .f5res__you{ display:block; font-size:14px; font-weight:400; color:#E6E2D8; }
 /* 23 · the numeral stays IN the demoted line. <b> takes the UA's bold,
    which in a 400/900 family resolves to the Black — so the figure was
@@ -5152,14 +5186,30 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
 .f5coin__tot{ margin:3px 0 0; font-size:12px; font-weight:700; color:#8E897C; text-align:center; }
 
 /* ---- the buttons. Last, and nothing lands after them. ---- */
-.f5acts{ margin-top:auto; padding-top:12px; display:flex; flex-direction:column;
+/* T34 · the 12px padding-top is gone: it was the stack-to-actions gap by
+   accident, expressed as the button group's own inside edge. That gap is
+   --f5-gap-acts now and it is stated once, where it can be read. */
+.f5acts{ margin-top:auto; padding-top:0; display:flex; flex-direction:column;
   align-items:stretch; gap:8px; flex:none; }
 .f5go{ font-size:18px; min-height:0; padding:12px 0 13px; }
+/* T34 · A SECONDARY BUTTON, NOT A TERTIARY LINK. It was a 15px underlined
+   text link, centred, 109x41 — under the 44px target minimum and reading
+   as an afterthought next to a full-width yellow primary. Now it is the
+   same width and the same shape as the primary, outlined rather than
+   filled.
+   THE STROKE IS NEUTRAL INK ON PURPOSE. Lime and magenta code
+   correctness in this game and nothing else; this is navigation, so the
+   outline is the paper-on-ink white the rest of the dark surfaces use.
+   IT STILL LOSES TO THE YELLOW, WHICH IS THE POINT: the primary is a
+   solid #FFD60A field carrying 18px ink at the darkest value on the
+   screen, this is 15px at #D8D2C4 on nothing. Figures in the report. */
 .f5back{
-  align-self:center; border:0; background:none; cursor:pointer;
+  align-self:stretch; cursor:pointer; background:none;
+  border:2px solid rgba(255,255,255,.30); border-radius:12px;
   font-family:var(--font-display); font-weight:900; font-size:15px; color:#D8D2C4;
-  padding:9px 18px 10px; text-decoration:underline; text-underline-offset:3px;
+  padding:12px 0 13px; text-decoration:none;
 }
+.f5back:active{ background:rgba(255,255,255,.06); }
 
 /* ---- PART 2 · the disclosure's own surfaces are GONE. .f5scrim,
    .f5sheet, .f5grab, .f5sheet__body and .f5close went with moreSheet();
@@ -5477,7 +5527,14 @@ body.no-ph .f5res .ph{ display:inline-block !important; }
   transform:translateY(22px);
   transition-timing-function:var(--e-out);
 }
-.f5 .b5fit.is-recentring .f5acts{ margin-top:0; }
+/* the auto margin is what floats the buttons to the floor while the beat
+   is still assembling; the settled state replaces it with the stated
+   gap. The subtraction is because the column's own gap is already
+   between them, so --f5-gap-acts is what you MEASURE, not what is
+   written on top of something else. */
+.f5 .b5fit.is-recentring .f5acts{
+  margin-top:calc(var(--f5-gap-acts) - var(--f5-gap-board));
+}
 @media (prefers-reduced-motion: reduce){
   .f5 .b5fit.is-recentring{ transition:none; }
 }
