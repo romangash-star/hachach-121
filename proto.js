@@ -5008,10 +5008,32 @@ const MAJORITY = 61, PLENUM = 120;
    first line since T12. Not a copy change: the decision was already
    taken, this is the decision actually reaching all sixteen issues. */
 const VERDICT_OPENER = /^\s*(?:זה\s+)?(?:לא\s+)?נכון\s*[!.,–—-]*\s*/;   /* TAMAR */
+/* T34c · WHAT MAKES A REMAINDER UNABLE TO STAND ALONE. A vav bound to
+   the front of a word IS the conjunction "and" in Hebrew — it is not a
+   separate token — so the test is the prefix, not a word list. The three
+   standalone conjunctions are named because they are words in their own
+   right and no prefix rule would catch them.
+   THE ONE FALSE POSITIVE THIS RULE CAN HAVE is a noun whose root simply
+   begins with vav: ועדה / ועדת, "committee", occurs in these sixteen
+   explanations. It never occurs in FIRST position, which is the only
+   position this tests, so the rule is correct on all sixteen today —
+   but a rewrite that opens a remainder on ועדת חקירה would keep an
+   opener it does not need. Measured, and in the report. */
+const LEADING_CONJ = /^(?:ו[א-ת]|אבל\s|אך\s|אלא\s)/;                   /* TAMAR */
 function explainSplit(text) {
   const t = (text || '').trim();
   if (!t) return { first:'', rest:'' };
-  const body = t.replace(VERDICT_OPENER, '') || t;
+  /* T34c · DO NOT STRIP INTO A DANGLING CONJUNCTION. s1 reads
+     "לא נכון — ובג״ץ דאג שזה יישאר ככה", where the ו־ conjoins the clause
+     to the verdict; take the verdict away and the sentence opens on an
+     "and" with nothing behind it. Weighed the two failures: a modal that
+     opens mid-sentence reads as broken to every player who gets that
+     issue, and a modal that restates the verdict is an impurity only we
+     notice. The second is the lesser evil, so the whole opener stays.
+     A RULE, NOT A CASE FOR s1: any remainder that cannot stand on its own
+     keeps its opener. It fires on TWO of the sixteen — see the report. */
+  const cut  = t.replace(VERDICT_OPENER, '');
+  const body = (!cut || LEADING_CONJ.test(cut)) ? t : cut;
   const parts = body.split(/(?<=[.!?])\s+/).filter(p => p.trim());
   if (!parts.length) return { first:'', rest:'' };
   let first = parts[0], rest;
@@ -6245,7 +6267,12 @@ function moreModal(text, terms, links) {
       '<button type="button" class="f5chip" data-term="' + esc(x) + '">' +
         esc(x) + '</button>').join('') + '</div>' : '') +
     (links.length ? '<div class="f5links">' + links.map(l => {
-      const icon = /^\s*סרטון/.test(l.label || '') ? '▶' : '🔗';
+      /* T34c · THE SAME TEST THE BOARD'S LINE USES, and now the only one.
+         This read the label alone, so b2's and a2's YouTube links drew
+         🔗 while the line above the door promised video — the same
+         overstatement T34b took out of the line, one layer down. One
+         source of truth for "is this a video": isVideoLink(). */
+      const icon = isVideoLink(l) ? '▶' : '🔗';
       return l.url
         ? '<a class="f5link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
             '<i aria-hidden="true">' + icon + '</i>' + esc(l.label) + '</a>'
