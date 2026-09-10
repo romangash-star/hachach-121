@@ -251,6 +251,13 @@ const DEV = {
   /* T27 · and again, for the question block's one-shot demonstration.
      on/off force it WITHOUT writing the flag. */
   qbar: qPick('qbar', { on:true, off:false }, null),
+  /* BUILD-IB · and twice more, for the two schedules this pass adds. The
+     reason is the same one stated four times above: a thing that by
+     definition happens once cannot otherwise be looked at twice, and
+     resetting the save to see it spends the whole run. Neither override
+     writes its flag. */
+  askMk: qPick('askmk', { on:true, off:false }, null),
+  tctap: qPick('tctap', { on:true, off:false }, null),
   /* T20 · the claim's size on beat 2. 26 SHIPS as of 09 Sep — see .b2q in
      proto.css for why, and note it is a fit decision rather than a type
      one. 30 and 22 stay reachable so the three can be drawn beside each
@@ -1860,7 +1867,12 @@ function firstRunIntro(done) {
   const o = el('div', 'b1intro');
   o.innerHTML =
     '<div class="b1intro__box" role="dialog" aria-modal="true">' +
-      '<h2 class="b1intro__t">' + esc(INTRO_B1.title) + '</h2>' +
+      /* BUILD-IB · 1 · THE TITLE IS THE BAND. Same string, same job, set
+         on the surface's one kraft object instead of as a 34px line in
+         cream. h2 is kept so the heading is still a heading: the band is
+         a treatment, not a demotion. */
+      '<div class="bandslot">' +
+        '<h2 class="band b1intro__t">' + esc(INTRO_B1.title) + '</h2></div>' +
       /* esc(), not ph(): this is a written sentence pending Tamar's
          approval, not a description of one that has not been written. */
       /* T17 · THE BREAK IS PUT IN AT RENDER, AFTER THE COMMA.
@@ -1943,6 +1955,26 @@ function slapAsk(text) {
   s._t = setTimeout(() => s.classList.add('is-slapped'), T.askDelay);
   return s;
 }
+/* BUILD-IB · 9 · IS THE MK ASK STILL DUE? Same shape as qbarDemo()'s
+   gate and preReveal()'s: a DEV override that never writes, a save flag
+   that is spent once, and reduced motion skipping the whole thing.
+   REDUCED MOTION SKIPS IT because the sticker IS its slap -- .ask-st
+   arrives on a --t-ask-delay timer and lands with a transform, and a
+   slap flattened to 1ms is a sticker that appears from nowhere over the
+   card. The instruction is not lost: the round's own controls say the
+   same thing, which is the argument for scheduling it at all.
+   IT SPENDS THE FLAG WHEN IT ANSWERS YES, not when the sticker settles:
+   the player has been shown the instruction the moment it is on screen,
+   and tying the spend to an animation that may be interrupted would
+   re-instruct anyone who left mid-cascade. */
+function askMkDue() {
+  if (DEV.askMk !== null) return DEV.askMk;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (ASK_MK_SEEN) return false;
+  ASK_MK_SEEN = true; saveState();
+  return true;
+}
+
 /* the claim's sticker retires the moment the claim is answered — it is
    the claim card's instruction and the claim card is leaving. The MK
    sticker is NOT retired between cards: it slaps once on the first card
@@ -3623,7 +3655,14 @@ function beat2() {
        already floating at the bottom of this same overlay. */
     '<div class="ovpane ovpane--bill is-below">' +
       '<div class="ov-inner b3inner">' +
-        '<p class="b3ask">' + esc('נחשו מה הצביעו שאר הח״כים') + '</p>' +  /* TAMAR · T5 */
+        /* BUILD-IB · 1 · THE LINE IS THE BAND. Beat 3 is one line and has
+           been since T5; the band is what that line is set on now, so the
+           surface carries the kraft object the other three do and the
+           copy is untouched. .bandslot reserves the 53px in flow — the
+           band itself is absolute and 440px wide, which is wider than the
+           stage on purpose. */
+        '<div class="bandslot"><p class="band b3ask">' +
+          esc('נחשו מה הצביעו שאר הח״כים') + '</p></div>' +  /* TAMAR · T5 */
       '</div>' +
     '</div>';
   $('#stage').appendChild(ov);
@@ -3786,19 +3825,43 @@ function tachlesTransition(btn, ov) {
   }, T.tcTravelAt + T.tcTravel);
 }
 
-/* THE AFFORDANCE, AND IT IS NOT SMALL PRINT. The whole surface is the
-   target, so the cue is a sticker-family pill with a chevron that
-   breathes — at this beat the screen has stopped moving and must not
-   read as finished. The blur behind it holds at 3px for the same
-   reason. */
+/* THE AFFORDANCE. The whole surface is the target, so the cue names the
+   gesture rather than pretending to be the thing you press — BUILD-IB
+   took the pill's costume off it and left the words. At this beat the
+   screen has stopped moving and must not read as finished; the blur
+   holding at the tier and tc-breathe are the other two halves of that.
+
+   BUILD-IB · 10 · THE HELD STATE IS UNCONDITIONAL, THE WORDS ARE NOT.
+   .is-held goes on every time: it is the surface saying it is alive, and
+   the collapse's implicit from-keyframe reads its blur. Only the line is
+   scheduled, and it is withheld after the first round — see tapDue().
+   IT IS SAFE TO WITHHOLD BECAUSE OF WHERE IT SITS. armNext() fires
+   beat3() at 900ms, the bill pane settles at 1260 and this lands at
+   1300: the line is a late state ON a surface the player is already
+   reading, not a curtain in front of it. Removing it removes a label and
+   moves no timing. */
 function tapAffordance(ov) {
   if (!ov.isConnected || $('.tctap', ov)) return;
   ov.classList.add('is-held');
+  if (!tapDue()) return;
   const hint = el('div', 'tctap',
     '<span>' + esc(t('tapNext')) + '</span>' +                       /* TAMAR · COPY.tapNext */
     '<span class="tctap__c" aria-hidden="true">›</span>');
   ov.appendChild(hint);
   requestAnimationFrame(() => requestAnimationFrame(() => hint.classList.add('is-in')));
+}
+/* the same gate askMkDue() uses, and deliberately the same shape: an
+   override that never writes, a save flag spent once, reduced motion
+   opting out. Reduced motion skips it because the line's entrance IS a
+   transition and the breathe is an animation -- flattened to 1ms it
+   appears from nowhere and then sits still, which says less than the
+   cursor already does. */
+function tapDue() {
+  if (DEV.tctap !== null) return DEV.tctap;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (TCTAP_SEEN) return false;
+  TCTAP_SEEN = true; saveState();
+  return true;
 }
 
 /* ===== v26 · THE תכלס TAB AND THE PROMPT'S TAIL =====================
@@ -4516,7 +4579,11 @@ function armPredict(first) {
      re-entering. Re-slapping on every card was the v17 board's own
      stated risk for this option ("it repeats on every card, which is
      where it may wear out"); one slap is the version that answers it. */
-  if (first) slapAsk(ASK.mk);
+  /* BUILD-IB · 9 · AND ONLY ON THE FIRST ROUND OF THE GAME. `first` is
+     the first CARD of this cascade and stays; askMkDue() is the first
+     ROUND of the run. A player on round eleven has been told what to do
+     ten times and the sticker is the loudest object on the card. */
+  if (first && askMkDue()) slapAsk(ASK.mk);
   /* T27 · THE NEXT CARD CLOSES THE QUESTION. armPredict() runs once per
      card, so a panel the player left open on card three is collapsed by
      card four without a timeout anywhere — a timeout would fire while
@@ -5229,6 +5296,12 @@ function f5LineHtml(kind) {
    ===================================================================== */
 const PR_CHAIR_MAX = 210;
 const PR_CHAIR_MIN = CHAIR_MIN;      /* v27's 150, named once */
+/* BUILD-IB · 12 · the field's own two constants, derived from SEAT_VB
+   and p4()'s chair paste and written down so nothing re-derives them:
+   745/458 is the drawn extent's ratio, and the chair is 268 of that 458.
+   Change SEAT_VB and these move with it. */
+const PR_FIELD_AR    = 745 / 458;    /* 1.6266 */
+const PR_FIELD_CHAIR = 268 / 458;    /* 0.5851 */
 
 function fitPreReveal(b) {
   const chair = $('.pr-chair', b); if (!chair) return;
@@ -5252,7 +5325,29 @@ function fitPreReveal(b) {
   let target = avail - rest;
   if (target > PR_CHAIR_MAX) target = PR_CHAIR_MAX;
   if (target < PR_CHAIR_MIN) target = PR_CHAIR_MIN;
-  chair.style.height = target.toFixed(2) + 'px';
+
+  /* BUILD-IB · 12 · THE BUDGET NOW SIZES THE FIELD, AND THE CHAIR IS A
+     PROPORTION OF IT. Everything above is unchanged: `target` is still
+     the chair height the vertical budget can afford. What changed is
+     that the chair is no longer a free object -- it stands in the pool
+     at the poster's own proportions, so sizing it directly would slide
+     it out of the light. The field is sized instead and the chair
+     follows in CSS.
+     WIDTH IS THE SECOND CONSTRAINT AND IT USUALLY WINS. The field is
+     1.63:1, so a 210px chair asks for a 359px height and a 584px width
+     -- wider than either target stage. Where the width binds, it sets
+     the size and the chair comes out smaller than PR_CHAIR_MAX; that is
+     the field being complete rather than the chair being cropped, and
+     cropping the outer rows is the one thing that could make the count
+     unreadable. */
+  const availW = b.clientWidth
+               - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  let fh = target / PR_FIELD_CHAIR;                 /* the field the chair asks for */
+  let fw = fh * PR_FIELD_AR;
+  if (fw > availW) { fw = availW; fh = fw / PR_FIELD_AR; }
+  const field = $('.pr-field', b);
+  if (field) { field.style.width = fw.toFixed(2) + 'px'; field.style.height = fh.toFixed(2) + 'px'; }
+  chair.style.height = '';        /* the field owns it now — see .pr-chair */
 }
 
 /* =====================================================================
@@ -5340,6 +5435,75 @@ function layGate() {
   return b;
 }
 
+/* =====================================================================
+   BUILD-IB · 12 · THE SEAT FIELD. THE CHAIR SITS INSIDE THE 120.
+
+   THE GEOMETRY IS LIFTED, NOT RECONSTRUCTED. Every number below is
+   explorations/v31/build.py, p4() -- the Open Graph poster -- read out of
+   the source: centre (600,486), y squashed 0.92, a 118-degree span,
+   seats as 22x20 rounded rectangles at radius 5, fill #605950, outline
+   #1A1815 at 2px, and floorpool() at (600,512) as 52 nested ellipses of
+   rgb(255,214,10) at 200x34 with peak 26. The one thing that is NOT the
+   poster's is the row table, and that is deliberate -- see below.
+
+   FIVE ROWS, NOT SIX, AND THE ARITHMETIC IS THE ARGUMENT. The poster
+   runs [214,14] [266,18] [318,22] [370,26] [422,30] [474,10]: six rows
+   at ~30px pitch across radii 214-474 want 148 seats, the field must be
+   120, so a short sixth of ten finishes the count on a 331px stub of arc
+   above an 869px one. At 360 that reads as ten seats set apart from 110,
+   which is the one thing in this whole surface that is mistakable for a
+   bloc. 16/20/24/28/32 is exactly 120 with every row at the full 118
+   degrees and every pitch within 1.35px of every other -- measured
+   28.04 to 29.38 -- and the field gets shallower with it (outer arc 474
+   -> 422), which at 360 stops it crowding the chair.s shoulders.
+   THE POSTER IS NOT CHANGED. It now diverges from the game surface, and
+   that is expected: the same twelve numbers in p4() would have to move
+   to match, and the poster is shipped work.
+
+   THE 121st IS NOT A GAP IN THE FIELD. Nothing is missing, marked,
+   removed or left empty -- an empty slot among 120 filled ones is a
+   diagram of an outcome, and the field must not be one. It is LIT FLOOR:
+   the pool is the player.s own yellow and the thing standing in it is
+   the chair. The empty seat is expressed as light.
+
+   THE GUARDRAIL, AND IT IS A CONSTRAINT ON THE DRAWING, NOT A NOTE:
+   one fill, one outline, one size across all 120. No hue on any seat.
+   No grouping, no ordering, no spacing that could read as a side. The
+   only colour anywhere in this function is the player.s yellow, as light
+   on the floor, and it never touches a seat. If a future change puts a
+   second fill in here, that change is wrong.
+   ===================================================================== */
+const SEAT_ROWS = [[214,16],[266,20],[318,24],[370,28],[422,32]];  /* = 120 */
+const SEAT_VB   = { x:227, y:88, w:745, h:458 };   /* the drawn extent, measured */
+
+function seatFieldSvg() {
+  const CX = 600, CY = 486, SQ = 0.92, SPAN = 118;
+  let seats = '', n = 0;
+  for (const [r, cnt] of SEAT_ROWS) {
+    for (let i = 0; i < cnt; i++) {
+      const a = (180 + (180 - SPAN) / 2 + SPAN * (i / (cnt - 1))) * Math.PI / 180;
+      const sx = CX + r * Math.cos(a), sy = CY + r * Math.sin(a) * SQ;
+      /* ONE rect, ONE fill, ONE outline, ONE size. The only thing that
+         differs between any two of the 120 is x and y. */
+      seats += '<rect x="' + (sx - 11).toFixed(2) + '" y="' + (sy - 10).toFixed(2) +
+               '" width="22" height="20" rx="5"/>';
+      n++;
+    }
+  }
+  /* floorpool(), 52 nested ellipses, largest and faintest first so each
+     one paints over the last -- which is what builds the falloff. */
+  let pool = '';
+  for (let i = 0; i < 52; i++) {
+    const k = i / 52, w = 200 * (1 - k * .62), h = 34 * (1 - k * .62);
+    pool += '<ellipse cx="600" cy="512" rx="' + w.toFixed(2) + '" ry="' + h.toFixed(2) +
+            '" fill="rgba(255,214,10,' + ((4 + 26 * k) / 255).toFixed(4) + ')"/>';
+  }
+  return '<svg class="pr-field__svg" viewBox="' + SEAT_VB.x + ' ' + SEAT_VB.y + ' ' +
+           SEAT_VB.w + ' ' + SEAT_VB.h + '" aria-hidden="true" focusable="false">' +
+           '<g class="pr-seats">' + seats + '</g>' + pool +
+         '</svg>';
+}
+
 async function preReveal() {
   S.beat = 4.5;
   const r = $('#round');
@@ -5386,8 +5550,15 @@ function buildGate(firstTime) {
        AT REST MEANS AT REST. No breath, no float, no glow: the gate is
        the thing being offered and a second moving object beside it would
        split the invitation. The chair is the setting. */
-    '<img class="pr-chair" src="' + ROOT +
-      (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
+    /* BUILD-IB · 12 · the chair is IN the field now, not above it. One
+       positioned wrapper carries both, at the poster's own proportions,
+       so the chair lands in the pool the way p4() composed it rather
+       than by a number tuned here. NO CONTAINER: the wrapper paints
+       nothing -- no fill, no edge, no radius. It is a coordinate space. */
+    '<div class="pr-field">' + seatFieldSvg() +
+      '<img class="pr-chair" src="' + ROOT +
+        (M.props.chair['900'] || M.props.chair['300']) + '" alt="">' +
+    '</div>' +
     /* THE EXPLANATION, FIRST ROUND ONLY, and it is written now — the
        hazard placeholder this screen carried is gone with it. It goes
        through t() because it speaks to the player; see COPY.revealHow. */
@@ -6541,6 +6712,29 @@ let AV_BEACON_SPENT = false;
    whole screen conditional on this flag, that is the bug, not the fix. */
 let PRE_HOW_SEEN = false;
 
+/* BUILD-IB · 9 · THE MK ASK'S SCHEDULE. נחשו מה הוא/היא הצביע/ה is the
+   only instruction in the app that never stopped being given: card one
+   of every cascade, twelve rounds, the same verb on the eleventh. It
+   goes on the same terms as `mi`, `ab` and `pr` above -- in the save
+   rather than a key of its own, additive and optional so no SAVE_VER
+   bump, and a store written before it restores false and instructs once
+   more.
+   THE SCHEDULE IS NOT A COPY QUESTION. The line is Tamar's and is not
+   touched; what changes is how many times it is said.
+   ITS CLAIM TWIN IS NOT SCHEDULED. ASK.claim retires with the card it is
+   stuck to -- it is a label on an object that leaves -- so it has never
+   been the repeated one and is left alone. */
+let ASK_MK_SEEN = false;
+
+/* BUILD-IB · 10 · AND THE TAP AFFORDANCE'S. Same pattern, same reason,
+   and cheap because of where the pill sits in the sequence: armNext()
+   fires beat3() at 900ms, the bill pane settles at 1260 and
+   tapAffordance() lands at 1300. The pill is a LATE STATE on a surface
+   the player is already reading, not a curtain in front of it -- so
+   withholding it removes a label and changes no timing. The held blur
+   and tc-breathe are untouched and still say the surface is alive. */
+let TCTAP_SEEN = false;
+
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
    playable, so every access is wrapped and every failure is "no save". */
@@ -6573,6 +6767,8 @@ function saveState() {
       mi: MAP_INTRO_SEEN,
       ab: AV_BEACON_SPENT,                                       /* T13 */
       pr: PRE_HOW_SEEN,                                          /* T11 */
+      am: ASK_MK_SEEN,                                           /* BUILD-IB 9 */
+      tt: TCTAP_SEEN,                                            /* BUILD-IB 10 */
       snd: SND_ON,                                               /* SOUND */
       qb: QBAR_SHOWN,                                            /* T27 */
       profile: PROFILE
@@ -6628,6 +6824,10 @@ function restoreSave() {
      it is the shipped default. Sound is off until somebody asks for it. */
   SND_ON          = s.snd === true;                              /* SOUND */
   QBAR_SHOWN      = s.qb === true;                               /* T27 */
+  /* BUILD-IB · the two schedules, coerced on the same terms as the five
+     above: a malformed value re-instructs once and can never cost a run. */
+  ASK_MK_SEEN     = s.am === true;                               /* BUILD-IB 9 */
+  TCTAP_SEEN      = s.tt === true;                               /* BUILD-IB 10 */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
