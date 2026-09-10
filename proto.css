@@ -3615,7 +3615,12 @@ body.no-ph .ph{ display:none !important; }
   position:absolute; left:50%; top:calc(50% - 1.5px); z-index:3;
   transform:translate(-50%, -50%);
   display:block; pointer-events:none;
-  filter:url(#dcw-sm);
+  /* T41 · NO DIE-CUT ON THE NODE ICONS. The white dilate was separating a
+     set of flat objects from the cream disc; the replacement six carry
+     their own edge, and the outline now reads as a sticker border round
+     art that is not a sticker. #dcw-sm stays defined in index.html and
+     stays on its five other users -- this is the only selector that drops
+     it. span.node-ico's drop-shadow is the emoji fallback and is untouched. */
 }
 /* the emoji fallback has no die-cut to give it — it is a glyph, not art */
 span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.28)); }

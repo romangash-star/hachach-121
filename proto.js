@@ -2117,7 +2117,7 @@ function claimArt() {
        drawn at 128 CSS px, which is 1:1 and therefore a 3x UPSCALE on a 3x
        phone — and it is the fallback for 14 of the 16 issues, so it is what
        most claim cards actually show. width/height stay the CSS size. */
-    return '<div class="b1art b1art--topic"><img src="' + ROOT + (T_['576'] || T_['384'] || T_['128']) +
+    return '<div class="b1art b1art--topic"><img src="' + ROOT + (T_['576'] || T_['512'] || T_['384'] || T_['128']) +
       '" alt="" width="' + w.toFixed(0) + '" height="' + h.toFixed(0) + '"></div>';
   }
   /* no object either: the slot still holds its box, so the card cannot
@@ -3102,7 +3102,12 @@ function lawModal() {
      384 then 256 stay underneath as fallbacks, so a topic missing the
      576 still draws rather than rendering an empty hero. */
   const T_ = M.topics && M.topics[issue.topic];
-  const h = T_ && (T_['576'] || T_['384'] || T_['256']);
+  /* T41 · 512 SITS IN THE CHAIN because the replacement topic art tops
+     out there. Without it a re-arted topic falls past 384 to 128 and
+     draws a 128px file at 190 CSS px -- the exact defect the note above
+     says was the worst-served surface in the audit. Topics that still
+     have a 576 are unaffected: it is first in the chain. */
+  const h = T_ && (T_['576'] || T_['512'] || T_['384'] || T_['256']);
   return stickerModal({
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
