@@ -3957,7 +3957,15 @@ function tapAffordance(ov) {
   const hint = el('div', 'tctap',
     '<span>' + esc(t('tapNext')) + '</span>' +                       /* TAMAR · COPY.tapNext */
     '<span class="tctap__c" aria-hidden="true">›</span>');
-  ov.appendChild(hint);
+  /* T38 · IT HANGS OFF THE BAND, NOT OFF THE OVERLAY. The prompt is about
+     the line the band carries, and at the foot of the surface it was
+     thirty-odd centimetres of empty ground away from it. .bandslot is
+     position:relative and exists from beat 2's build, so it is here by
+     the time this runs (armNext 900 -> bill settles 1260 -> this at 1300).
+     THE OVERLAY IS THE FALLBACK, not a second layout: if beat 3 ever
+     stops carrying a band, the prompt still appears rather than being
+     dropped on the floor by a missing selector. */
+  ($('.bandslot', ov) || ov).appendChild(hint);
   requestAnimationFrame(() => requestAnimationFrame(() => hint.classList.add('is-in')));
 }
 /* the same gate askMkDue() uses, and deliberately the same shape: an

@@ -5853,27 +5853,52 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
    THE BREATHE STAYS. It is the surface's is-alive signal and it never
    depended on the pill; on type it reads as a nudge rather than as a
    button trying to be pressed. */
+/* =====================================================================
+   T38 · THE PILL COMES BACK, AND IT MOVES UNDER THE BAND.
+
+   THIS IS THE PRE-BUILD-IB TREATMENT, RESTORED RATHER THAN REDESIGNED.
+   Every value below is the one that shipped before BUILD-IB §6 stripped
+   it: --paper fill, ink type, the 3px white die-cut, the 2px keyline and
+   the 3px hard offset, 9/18/10 padding on a 999px radius, 15px at 900.
+   A third treatment invented here would be a third thing to keep in step
+   with .v-a and .p-c, and the object it has to belong to has not changed.
+
+   BUILD-IB's ARGUMENT WAS RIGHT AND ITS CONCLUSION WAS NOT. The premise
+   holds: this element carries pointer-events:none, it cannot be clicked,
+   and the whole surface is the target. What the stripped version proved
+   is that removing the surface does not make that legible -- it makes
+   the prompt read as leftover text at the foot of an empty screen. The
+   honest fix for "it looks like a control it is not" turns out to be
+   POSITION, not costume: attached to the band it is about rather than
+   stranded at the foot where only buttons live.
+   CREAM, NEVER YELLOW. Yellow is the action colour and every yellow
+   object in this game does something when pressed. This one does not.
+
+   ── IT HANGS OFF THE BAND'S SLOT ─────────────────────────────────────
+   Anchored to .bandslot rather than to the overlay, so the pill is
+   positioned by the object it belongs to and follows it wherever the
+   column puts it. ABSOLUTE, NOT IN FLOW, and that is deliberate: a flow
+   child would grow .ovpane--bill from 53px to ~112 and .ovpane centres
+   its pane, so the band itself would rise ~30px. The band is the
+   surface's one kraft object and it does not move for a prompt.
+   THE GAP IS THE COLUMN'S OWN --sp-4, not a number invented here.
+   ===================================================================== */
 .tctap{
   position:absolute; z-index:10; left:50%; translate:-50% 0;
-  bottom:calc(26px + env(safe-area-inset-bottom));
+  top:calc(100% + var(--sp-4));
   display:inline-flex; align-items:center; gap:9px;
-  margin:0; padding:0; border:0; background:none; border-radius:0; box-shadow:none;
-  /* --font-body, not --font-display: same SimplerPro family, but the
-     display token is annotated "weight 900" in hachach.css and this line
-     is 400. Same convention .qbar already follows. */
-  font-family:var(--font-body); font-weight:400; font-size:15px;
-  color:var(--paper);
-  text-shadow:0 1px 3px rgba(0,0,0,.95),
-              0 0 9px rgba(0,0,0,.9),
-              0 0 2px rgba(0,0,0,.9);
+  padding:9px 18px 10px; border-radius:999px;
+  background:var(--paper); color:var(--ink);
+  border:3px solid var(--edge);
+  box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
+  font-family:var(--font-display); font-weight:900; font-size:15px;
   white-space:nowrap; pointer-events:none;
   opacity:0; transform:translateY(10px);
   transition:opacity var(--t-tc-next) linear, transform var(--t-tc-next) var(--e-land);
 }
 .tctap.is-in{ opacity:1; transform:none; animation:tc-tap 2000ms ease-in-out 600ms infinite; }
-/* the chevron is the line's own character now, not a second object on a
-   plate: same weight, same shadow, one step up in size so it still reads
-   as a direction rather than as punctuation. */
+/* the chevron, one step up in size so it reads as a direction rather
+   than as punctuation. Unchanged since before BUILD-IB. */
 .tctap__c{ display:block; font-size:17px; line-height:1; }
 @keyframes tc-tap{
   0%,100%{ transform:translateY(0)   }
