@@ -1150,31 +1150,91 @@ function newRound(issueId) {
   machineMs = 0;
 }
 
-/* ===================== HAPTICS · §5 ================================
-   navigator.vibrate behind a capability check, and that check is the whole
-   feature on half the devices this ships to: iOS SAFARI DOES NOT IMPLEMENT
-   THE VIBRATION API AT ALL. On an iPhone every call here is a no-op — not
-   a silent failure to fix, just absent. It is testable on Android only.
+/* ===================== HAPTICS · §5, after O2 ======================
+   iOS SAFARI DOES NOT IMPLEMENT THE VIBRATION API AT ALL. Confirmed
+   against MDN's browser-compat-data: safari is version_added:false and
+   safari_ios mirrors it. On an iPhone every call here is absent — not a
+   silent failure to fix. Android only, and that has not changed.
 
-   Three events, and only three. A press is 10ms, the drag crossing its
-   commit threshold is 10ms — the same event, felt at the moment the
-   gesture becomes a decision — and the verdict stamp landing is 25ms,
-   because it is the one moment the game asserts something.
+   THREE EVENTS, AND NOW THE FILE MEANS IT. This comment used to say
+   "three events, and only three" while ten call sites existed: every
+   button press, the drag crossing, both stamps, the banner handoff, the
+   finale flare, the 121st, the coin flight and a carousel step. An
+   instrumented round measured FOURTEEN pulses on a five-card cascade —
+   about 370 a session over 22 rounds. A tick on every tap is not
+   feedback, it is a texture the player eventually escapes by turning
+   vibration off at the OS, which costs them every other app on the
+   phone. O2 is the subtraction. What is left is below, and the table IS
+   the list.
 
-   NOTHING ON BEAT 2, and not because it would be a small buzz: beat 2 is
-   the player's own opinion, §1.4d says it is never scored and never
-   rewarded, and a haptic is the most primitive reward the phone has.
-   Buzzing there would say "good answer" to a question that has none. */
+   ── THE TABLE IS THE GUARD ─────────────────────────────────────────
+   buzz() takes the NAME of an event, never a duration. A call that does
+   not name one of these three does nothing, so the rule is enforced by
+   identity rather than by a clock.
+   THAT IS WHAT CLOSED THE BEAT-2 ESCAPE. The old guard was
+   `if (S.beat === 2) return`, and the banner handoff defeated it by
+   arithmetic: it is scheduled at tcTravelAt + tcTravel = 1120ms while
+   beat3() starts at tcNextAt = 900ms, so the pulse landed 220ms after
+   the counter ticked over, wore beat 3's number and fired. Measured, in
+   the instrumented timeline, as `7037ms 18ms beat 3`. It was rewarding
+   the player's own vote — the one input §1.4d says is never scored,
+   never rewarded and never compared to a correct answer.
+   The beat check is GONE rather than hardened. A guard that asks what
+   time it is can always be beaten by something scheduled later; a guard
+   that asks what the pulse IS cannot. There is no event named for beat 2
+   in this table, so no call from beat 2 can fire — including one that
+   arrives after the beat has advanced.
+
+   CAN_BUZZ IS A PRESENCE CHECK AND NOTHING MAY BRANCH ON IT AS THOUGH IT
+   MEANT MORE. `typeof navigator.vibrate === 'function'` is true on a
+   MacBook with no vibration motor — measured. navigator.vibrate() also
+   RETURNS true there, so the return value is no better: true means the
+   call was accepted, never that the phone buzzed. Firefox Android is the
+   proof by counter-example — vibration is disabled outright and it still
+   returns true. There is no way to feature-detect a haptic, so nothing
+   in this app may show, hide, promise or explain anything on the
+   strength of it.
+
+   IT RIDES THE SOUND SWITCH. See sndOn(): one control for both channels,
+   because both are the same request — do not make my phone do things.
+   ===================================================================== */
 const CAN_BUZZ = typeof navigator !== 'undefined' &&
                  typeof navigator.vibrate === 'function';
-function buzz(ms) {
+/* every permitted haptic in the game. Adding a line here is the review
+   point; there is deliberately no way to buzz without adding one. */
+const BUZZ = Object.freeze({
+  /* beat 1 · the verdict stamp hitting the claim card */
+  claimStamp: 25,
+  /* beat 4 · the verdict stamp hitting an MK card, cascade and inverted
+     round alike — one event, two call sites, one number */
+  mkStamp:    25,
+  /* beat 5 · the player's vote landing on the finale board as the 121st.
+     NOT a reward for the vote: the board is stating the count, and the
+     121st seat is the title of the game enacted rather than described. */
+  the121st:   18,
+});
+function buzz(event) {
   if (!CAN_BUZZ) return;
-  if (S && S.beat === 2) return;            /* §5 categorical */
-  try { navigator.vibrate(ms); } catch (e) {}
+  /* THE GUARD: an unnamed event is not a haptic.
+     hasOwnProperty.call rather than `in`, so BUZZ's inherited keys are
+     not names — 'toString', 'constructor' and '__proto__' are all
+     refused, verified. The typeof is not belt-and-braces either: a
+     property lookup stringifies its key, so ['mkStamp'] would otherwise
+     coerce to 'mkStamp' and fire. No call site passes an array, but a
+     guard that can be walked past by coercion is not one. */
+  if (typeof event !== 'string') return;
+  if (!Object.prototype.hasOwnProperty.call(BUZZ, event)) return;
+  /* O2 · the same switch that governs sound. Off by default, because
+     that is where sound ships and this is the louder of the two. */
+  if (!sndOn()) return;
+  try { navigator.vibrate(BUZZ[event]); } catch (e) {}
 }
-/* one call site for every pressable thing, so the rule cannot be applied
-   to some buttons and forgotten on others */
-function pressable(node) { node.addEventListener('pointerdown', () => { unlockAudio(); buzz(10); }); return node; }
+/* one call site for every pressable thing. It carries the AUDIO UNLOCK
+   and only that now — O2 took the 10ms press tick off it, which was 7 of
+   the 14 pulses in a round on its own. The unlock has to stay here: iOS
+   will not play anything until the gesture that creates the context, and
+   this is the single place every pressable thing in the app passes. */
+function pressable(node) { node.addEventListener('pointerdown', () => { unlockAudio(); }); return node; }
 
 /* ===================== SOUND · THE FOLEY SET =========================
    FOLEY, NOT UI SOUNDS. Everything on screen is a physical object, so the
@@ -1236,6 +1296,11 @@ const SFX_TICK_MIN = 55;
 /* ?sound=on / ?sound=off FORCE the preference WITHOUT writing it, on the
    same terms as ?intro, ?mapintro, ?beacon and ?prehow: a switch that
    exists to look at something must not spend the player's real state. */
+/* O2 · TWO CHANNELS READ THIS, NOT ONE. sfx() asks it before playing and
+   buzz() asks it before vibrating. The name stays `snd` — renaming a
+   shipped save field to gain a synonym would cost every existing save
+   for nothing — but what it means is now "make my phone do things", and
+   the toggle's label says both out loud. */
 function sndOn() {
   return DEV.sound !== null ? DEV.sound : SND_ON;
 }
@@ -2171,8 +2236,13 @@ function wireSwipe(card, tgt, prev) {
        crossing itself — not on every frame past it, which would be a
        rattle rather than a signal. It fires on the way in and re-arms on
        the way back out, so a drag that hesitates on the line says so. */
+    /* O2 · THE CROSSING NO LONGER BUZZES. It was defensible -- the moment
+       a gesture becomes a decision -- but it duplicates the claim stamp
+       ~600ms later and only one of the two can be the moment. The stamp
+       is the one the game asserts; this is the player still moving. The
+       `crossed` latch stays: it is what keeps the state once-per-drag. */
     const over = Math.abs(dx) > TH;
-    if (over !== crossed) { crossed = over; if (over) buzz(10); }
+    if (over !== crossed) { crossed = over; }
     /* ONLY THE TOP CARD TRANSFORMS. The stage, the pile and the ground
        are never touched. */
     const k = dx / scale();
@@ -2421,7 +2491,7 @@ async function claimReveal(ans, card) {
      190ms fall and its 1.8/1.06 landing; only the MK card's stamp was
      asked to land harder. Its contact stays --t-stamp-drop. */
   inkBleed();
-  setTimeout(() => buzz(25), T.stampDrop);
+  setTimeout(() => buzz('claimStamp'), T.stampDrop);
 
   /* the correctness chip, in the chyron slot — a different plane from
      the card, so it cannot be read as part of the stamp */
@@ -3818,10 +3888,16 @@ function tachlesTransition(btn, ov) {
 
   /* the hand-off. The real banner appears in the same place on the same
      frame the flying one is removed, so there is no gap and no fade. */
+  /* O2 · THIS IS THE PULSE THAT ESCAPED THE BEAT-2 GUARD, and it is
+     gone. It fired at tcTravelAt + tcTravel = 1120ms while beat3() starts
+     at tcNextAt = 900, so it wore beat 3's number and passed a check that
+     reads S.beat. What it celebrated is the player's own vote arriving on
+     the banner -- exactly the input §1.4d says is never rewarded. The
+     banner still pins and the flying chip still hands off; only the pat
+     on the back goes. */
   setTimeout(() => {
     pinVote(vote);
     cal.remove();
-    buzz(18);
   }, T.tcTravelAt + T.tcTravel);
 }
 
@@ -4654,7 +4730,7 @@ async function verdict(guess, foot, card) {
      is the frame the disc actually hits the card, and the jolt is keyed to
      the same number. The buzz and the hit are one event or neither.
      ITEM 7 moved that frame 190 -> 200ms, so all three moved together. */
-  setTimeout(() => buzz(25), T.stampDropMk);
+  setTimeout(() => buzz('mkStamp'), T.stampDropMk);
 
   const table = COIN_TABLES[DEV.coins];
   /* §4 THE COINS LEAVE THE STAMP. Fired after the stamp has fully landed
@@ -4830,7 +4906,7 @@ async function invResolve(pid, foot, card, btn) {
   /* ITEM 7 · the inverted round stamps the same MK card with the same
      disc, so it lands on the same 200ms contact as the cascade's. */
   inkBleed(T.stampDropMk);
-  setTimeout(() => buzz(25), T.stampDropMk);
+  setTimeout(() => buzz('mkStamp'), T.stampDropMk);
 
   /* the floor plus the decaying bonus, paid from the stamp like every
      other cascade award — and shown for the first time here */
@@ -6240,7 +6316,6 @@ function runCount(board, tally) {
         held = true; holdUntil = now + T.f5Flare;
         paint(Math.round(tally.for * p), Math.round(tally.against * p));
         maj.classList.add('is-flare');
-        buzz(18);
         return requestAnimationFrame(tick);
       }
       const nf = Math.round(tally.for * p), na = Math.round(tally.against * p);
@@ -6365,7 +6440,7 @@ function tickVote(board, tally) {
       cols.forEach(d => d.classList.add('is-up'));
       if (bar) bar.classList.add('is-plus1');
       paintBar();
-      buzz(18);
+      buzz('the121st');
       /* SOUND · THE 121ST VOTE, in the silence the beat leaves for it.
          Everything about the +1 already fires on one frame on purpose;
          this is the fifth thing on that frame. */
@@ -6426,7 +6501,7 @@ function flyToken(slot) {
       fly.style.transition = 'transform ' + T.f5Flight + 'ms var(--e-land)';
       fly.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) +
                             'px) scale(' + k.toFixed(3) + ')';
-      setTimeout(() => { land(); fly.remove(); buzz(18); done(); }, T.f5Flight);
+      setTimeout(() => { land(); fly.remove(); done(); }, T.f5Flight);
     }));
   });
 }
@@ -8000,9 +8075,17 @@ function spendAvBeacon() {
    sits 2px from the box edge and the set smears; the slashed state is the
    more legible of the two because the slash REPLACES the arcs rather than
    adding to them. So the on-state carries one. */
+/* O2 · ONE SWITCH, BOTH CHANNELS, AND THE LABEL HAS TO SAY SO. Haptics
+   ride sndOn() now — see buzz(). The control did not change, the glyph
+   did not change and the flag did not change; what changed is what the
+   switch governs, so the only honest move is to name the second channel
+   in the string. רטט is the standard word and the label stays literal:
+   this is a screen-reader name, not a slogan.
+   THE FLAG CARRIES BOTH. `snd` in the save is one boolean and it did not
+   need a second — see setSound(). */
 const SND_LBL = {
-  off: 'הפעלת צלילים',                                          /* TAMAR */
-  on:  'השתקת צלילים'                                           /* TAMAR */
+  off: 'הפעלת צלילים ורטט',                                     /* TAMAR · O2 */
+  on:  'השתקת צלילים ורטט'                                      /* TAMAR · O2 */
 };
 /* the fade-up is ONE-SHOT PER SESSION rather than once-ever, and that is
    the one place this departs from T13. T13 spends its flag in the save;
@@ -8036,6 +8119,10 @@ function setSound(on) {
   SND_ON = !!on;
   if (DEV.sound === null) saveState();
   if (SND_ON) { unlockAudio(); sfxLoad(); }
+  /* O2 · NOTHING TO ARM ON THE HAPTIC SIDE. buzz() reads sndOn() at the
+     moment it fires, and the Vibration API needs no context, no decode
+     and no preload — only sticky activation, which the tap that flipped
+     this switch has already given the page. */
   paintSndToggle();
 }
 
@@ -8062,10 +8149,16 @@ function buildSndToggle() {
    control is removed from the beat at every width: a mute button that
    overlaps a vote button on some phones and not others is worse than one
    that is simply not on this screen.
-   BEAT 2 IS ALSO THE ONE BEAT THAT OWES THE PLAYER NOTHING. buzz()
-   already refuses here — "the player's own opinion is never scored" —
-   and the toggle is the only chrome on the screen that is not part of
-   the question being asked.
+   BEAT 2 IS ALSO THE ONE BEAT THAT OWES THE PLAYER NOTHING, and the
+   toggle is the only chrome on the screen that is not part of the
+   question being asked.
+   O2 · THE REASON GIVEN HERE USED TO BE "buzz() already refuses here",
+   AND THAT WAS NEVER RELIABLE. The refusal was a beat-number check and
+   the banner handoff walked straight past it by landing 220ms after the
+   beat advanced. buzz() now refuses by identity — there is no event
+   named for beat 2 in its table — so the sentence is true for a
+   different and much better reason. The collision argument above is what
+   removes the toggle from this beat regardless.
    IT IS NOT STRANDED. The same control is on the map and on beats 1, 3,
    4 and 5, which is every other surface that has it. */
 function sndToggleShown(screen) {
@@ -9925,7 +10018,8 @@ async function egBeat4() {
       d.classList.toggle('is-on', j === i);
       d.setAttribute('aria-selected', j === i);
     });
-    if (!silent) buzz(10);
+    /* O2 · a carousel step is navigation, not an event. The dots and the
+       snap already say which card is current. */
   };
   /* the swipe. pointer events, one finger, a 40px threshold; the rail
      follows the finger and snaps on release. touch-action:pan-y in CSS
