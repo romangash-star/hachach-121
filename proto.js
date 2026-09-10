@@ -6785,6 +6785,24 @@ function exitRound() {
    THREE WAYS TO CANCEL AND ONE TO PROCEED, unchanged from the round's:
    the ✕, the ground and the stay button all dismiss; only `go` goes.
    Every ambiguous gesture resolves toward not losing the thing.
+
+   T35c · THE YELLOW IS NOT IN THE SAME PLACE ON ALL THREE SHEETS, AND
+   THAT ASYMMETRY IS THE DESIGN. Do not "fix" it into consistency.
+     · This sheet — leaving a round, restarting an allocation — puts the
+       DESTRUCTIVE verb on the primary. What is lost is one round or one
+       screen's worth of taps, both of which the player can simply do
+       again, so the sheet's job is to confirm quickly and get out of the
+       way.
+     · resetConfirm() — the whole game — inverts it: .rs__safe (keep
+       playing) is the yellow primary and .rs__go (wipe) is demoted below
+       the perforation, ringed and unlifted. What is lost there is the
+       whole run and it cannot be re-earned.
+   The rule the pair encodes: THE MORE SEVERE THE LOSS, THE MORE THE
+   PRIMARY DEFENDS AGAINST IT. A sheet whose yellow always meant "yes"
+   would make the gravest button in the game the easiest one to hit.
+   The HEAD is the half that is shared — same box, same ✕, same centred
+   title and consequence line as of T35c. The FOOT is where the two
+   deliberately part.
    ===================================================================== */
 function confirmSheet(o) {
   const sh = el('div', 'exitsheet');
