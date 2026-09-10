@@ -7444,7 +7444,27 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    a 0px layout difference. Its ring moves outside here (v29f). Icons
    trail — last in the DOM, so RTL puts them at the physical left edge —
    at 21px, 18px in from that edge on both. */
-.sh-acts{ margin-top:14px; display:flex; flex-direction:column; gap:10px; flex:none; }
+/* T37 · 3 · ONE ROW. Stacked, these two were 64.5 + 10 + 54 = 128.5px of
+   the screen's height for two controls that do the same kind of thing to
+   the same object. Side by side they are 64.5, and the 64px that frees
+   goes to the track, which is flex:1 and takes it without being told. */
+.sh-acts{ margin-top:14px; display:flex; flex-direction:row; gap:10px; flex:none; }
+/* EQUAL HALVES, AND THAT IS A MEASUREMENT RATHER THAN A PREFERENCE.
+   The brief asked for the primary to stay wider. It cannot, and the
+   arithmetic is short: at 19px, שמירה לגלריה is 115.7px of ink against
+   שיתוף's 52.5, and each button also carries a 21px icon, a 9px gap and
+   its padding. For the yellow to be the wider of the two it has to be at
+   least as wide as save NEEDS, which puts the row at 2x save's minimum —
+   315.4px at 12px padding, against 318px of usable row at 360. That
+   leaves 2.6px to distribute, i.e. a lead of under 1%, which is not a
+   lead. At 36px padding, the value this rule replaced, it was 363.4px
+   against 318 and the row did not fit at all.
+   SO THEY ARE EQUAL, AND THE PRIMARY LEADS BY FILL INSTEAD. It is the
+   only yellow object on the screen and the only one with an extrusion;
+   save is an outline on the same ground. That hierarchy was never
+   carried by width. Reported rather than resolved — if the lead has to
+   be geometric, the copy is what has to move. */
+.sh-acts .sh-b{ flex:1 1 0; width:auto; min-width:0; }
 /* v30c · 49 -> 54. The two actions are the end of the run and were the
    shortest buttons in the sequence. */
 /* T25c · ONE PRIMARY PRESS ACROSS ALL FOUR SCREENS. The picker is the
@@ -7453,11 +7473,25 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
    trained three times changed size on the fourth. The SHARE button takes
    .eg-go's height; SAVE keeps 54 and becomes a visible secondary, which
    is what it always was in the hierarchy and now looks like it. */
-.sh-b{ height:54px; min-height:0; width:100%; box-sizing:border-box; padding:0 18px;
-       display:flex; align-items:center; justify-content:space-between; gap:9px;
+/* T37 · 3 · ONE HEIGHT, AND IT IS THE PRIMARY'S. What made them differ
+   was this rule: 54px here and a 64.5px override on --share, added by
+   T25c so the ending's primary press was the same size on all four
+   screens. That argument holds for the SHARE button and is why 64.5 is
+   the survivor; what it never covered was the sibling beside it, and
+   stacked at 64.5 over 54 the pair read as one control and one
+   afterthought. Side by side, two different heights would read as a
+   rendering fault. The override is gone and the base is 64.5.
+   PADDING 18 -> 12. Forced, not preferred: at 18 the two labels plus
+   their icons need 300.2px of a 318px row at 360 and the row has no
+   room to breathe; 12 takes it to 252.2 and gives each label its own
+   clearance. See the arithmetic on .sh-acts above.
+   THE CONTENT IS CENTRED AS A GROUP. space-between pushed the label to
+   the middle of the free space and the icon hard against the edge, which
+   is what "beside its label" is not. */
+.sh-b{ height:64.5px; min-height:0; width:100%; box-sizing:border-box; padding:0 12px;
+       display:flex; align-items:center; justify-content:center; gap:9px;
        font-size:19px; line-height:1; }
-.sh-b.sh-b--share{ height:64.5px; }
-.sh-b .sh-bl{ flex:1; text-align:center; white-space:nowrap; }
+.sh-b .sh-bl{ flex:0 1 auto; text-align:center; white-space:nowrap; }
 .sh-ico{ width:21px; height:21px; flex:none; display:block; line-height:0; }
 .sh-ic{ width:21px; height:21px; display:block; }
 .r-b.sh-b{ box-shadow:0 0 0 2.5px var(--paper), 0 0 0 4.6px var(--keyline), 0 4px 0 rgba(0,0,0,.34);
