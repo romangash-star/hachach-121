@@ -2119,7 +2119,7 @@ function claimArt() {
        drawn at 128 CSS px, which is 1:1 and therefore a 3x UPSCALE on a 3x
        phone — and it is the fallback for 14 of the 16 issues, so it is what
        most claim cards actually show. width/height stay the CSS size. */
-    return '<div class="b1art b1art--topic"><img src="' + ROOT + (T_['576'] || T_['384'] || T_['128']) +
+    return '<div class="b1art b1art--topic"><img src="' + ROOT + (T_['576'] || T_['512'] || T_['384'] || T_['128']) +
       '" alt="" width="' + w.toFixed(0) + '" height="' + h.toFixed(0) + '"></div>';
   }
   /* no object either: the slot still holds its box, so the card cannot
@@ -3104,7 +3104,12 @@ function lawModal() {
      384 then 256 stay underneath as fallbacks, so a topic missing the
      576 still draws rather than rendering an empty hero. */
   const T_ = M.topics && M.topics[issue.topic];
-  const h = T_ && (T_['576'] || T_['384'] || T_['256']);
+  /* T41 · 512 SITS IN THE CHAIN because the replacement topic art tops
+     out there. Without it a re-arted topic falls past 384 to 128 and
+     draws a 128px file at 190 CSS px -- the exact defect the note above
+     says was the worst-served surface in the audit. Topics that still
+     have a 576 are unaffected: it is first in the chain. */
+  const h = T_ && (T_['576'] || T_['512'] || T_['384'] || T_['256']);
   return stickerModal({
     title: issue.bill_title || '',
     meta:  issue.bill_date || '',
@@ -7741,6 +7746,45 @@ function nodeHTML(t, i, h, cur) {
     face = '<span class="node-ico" aria-hidden="true">' + t.icon + '</span>';
   }
 
+  /* T44 · THE BASE CARRIES THE HUE, AT THE VALUE IT ALREADY HAD.
+   --node-fill stays #2E2A26 for all six -- §3.2 above settled that and its
+   reasoning holds -- so the icon's ground never moves and no contrast
+   ratio on the disc changes. Only the EXTRUSION is tinted.
+
+   ISO-LUMINANT, AND THAT IS THE WHOLE TRICK. The base survives the map's
+   gradient today for one reason: at L=0.0073 it is darker than the
+   gradient's darkest stop (#8E2A2E, L=0.0760), so it separates everywhere
+   the node scrolls. The gradient is on .stage and the nodes scroll THROUGH
+   it, so a base that is merely "dark" is not enough -- it has to be below
+   the whole range. Every mix of the topic hue into the base lifts it into
+   that range and loses the edge somewhere on the scroll: colour-mixed at
+   20% the worst case falls to 1.34, and --tc-shade's own 78%/black lands
+   religion at L=0.388, a gold rim that vanishes against the gold end.
+   So the hue is rotated at CONSTANT luminance instead. Each base is the
+   topic colour scaled until its relative luminance equals the old base's,
+   which makes every contrast ratio -- against the face, against all four
+   gradient stops -- arithmetically identical to what shipped. */
+/* T44b · 0.00726 was the old base's own luminance -- iso-luminant, so every
+   ratio was identical to what shipped. Lifted to 0.0110, which buys about
+   31% more chroma for a worst-case-against-the-gradient of 2.07 against
+   the old 2.20. 0.0130 was on the table at 2.00 and was refused: the node
+   scrolls the full gradient, so the worst case is met on every scroll and
+   not occasionally. The bound is the darkest stop, #8E2A2E at L 0.0760. */
+const NODE_BASE_L = 0.0110;
+function tintBase(hex) {
+  const h = hex.replace('#', '');
+  const c = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = v => 0.2126 * lin(v[0]) + 0.7152 * lin(v[1]) + 0.0722 * lin(v[2]);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    if (L(c.map(x => x * m)) < NODE_BASE_L) lo = m; else hi = m;
+  }
+  const m = (lo + hi) / 2;
+  return '#' + c.map(x => Math.round(Math.min(255, x * m)).toString(16).padStart(2, '0')).join('');
+}
+
   /* the face's centre inside the box: the path threads the DISC, not the
      ring, so this is what the node is positioned by */
   const fcy = parseFloat(CSVAR('--node-face-y')) + parseFloat(CSVAR('--node-face')) / 2;
@@ -7749,7 +7793,8 @@ function nodeHTML(t, i, h, cur) {
       'style="left:calc(' + (NODE_X(i) * 100).toFixed(2) + '% - ' + G.c + 'px);top:' +
       (cy - fcy) + 'px;--tc:' + t.color +
       ';--tc-face:' + t.color +
-      ';--tc-shade:color-mix(in srgb,' + t.color + ' 78%,#000)">' +
+      ';--tc-shade:color-mix(in srgb,' + t.color + ' 78%,#000)' +
+      ';--node-base:' + tintBase(t.color) + '">' +
     '<span class="ringnode">' +
       '<svg class="ring" viewBox="0 0 ' + G.box + ' ' + G.box + '" aria-hidden="true">' +
         '<g transform="rotate(-90 ' + G.c + ' ' + G.c + ')">' +
@@ -7757,7 +7802,11 @@ function nodeHTML(t, i, h, cur) {
       '<button type="button" class="node-face" ' +
         'aria-label="' + esc(t.label + ' — ' + segs + ' מתוך ' + n) + '">' +
         face +
-        '<span class="node-num" aria-hidden="true">' + (i + 1) + '</span>' +
+        /* T42 · NO ORDINAL BADGE. It carried the map index and nothing
+           else -- no state variant, no aria (it was aria-hidden), no
+           handler. The four states are already carried between the ring's
+           segments, the current node's keyline and halo, .node-check and
+           the status line, so there was nothing to migrate off it. */
         (done ? '<span class="node-check" aria-hidden="true">✓</span>' : '') +
       '</button>' +
     '</span>' +
@@ -9731,6 +9780,11 @@ const SH_ICON = {
   spin:  '<span class="sh-spin" aria-hidden="true"></span>',
 };
 const SH_SRC = {
+  /* T43 · the coin joins the inlined set. It has to: the pill's coin is an
+     <img> precisely so shExport() can rewrite its src to base64, the way
+     the chair and the logos are. A CSS url() inside @ec-start/@ec-end
+     cannot resolve inside the export's data: SVG. */
+  coin:    'assets/coin_128.webp',
   chair:   'assets/mk/knesset_chair_300_shadow.webp',  /* the BAKED shadow — see the note at .ec-c-chair */
   logo:    'assets/share/logo-mono-900.png',
   logoInk: 'assets/share/logo-mono-900-ink.png',       /* pre-inked for kraft; no filter */
@@ -9783,10 +9837,14 @@ function shPillsHTML(aspect) {
            '<span class="ec-pill__n">' + esc(x.t.label) + '</span>' +
            '<span class="ec-pill__r"></span>' +
            '<span class="ec-pill__c">' + shNum(x.v) +
-             /* THE COIN IS .coin-t, THE REAL TOKEN, restated in em so the
-                2/19 keyline and offset hold at every tier — proto.css:4760:
-                "a second coin drawn a second way would be a second currency" */
-             '<i class="coin-t ec-pill__coin" aria-hidden="true"></i></span>' +
+             /* THE COIN IS .coin-t, THE REAL TOKEN — proto.css:4760:
+                "a second coin drawn a second way would be a second currency".
+                T43 · it is now one IMAGE at every site rather than a disc
+                drawn four ways, so the em sizing carries the whole coin
+                across the tiers instead of a keyline that had to be
+                restated. An <img> rather than a background so shExport()
+                can inline it; see SH_SRC.coin. */
+             '<img class="coin-t ec-pill__coin" src="' + SH_SRC.coin + '" alt="" aria-hidden="true"></span>' +
          '</span>';
   });
   if (p.more) h += '<span class="ec-pill ec-pill--more">' + esc(SH_COPY.more) + ' ' + p.more + '</span>';
@@ -9863,9 +9921,10 @@ const shB64 = async url => {
 function shWarm() {
   if (SH_WARM) return SH_WARM;
   SH_WARM = (async () => {
-    const [black, regular, chair, logo, logoInk, cssText] = await Promise.all([
+    const [black, regular, chair, logo, logoInk, coin, cssText] = await Promise.all([
       shB64(SH_SRC.black), shB64(SH_SRC.regular),
       shB64(SH_SRC.chair), shB64(SH_SRC.logo), shB64(SH_SRC.logoInk),
+      shB64(SH_SRC.coin),
       fetch('proto.css').then(r => r.text()),
     ]);
     /* the card's own rules, cut from proto.css between the markers */
@@ -9874,7 +9933,8 @@ function shWarm() {
       "@font-face{font-family:'SimplerPro';src:url(" + black + ") format('woff2');font-weight:900}" +
       "@font-face{font-family:'SimplerPro';src:url(" + regular + ") format('woff2');font-weight:400}" +
       (m ? m[1] : '');
-    return { css, img: { [SH_SRC.chair]: chair, [SH_SRC.logo]: logo, [SH_SRC.logoInk]: logoInk } };
+    return { css, img: { [SH_SRC.chair]: chair, [SH_SRC.logo]: logo,
+                        [SH_SRC.logoInk]: logoInk, [SH_SRC.coin]: coin } };
   })();
   SH_WARM.catch(() => { SH_WARM = null; });      /* a failed warm is retried by the next call */
   return SH_WARM;

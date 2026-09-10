@@ -627,7 +627,15 @@ body{
   box-shadow:0 0 0 1.5px var(--keyline);
 }
 .hud-coins{ direction:ltr; }
-.hud-coins .coin-glyph{ color:var(--primary); font-size:13px; line-height:1; }
+/* T43 · THE COIN IS THE IMAGE, at every site. It was a text bullet here
+   and a CSS disc at the other three; ITEM 14's rule -- "a second coin
+   drawn a second way would be a second currency" -- now has one drawing
+   behind it rather than two. Cited by section, not by line: the number it
+   used to carry had already drifted to an unrelated rule.
+   13px is the box the ● occupied,
+   squared: the glyph advanced 12.5 wide on a 13 line, and a coin is
+   round, so the half-pixel goes back into the width. */
+.hud-coins .coin-glyph{ width:13px; height:13px; display:block; flex:none; }
 .hud-coins .num{ direction:ltr; unicode-bidi:isolate; }
 .hud-coins.is-awarding{ animation:coin-bump var(--t-coin) var(--e-out); }
 @keyframes coin-bump{ 0%,100%{transform:none} 35%{transform:translateY(-3px) scale(1.04)} }
@@ -3506,19 +3514,18 @@ body.no-ph .ph{ display:none !important; }
 .seg-off{ stroke:rgba(24,20,16,.42); }
 .seg-on { stroke:var(--paper); }
 
-/* §1 THE DISC CARRIES THE HUE, AND THE ICON SITS ON CREAM. This reverses
-   the neutral-dark disc: on device that lost the eight-hue topic system
-   entirely, floated the icons on near-black, and sank the extrusion into a
-   ground that was almost the same value as the base.
-   The hue is now the raw data.js topic colour rather than a wash of it, so
-   the disc reads as the topic from across the screen, and the base is that
-   colour multiplied to 78% — a flat multiply, so the hue is preserved
-   exactly and the seam between face and base cannot show. Against the
-   charcoal ground a saturated disc over a darker version of itself is the
-   same figure-on-ground the cards and chips use.
+/* T44 · §1 DELETED HERE. It described the disc as carrying the raw topic
+   hue with the base a 78% multiply of it — a treatment that was built and
+   then REVERTED, for the reasons §3.2 gives directly above. The comment
+   outlived the revert and contradicted both the code under it and §3.2,
+   which is exactly the way a reader gets sent the wrong way.
 
    DUOLINGO EXTRUSION, NOT A DROP SHADOW. Zero blur, zero spread, offset
-   straight down by the depth. */
+   straight down by the depth.
+   --node-base is the DEFAULT here and nodeHTML() overrides it per topic
+   with tintBase(): the topic's hue at a fixed luminance, slightly above
+   this one — see NODE_BASE_L. --node-fill is NOT overridden anywhere: one
+   ground for all six, per §3.2, so no icon's contrast moves. */
 .node{ --node-fill:#2E2A26; --node-base:#171412; }
 .node-face{
   position:absolute; left:var(--node-face-x); top:var(--node-face-y); z-index:2;
@@ -3618,27 +3625,26 @@ body.no-ph .ph{ display:none !important; }
   position:absolute; left:50%; top:calc(50% - 1.5px); z-index:3;
   transform:translate(-50%, -50%);
   display:block; pointer-events:none;
-  filter:url(#dcw-sm);
+  /* T41 · NO DIE-CUT ON THE NODE ICONS. The white dilate was separating a
+     set of flat objects from the cream disc; the replacement six carry
+     their own edge, and the outline now reads as a sticker border round
+     art that is not a sticker. #dcw-sm stays defined in index.html and
+     stays on its five other users -- this is the only selector that drops
+     it. span.node-ico's drop-shadow is the emoji fallback and is untouched. */
 }
 /* the emoji fallback has no die-cut to give it — it is a glyph, not art */
 span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.28)); }
 
-/* the two badges. The number is always there — nodes are numbered, and a
-   number that vanishes on completion stops being an address. */
-.node-num{
-  position:absolute; left:6px; bottom:6px; z-index:3;
-  width:24px; height:24px; border-radius:50%;
-  display:grid; place-items:center;
-  direction:ltr; font-family:var(--font-display); font-weight:900; font-size:14px;
-  background:var(--paper); color:var(--ink);
-  box-shadow:0 0 0 1.5px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.3);
-}
-/* THE BADGES CLEAR THE RING, halo included, and they still do at 15%.
-   24px inset 6px on an 87px face puts a badge's far corner 50.3px from
-   the RING centre — 51.8 with its 1.5px casing — against the ring's
-   54.5px inner edge. That is 2.7px of clearance where the board's
-   21/5 against r=50.5 had 1.7px, so the rule "nothing may overlap the
-   ring, shadows included" holds by a wider margin than before. */
+/* T42 · THE ORDINAL BADGE IS GONE. .node-num sat bottom-left carrying the
+   map index; it had no state variant, was aria-hidden, and nothing read it,
+   so removing it took no signal with it. The completion check below is now
+   the only badge on a node.
+   THE CHECK CLEARS THE RING, halo included, and it still does at 15%.
+   24px inset 6px on an 87px face puts its far corner 50.3px from the RING
+   centre — 51.8 with its 1.5px casing — against the ring's 54.5px inner
+   edge. That is 2.7px of clearance where the board's 21/5 against r=50.5
+   had 1.7px, so the rule "nothing may overlap the ring, shadows included"
+   holds by a wider margin than before. Geometry unchanged by T42. */
 .node-check{
   position:absolute; right:6px; bottom:6px; z-index:3;
   width:24px; height:24px; border-radius:50%;
@@ -3777,10 +3783,13 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    left:0/top:0 pins the origin; direction:ltr keeps it pinned if the
    offsets are ever dropped again. */
 .coinfly{ position:absolute; inset:0; z-index:60; pointer-events:none; direction:ltr; }
+/* T43 · ONE IMAGE, NO DISC UNDER IT. The fill, the radius and the inset
+   keyline are gone rather than left to render behind a transparent PNG --
+   the coin has its own edge and its own shadow baked in. Size and position
+   are untouched: this is a material swap, not a layout change. */
 .coin-t{
-  position:absolute; left:0; top:0; width:19px; height:19px; border-radius:50%;
-  background:var(--primary);
-  box-shadow:inset 0 0 0 2px rgba(0,0,0,.55), 0 2px 0 rgba(0,0,0,.3);
+  position:absolute; left:0; top:0; width:19px; height:19px;
+  background:url(assets/coin_128.webp) center/contain no-repeat;
   will-change:transform, opacity;
 }
 /* the chip's own acknowledgement, once per arrival */
@@ -6462,7 +6471,8 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
 /* =====================================================================
    ITEM 14 · THE ALLOCATION'S COINS
    THE SAME TOKEN, SMALLER. .coin-t is the award's 19px coin and this is
-   that object at 13px — same fill, same inset keyline, same hard offset —
+   that object at 13px — T43 · the same IMAGE now, where it used to be the
+   same fill, inset keyline and hard offset redrawn at a smaller size —
    because a second coin drawn a second way would be a second currency.
    It is a handful landing on a 56px row rather than a payment arriving at
    the HUD, so it reads at the size a handful is.
@@ -6471,9 +6481,10 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
    scrolling column needs — .eg-fx is inside the column and behind it
    (z-index 1 against .eg-col's 2), so a sprite hosted there would fly
    BEHIND the rows it is landing on. */
+/* T43 · the keyline scaled with the token when it was drawn; the image
+   carries its own, so this is size only now. */
 .coin-t--eg{
   width:13px; height:13px;
-  box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.55), 0 1px 0 rgba(0,0,0,.3);
 }
 /* the balance's own acknowledgement: it is the number that just went
    down, so it is the thing that reacts. One pulse, no travel — the
@@ -7721,14 +7732,22 @@ button.prof-hero:focus-visible{ outline:3px solid var(--primary); outline-offset
 .ec-pill__r{ width:3px; align-self:stretch; background:var(--ink); opacity:.16; flex:none; }
 .ec-pill__c{ font-weight:900; color:var(--ink-soft); display:inline-flex; align-items:center;
              gap:.28em; flex:none; font-variant-numeric:tabular-nums; }
-/* THE COIN IS .coin-t, THE REAL TOKEN (proto.css:2740 — 19px disc,
-   --primary fill, 2px inset keyline at 55%, 2px hard offset at 30%), here
-   in em so it follows the pill tier: keyline and offset stay at the
-   token's own 2/19 = 0.1053 of its diameter at every size. It is
-   border-radius + background + box-shadow — nothing in it is a filter. */
-.ec-pill .coin-t{ position:static; width:.72em; height:.72em; border-radius:50%; flex:none;
-                  background:var(--primary); will-change:auto;
-                  box-shadow:inset 0 0 0 .0758em rgba(0,0,0,.55), 0 .0758em 0 rgba(0,0,0,.3);
+/* THE COIN IS .coin-t, THE REAL TOKEN, here in em so it follows the pill
+   tier — the whole coin scales with the type instead of a keyline that had
+   to be restated at each one. T43 retired the drawn disc it used to
+   describe (19px, --primary fill, 2px inset keyline, 2px hard offset);
+   the image carries all of that itself. The margin-bottom below is the
+   optical seat on the digits and is the only thing still in token units. */
+/* T43 · AN <img> HERE, NOT A BACKGROUND, AND THAT IS LOAD-BEARING. This
+   rule is inside the @ec-start/@ec-end block, which is cut out and embedded
+   verbatim in the export's data: SVG -- a data: URL has no base, so a
+   url() in here resolves against nothing and the coin would be missing
+   from the saved PNG while looking correct on screen. Every other image on
+   this card is an <img> whose src shExport() rewrites to base64, and the
+   coin is now one too. `background:none` kills the .coin-t background it
+   would otherwise inherit, so there is exactly one coin drawn here. */
+.ec-pill .coin-t{ position:static; width:.72em; height:.72em; flex:none;
+                  background:none; will-change:auto;
                   margin-bottom:.0758em; }
 /* the player's own words: kraft, not paper, and the allocation screen's
    own ✎ — marked as authored without being dressed as a ninth topic */
