@@ -3977,8 +3977,6 @@ function tapAffordance(ov) {
 function tapDue() {
   if (DEV.tctap !== null) return DEV.tctap;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-  if (TCTAP_SEEN) return false;
-  TCTAP_SEEN = true; saveState();
   return true;
 }
 
@@ -6845,14 +6843,26 @@ let PRE_HOW_SEEN = false;
    been the repeated one and is left alone. */
 let ASK_MK_SEEN = false;
 
-/* BUILD-IB · 10 · AND THE TAP AFFORDANCE'S. Same pattern, same reason,
-   and cheap because of where the pill sits in the sequence: armNext()
-   fires beat3() at 900ms, the bill pane settles at 1260 and
-   tapAffordance() lands at 1300. The pill is a LATE STATE on a surface
-   the player is already reading, not a curtain in front of it -- so
-   withholding it removes a label and changes no timing. The held blur
-   and tc-breathe are untouched and still say the surface is alive. */
-let TCTAP_SEEN = false;
+/* T38b · THE TAP AFFORDANCE HAS NO SCHEDULE, AND ITS FLAG IS GONE.
+   BUILD-IB §10 withheld the pill after round one on the same terms as
+   .ask-st, and the argument was that a repeat player does not need to be
+   told to tap. That holds on a surface with other content. Beat 3 has
+   none: no chair, no title, no date -- a band over the deck's card back
+   under a 3px blur, and the pill was the only object saying the screen
+   was waiting for something. Withholding it did not make the beat
+   cleaner, it emptied it.
+   THE FLAG IS DELETED RATHER THAN LEFT UNUSED. With the gate gone
+   nothing read TCTAP_SEEN at all -- it would have been written on every
+   save and restored on every load to be consulted by nobody, which is
+   dead state that eventually gets reconnected by accident. Reinstating
+   the schedule means re-adding four sites, and the reason it was
+   reversed is a property of the beat rather than of the player.
+   .ask-st KEEPS ITS SCHEDULE. That one teaches a mechanic learned once,
+   and its surface carries a card, a face and a name -- see askMkDue().
+   REDUCED MOTION STILL SUPPRESSES IT, and that is not part of this
+   reversal: the pill's entrance is a transition and tc-tap is an
+   animation, so flattened to 1ms it appears from nowhere and sits still.
+   tapDue() keeps that branch and the DEV override above it. */
 
 /* the same fails-open contract as seenIntro(): private mode, a cleared
    store and a browser with storage disabled all have to leave the game
@@ -6887,7 +6897,6 @@ function saveState() {
       ab: AV_BEACON_SPENT,                                       /* T13 */
       pr: PRE_HOW_SEEN,                                          /* T11 */
       am: ASK_MK_SEEN,                                           /* BUILD-IB 9 */
-      tt: TCTAP_SEEN,                                            /* BUILD-IB 10 */
       snd: SND_ON,                                               /* SOUND */
       qb: QBAR_SHOWN,                                            /* T27 */
       profile: PROFILE
@@ -6946,7 +6955,10 @@ function restoreSave() {
   /* BUILD-IB · the two schedules, coerced on the same terms as the five
      above: a malformed value re-instructs once and can never cost a run. */
   ASK_MK_SEEN     = s.am === true;                               /* BUILD-IB 9 */
-  TCTAP_SEEN      = s.tt === true;                               /* BUILD-IB 10 */
+  /* T38b · `tt` is not read any more. A save written while the schedule
+     existed still carries the key; it is ignored rather than migrated,
+     which is the same additive-and-optional contract every other flag
+     here is added under, run backwards. No SAVE_VER bump either way. */
   /* §B the profile, coerced field by field the way `cf` is: anything that
      is not a legal value is the default, and nothing in it can be grounds
      for discarding a save. An avatarId that names a preset no longer on
