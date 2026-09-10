@@ -333,8 +333,8 @@
       "512": "assets/topics/v2/branches_512.webp",
       "display_css": 190.0,
       "dpr": 2.69,
-      "aspect": 1.0119,
-      "node_scale": 1.1669,
+      "aspect": 0.9336,
+      "node_scale": 1.0354,
       "source": "branches (v2)"
     },
     "economy": {
@@ -358,7 +358,7 @@
       "display_css": 190.0,
       "dpr": 3.03,
       "aspect": 0.6406,
-      "node_scale": 1.0681,
+      "node_scale": 1.2283,
       "source": "environment",
       "reads_down_to": 40
     },
@@ -383,7 +383,7 @@
       "display_css": 190.0,
       "dpr": 3.03,
       "aspect": 1.5238,
-      "node_scale": 1.0285,
+      "node_scale": 1.1828,
       "source": "policehat",
       "reads_down_to": 40
     },
