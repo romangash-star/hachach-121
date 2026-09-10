@@ -4296,6 +4296,14 @@ let QBAR_SHOWN = false;
 let QBAR_OPEN  = false;
 
 function qbarEl() { return $('#qbar'); }
+/* T36 · THE HIT STRIP. A second, empty element rather than a pseudo-
+   element on the pill, and that is forced rather than chosen: .qbar
+   carries overflow:hidden and needs it — during the OPEN transition the
+   text is already at its 3-line height while the pill is still growing
+   through it, and without the clip those lines paint outside the pill.
+   Anything hung off .qbar is inside that clip and therefore not
+   hit-testable outside it, so the extra 4px has to live on a sibling. */
+function qbarHitEl() { return $('#qbarHit'); }
 
 /* THE CUT IS MEASURED, NOT ASSUMED. The fade is a property of a line
    that is actually too long — 13 of the 16 prompts at 390 — and putting
@@ -4338,11 +4346,19 @@ function qbarShow(text) {
   const t = $('.qbar__t', b); if (!t) return;
   if (t.textContent !== text) t.textContent = text;
   b.hidden = false;
+  /* T36 · the strip goes with the pill, always. A tap target for a panel
+     that is not on screen is a tap target for nothing, and this one is
+     invisible — there would be no way to see that it had been left
+     behind. Mirrored here rather than by a CSS sibling selector because
+     .hud-mid's children are moved around by pairHudProgress() and a
+     selector that depends on their order would break silently. */
+  const h = qbarHitEl(); if (h) h.hidden = false;
   qbarSetOpen(false);
 }
 function qbarHide() {
   const b = qbarEl(); if (!b) return;
   b.hidden = true; qbarSetOpen(false);
+  const h = qbarHitEl(); if (h) h.hidden = true;
 }
 
 /* THE GESTURE. A tap on the panel is a tap; anything with travel in it is
@@ -4393,6 +4409,26 @@ function buildQbar() {
   b.innerHTML = '<span class="qbar__t"></span>';
   mid.appendChild(b);
   wireQbar(b);
+  /* T36 · THE 44px HIT AREA, AND IT SITS BEHIND THE PILL RATHER THAN
+     OVER IT. z-index 0 against .qbar's 1 means every tap that lands on
+     the pill still lands on the PILL — which is what keeps :active's
+     press feedback working — and only the 4px bands above and below it
+     reach this. Over the top it would have swallowed every press and the
+     control would have stopped acknowledging touch.
+     IT IS THE SAME GESTURE, NOT A SECOND ONE. wireQbar() toggles a
+     global, so binding it here gives the strip the identical slop test,
+     the identical swipe release and the identical click suppression; a
+     second implementation is how the two would drift.
+     NO WIDTH IS ADDED. The pill is already 205-235px wide, far past 44,
+     so the strip takes .qbar's own inline box unchanged and the 8px and
+     10px clearances to the coin pill and the ✕ are untouched — see the
+     hit test in the report. Growing it sideways would have bought
+     nothing and spent both. */
+  const hit = el('div', 'qbar-hit');
+  hit.id = 'qbarHit'; hit.hidden = true;
+  hit.setAttribute('aria-hidden', 'true');       /* the button is the a11y surface */
+  mid.appendChild(hit);
+  wireQbar(hit);
 }
 
 /* IT OPENS ITSELF ONCE, on the player's first card of the game: the same
