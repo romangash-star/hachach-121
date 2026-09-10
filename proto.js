@@ -7737,6 +7737,45 @@ function nodeHTML(t, i, h, cur) {
     face = '<span class="node-ico" aria-hidden="true">' + t.icon + '</span>';
   }
 
+  /* T44 · THE BASE CARRIES THE HUE, AT THE VALUE IT ALREADY HAD.
+   --node-fill stays #2E2A26 for all six -- §3.2 above settled that and its
+   reasoning holds -- so the icon's ground never moves and no contrast
+   ratio on the disc changes. Only the EXTRUSION is tinted.
+
+   ISO-LUMINANT, AND THAT IS THE WHOLE TRICK. The base survives the map's
+   gradient today for one reason: at L=0.0073 it is darker than the
+   gradient's darkest stop (#8E2A2E, L=0.0760), so it separates everywhere
+   the node scrolls. The gradient is on .stage and the nodes scroll THROUGH
+   it, so a base that is merely "dark" is not enough -- it has to be below
+   the whole range. Every mix of the topic hue into the base lifts it into
+   that range and loses the edge somewhere on the scroll: colour-mixed at
+   20% the worst case falls to 1.34, and --tc-shade's own 78%/black lands
+   religion at L=0.388, a gold rim that vanishes against the gold end.
+   So the hue is rotated at CONSTANT luminance instead. Each base is the
+   topic colour scaled until its relative luminance equals the old base's,
+   which makes every contrast ratio -- against the face, against all four
+   gradient stops -- arithmetically identical to what shipped. */
+/* T44b · 0.00726 was the old base's own luminance -- iso-luminant, so every
+   ratio was identical to what shipped. Lifted to 0.0110, which buys about
+   31% more chroma for a worst-case-against-the-gradient of 2.07 against
+   the old 2.20. 0.0130 was on the table at 2.00 and was refused: the node
+   scrolls the full gradient, so the worst case is met on every scroll and
+   not occasionally. The bound is the darkest stop, #8E2A2E at L 0.0760. */
+const NODE_BASE_L = 0.0110;
+function tintBase(hex) {
+  const h = hex.replace('#', '');
+  const c = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = v => 0.2126 * lin(v[0]) + 0.7152 * lin(v[1]) + 0.0722 * lin(v[2]);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2;
+    if (L(c.map(x => x * m)) < NODE_BASE_L) lo = m; else hi = m;
+  }
+  const m = (lo + hi) / 2;
+  return '#' + c.map(x => Math.round(Math.min(255, x * m)).toString(16).padStart(2, '0')).join('');
+}
+
   /* the face's centre inside the box: the path threads the DISC, not the
      ring, so this is what the node is positioned by */
   const fcy = parseFloat(CSVAR('--node-face-y')) + parseFloat(CSVAR('--node-face')) / 2;
@@ -7745,7 +7784,8 @@ function nodeHTML(t, i, h, cur) {
       'style="left:calc(' + (NODE_X(i) * 100).toFixed(2) + '% - ' + G.c + 'px);top:' +
       (cy - fcy) + 'px;--tc:' + t.color +
       ';--tc-face:' + t.color +
-      ';--tc-shade:color-mix(in srgb,' + t.color + ' 78%,#000)">' +
+      ';--tc-shade:color-mix(in srgb,' + t.color + ' 78%,#000)' +
+      ';--node-base:' + tintBase(t.color) + '">' +
     '<span class="ringnode">' +
       '<svg class="ring" viewBox="0 0 ' + G.box + ' ' + G.box + '" aria-hidden="true">' +
         '<g transform="rotate(-90 ' + G.c + ' ' + G.c + ')">' +

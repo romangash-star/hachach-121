@@ -3511,19 +3511,18 @@ body.no-ph .ph{ display:none !important; }
 .seg-off{ stroke:rgba(24,20,16,.42); }
 .seg-on { stroke:var(--paper); }
 
-/* §1 THE DISC CARRIES THE HUE, AND THE ICON SITS ON CREAM. This reverses
-   the neutral-dark disc: on device that lost the eight-hue topic system
-   entirely, floated the icons on near-black, and sank the extrusion into a
-   ground that was almost the same value as the base.
-   The hue is now the raw data.js topic colour rather than a wash of it, so
-   the disc reads as the topic from across the screen, and the base is that
-   colour multiplied to 78% — a flat multiply, so the hue is preserved
-   exactly and the seam between face and base cannot show. Against the
-   charcoal ground a saturated disc over a darker version of itself is the
-   same figure-on-ground the cards and chips use.
+/* T44 · §1 DELETED HERE. It described the disc as carrying the raw topic
+   hue with the base a 78% multiply of it — a treatment that was built and
+   then REVERTED, for the reasons §3.2 gives directly above. The comment
+   outlived the revert and contradicted both the code under it and §3.2,
+   which is exactly the way a reader gets sent the wrong way.
 
    DUOLINGO EXTRUSION, NOT A DROP SHADOW. Zero blur, zero spread, offset
-   straight down by the depth. */
+   straight down by the depth.
+   --node-base is the DEFAULT here and nodeHTML() overrides it per topic
+   with tintBase(): the topic's hue at a fixed luminance, slightly above
+   this one — see NODE_BASE_L. --node-fill is NOT overridden anywhere: one
+   ground for all six, per §3.2, so no icon's contrast moves. */
 .node{ --node-fill:#2E2A26; --node-base:#171412; }
 .node-face{
   position:absolute; left:var(--node-face-x); top:var(--node-face-y); z-index:2;
