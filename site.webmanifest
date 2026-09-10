@@ -1,0 +1,17 @@
+{
+  "_tamar": "TAMAR · name and short_name are Hebrew copy. They are NOT new strings: both mirror the <title>, og:site_name and og:title already in index.html, so this file must be changed with them, never independently. JSON has no comment syntax, so this key stands in for the /* TAMAR */ marker used everywhere else.",
+  "name": "הח״כ ה-121",
+  "short_name": "הח״כ ה-121",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#2E2A26",
+  "background_color": "#FBF7EE",
+  "icons": [
+    { "src": "/assets/favicon/favicon-192.png",  "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/favicon/favicon-512.png",  "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/favicon/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
