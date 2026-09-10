@@ -542,29 +542,40 @@ body{
     radial-gradient(120% 80% at 50% 108%, #F2B33C 0%, #E4732B 38%, #C4402E 70%, #8E2A2E 100%),
     #C4402E;
 }
-@supports (height: 100dvh){ .stage{ height:100dvh; } }
-/* T52 · THE GROUND REACHES THE TRUE BOTTOM EDGE, IN STANDALONE ONLY.
-   viewport-fit=cover extended the viewport at both ends. The top needed
-   nothing — padding-top moves content DOWN inside a box whose top edge is
-   already at 0. The bottom is not the mirror of that: padding-bottom is
-   INSIDE the height (box-sizing:border-box), so it holds content clear of
-   the home indicator within a box that still stops short of it, and body's
-   #6E6C68 showed in the difference.
-   min-height:100% IS THE FLOOR, AND IT IS SCOPED. html and body are
-   position:fixed inset:0, which under viewport-fit=cover IS the full cover
-   viewport, so 100% is the real screen height. But that is only safe where
-   nothing collapses: in BROWSER Safari the ICB is the LARGE viewport while
-   dvh is the dynamic one, so an unscoped min-height:100% would hold the
-   stage at the large height and overflow the moment the URL bar came back.
-   Browser Safari is the primary case here — most players arrive from a
-   link — so the floor is behind (display-mode: standalone), where there is
-   no chrome to collapse and dvh and the ICB cannot disagree in that
-   direction. The browser path is byte for byte what it was.
-   NO COLOUR CHANGES. Every screen's ground is painted by the stage box —
-   .stage's own background, the map's gradient on .stage[data-screen=map],
-   .mapwin's negative bottom margin — so they all follow the box down. */
-@media (display-mode: standalone){
-  .stage{ min-height:100%; }
+/* T52b · THE GROUND REACHES THE TRUE BOTTOM EDGE, KEYED ON THE INSET.
+   viewport-fit=cover extended the viewport at both ends, and the two ends
+   are not mirrors. padding-top moves content DOWN inside a box whose top
+   edge is already at 0 — there was never a gap. padding-bottom is INSIDE
+   the height (box-sizing:border-box), so it holds content clear of the home
+   indicator within a box that stops short of it, and body's #6E6C68 — which
+   propagates to the CANVAS and so paints every pixel the stage does not
+   cover — showed in the difference.
+   THE INSET IS ITS OWN CONDITION. env(safe-area-inset-bottom) is non-zero
+   exactly where there is an indicator to reach past and 0 everywhere else,
+   so adding it to the height is 100dvh untouched in every browser case and
+   taller only where the band appears. No detection, no media query, no JS.
+   T52's (display-mode: standalone) is GONE. It shipped, and the band
+   survived a full cache clear on a real iPhone — iOS's display-mode feature
+   has historically tracked apple-mobile-web-app-capable rather than the
+   manifest, and this app declares standalone by manifest alone. A dead
+   query left in the sheet is worse than not having tried it. Unverified:
+   no headless browser can report what iOS matches, so the ?diag flag is
+   what will settle it.
+   min() IS THE GUARD, AND IT IS NOT OPTIONAL. The bare
+   calc(100dvh + env(...)) assumes dvh comes back SHORT of the screen. If a
+   platform ever reports it already including the inset, the stage becomes
+   inset-taller than the screen — and the controls anchored to the stage's
+   BOTTOM EDGE go with it: measured, the sound toggle lands 14px from the
+   true edge and the share buttons 16px, both under the indicator. The
+   padding does not save them, because they are positioned against the edge
+   rather than laid out inside the padding box. So the height is capped at
+   the ICB, which html and body already are — position:fixed inset:0 under
+   viewport-fit=cover IS the full screen. min() picks the smaller: the sum
+   where dvh is short, 100% where it is not, and 100dvh untouched in every
+   browser case because the inset is 0 there and the sum is already 100dvh.
+   No detection, no media query, no JS. */
+@supports (height: 100dvh){
+  .stage{ height:min(100%, calc(100dvh + env(safe-area-inset-bottom))); }
 }
 /* §5.3, SECOND CAUSE. max-width:390px is a DESKTOP PREVIEW FRAME — it
    keeps the prototype phone-shaped in a browser window — but it applies on
