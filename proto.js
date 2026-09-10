@@ -1453,7 +1453,7 @@ const coinCount = n => Math.max(3, Math.min(5, Math.round(n / 25) + 2));
 function award(n, from, snd) {
   if (!n) return;
   /* SOUND · ONCE PER AWARD, AT SPAWN. award() is already called at
-     T.stamp — 340ms after the stamp lands — so this IS the 340ms mark,
+     T.stampLand — 360ms, the stamp's own landing — so this IS that mark,
      and it is the coins leaving rather than arriving: the flight takes
      another ~450ms and a sound at the far end of that is 790ms behind
      the verdict it belongs to.
@@ -2575,7 +2575,10 @@ async function claimReveal(ans, card) {
   wrap.appendChild(chip);
 
   const table = COIN_TABLES[DEV.coins];
-  if (table.claimNeedsCorrect && ok) setTimeout(() => award(table.claim, mark), T.stamp);
+  /* T53 · T.stamp -> T.stampLand. ITEM 47B moved the PILL to the 360ms
+     landing and left the award on 340, so the claim's coins left 20ms
+     before the disc settled — the same drift, the same event. */
+  if (table.claimNeedsCorrect && ok) setTimeout(() => award(table.claim, mark), T.stampLand);
 
   /* §0 · THREE MOVEMENTS, IN ORDER, AND NOTHING ELSE MOVES.
        1  the stamp falls and lands            0 -> 340ms  (--t-stamp)
@@ -4737,7 +4740,19 @@ async function verdict(guess, foot, card) {
   S.guesses[p.id] = guess;
   const ok = guess === p.vote;
 
-  foot.querySelectorAll('.v-a').forEach(b => b.disabled = true);
+  /* T53 · THE PRESS IS ACKNOWLEDGED HERE, BEFORE ANY WAIT. disabled has no
+     style on .v-a — there is no :disabled rule for it anywhere — so
+     disabling alone left three identical live-looking buttons for the whole
+     of --t-hold. is-taken recedes the two not chosen and is-chosen holds
+     the one that was, which is beat 2's treatment on beat 4's row: the
+     640ms below finally is what its comment says it is. It also covers the
+     dead-button problem, because the row now reads as resolved rather than
+     as three things still waiting to be pressed. */
+  foot.querySelectorAll('.v-a').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.pred === guess) b.classList.add('is-chosen');
+  });
+  foot.classList.add('is-taken');
 
   /* T27 · THE BLACK TAG RETIRES ON THE FIRST VERDICT. "נחשו מה הוא/היא
      הצביע/ה" earns card one and nothing after it: the card shows a face,
@@ -4790,12 +4805,19 @@ async function verdict(guess, foot, card) {
   setTimeout(() => buzz('mkStamp'), T.stampDropMk);
 
   const table = COIN_TABLES[DEV.coins];
-  /* §4 THE COINS LEAVE THE STAMP. Fired after the stamp has fully landed
-     (T.stamp), so the flight follows the verdict rather than crossing it,
-     and spawned AT the mark so the award has a place it came from. */
-  if (ok) setTimeout(() => award(table.perCorrect, mark), T.stamp);
+  /* §4 THE COINS LEAVE THE STAMP. Fired after the stamp has fully landed,
+     so the flight follows the verdict rather than crossing it, and spawned
+     AT the mark so the award has a place it came from.
+     T53 · T.stamp -> T.stampLand. --t-stamp is hachach.css's 340, which
+     ITEM 47 superseded for both stamps: the MK disc runs d2-land-mk for
+     --t-stamp-land, 360ms. ITEM 47B already caught the same 20ms drift on
+     the claim path and moved that site; these two were left behind, so the
+     coins left and the card began its exit 20ms before the disc had
+     finished settling. --t-stamp is NOT retuned — hachach.css:251 still
+     drives its own d2-land from it. */
+  if (ok) setTimeout(() => award(table.perCorrect, mark), T.stampLand);
 
-  await wait(T.stamp + T.flip);
+  await wait(T.stampLand + T.flip);
 
   /* THE RESOLVED CARD IS SWIPED OFF, then the next one turns over. The
      player never sees a card replaced in place. */
@@ -4968,9 +4990,10 @@ async function invResolve(pid, foot, card, btn) {
   /* the floor plus the decaying bonus, paid from the stamp like every
      other cascade award — and shown for the first time here */
   const table = COIN_TABLES[DEV.coins];
-  if (ok) setTimeout(() => award(table.perCorrect + INV_BONUS[step], mark), T.stamp);
+  /* T53 · T.stamp -> T.stampLand, the same 20ms drift as the cascade */
+  if (ok) setTimeout(() => award(table.perCorrect + INV_BONUS[step], mark), T.stampLand);
 
-  await wait(T.stamp + T.flip);
+  await wait(T.stampLand + T.flip);
   S.ci++;
   layGate();                          /* T24 · see the cascade's tail */
   leaveCard();

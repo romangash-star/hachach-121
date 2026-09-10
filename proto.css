@@ -331,7 +331,12 @@
   --t-gx-travel-1: 420ms;   /* one slot of disagreement                 */
   --t-gx-travel-2: 650ms;   /* two — felt as bigger, not just longer    */
   --t-gx-settle:   220ms;   /* agreement: nowhere to travel             */
-  --t-gx-stamp-lag: 80ms;
+  /* T53 · 80 -> 0. Pure dead air: nothing is on screen changing during it.
+     Its stated job — the stamp lands after the token has settled, not with
+     it — is already guaranteed by the awaits above, which do not resolve
+     until the travel is done. Kept as a token rather than deleted so the
+     beat can be dialled back without restoring code. */
+  --t-gx-stamp-lag: 0ms;
 
   --e-in:          cubic-bezier(.55,.06,.9,.5);   /* leaving, not arriving */
   --e-out:         cubic-bezier(.16,.84,.44,1);
@@ -2177,6 +2182,29 @@ body.no-ph .ph{ display:none !important; }
    card whose height is fixed.
    ===================================================================== */
 .mf-b__foot .v-a{ font-size:19px; min-height:62px; }
+/* T53 · THE CHOICE HAS TO LOOK CHOSEN, AND THAT IS THE WHOLE FIX.
+   verdict() waits --t-hold (640ms) under a comment that reads "the
+   player's choice sits alone before the truth arrives" — but nothing made
+   it alone. The three buttons were disabled on the same tick and there is
+   no :disabled rule for .v-a anywhere, so they sat at rest, undimmed and
+   unmarked, for 644 measured milliseconds after the finger lifted. The
+   :active depression is the only acknowledgement there was and it ends on
+   release. That is what read as a hang.
+   IT IS BEAT 2'S TREATMENT, UNCHANGED. .ovpane--vote.is-taken does exactly
+   this on the tachles vote — .3 and scale(.94) for the two not taken, full
+   strength for the one that was, on --t-b2-seat. Same values, same token,
+   same easing; only the selector is new, so the two votes in the game read
+   the same way and there is one treatment to tune rather than two.
+   RECEDE, NOT FAIL. Opacity and scale only. No hue moves: lime and magenta
+   code correctness in this app and the press knows nothing about whether
+   the guess was right — the verdict is 1.5 seconds away and belongs to the
+   stamp. A rejected answer here means "not the one you picked", never
+   "wrong". */
+.mf-b__foot.is-taken .v-a{
+  opacity:.3; transform:scale(.94);
+  transition:opacity var(--t-b2-seat) linear, transform var(--t-b2-seat) var(--e-settle);
+}
+.mf-b__foot.is-taken .v-a.is-chosen{ opacity:1; transform:none; }
 
 /* ---- the guess-vs-reality axis. The payload of the beat, and it is
    INSIDE the card again, at the foot, where the board draws it.
