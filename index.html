@@ -32,6 +32,26 @@
      a 667px window and the document scrolls by 26px no matter what the stage
      does. The stage keeps its 390 ceiling with max-width instead. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- T51 · THE APP'S OWN GROUND RUNS UNDER THE STATUS BAR. Installed to the
+     home screen the app goes standalone off site.webmanifest's
+     "display":"standalone", which iOS 16.4+ honours — and with no status
+     bar style declared it defaulted to the opaque one, which insets the web
+     view below the clock and fills the strip with body's #6E6C68, a grey
+     that matches nothing in the app.
+     black-translucent removes the fill and hands the full height to the
+     page. NOTHING ELSE HAD TO CHANGE: viewport-fit=cover was already here,
+     and every top row is already carried by an inset-aware ancestor —
+     .stage pays padding-top:calc(10px + env(safe-area-inset-top)) for the
+     round's in-flow .hud and the intro, the map's floated .hud carries its
+     own, .ov--end carries its own, and .ov--stage takes --ov-top which
+     reserveHudGap() measures off the HUD's real position. Verified against
+     a simulated 59px inset: every top element moves down exactly 59 and
+     clears it.
+     .mapwin STAYS BLED. Its negative margin cancels the stage padding, so
+     the map's gradient reaches the true top edge and runs under the glass —
+     measured top 0 at both insets. That is the point of the change, not a
+     thing to pad away. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- T47 · THE MARK IS THE GOLD COIN WITH THE CHAIR. What was here before
      was an inline SVG holding the chair emoji, U+1FA91, so the tab drew
      whatever emoji font the platform happened to have — a different picture
