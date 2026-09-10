@@ -1731,10 +1731,13 @@ function deckCard(i) {
   front.innerHTML =
     '<span class="mf-b__halo"></span>' +
     /* `hi` IS THE NATIVE CROP, `400` the fallback. .mf-b__port draws at 401
-       CSS px, so under the DPR-3 rule this wants a 1203px file; the masters
-       top out at the crop box (474-723px), which is what `hi` is. It is
-       still 1.18-1.80x rather than 3x — see manifest.json's `dpr` per
-       portrait and the ceiling note in frame_mk.py. */
+       CSS px, so under the DPR-3 rule this wants a 1204px file, and T40 is
+       where `hi` finally became one: the whole set is re-cropped from the
+       1360x2048 masters to 1204x1605, so `dpr` is 3 for all 28 rather than
+       the old 1.18-1.80x ceiling. The crop is anchored on the CROWN, not on
+       the frame — every portrait puts the top of the head at 2.4% of its own
+       height, which is what stops the head jumping card to card as the
+       cascade deals. See manifest.json's `portrait_crop_rule`. */
     (art
       ? '<img class="mf-b__port" src="' + ROOT + (art.hi || art['400']) + '" alt="">'
       : '<span class="mf-b__badge">' + esc(initials(pol.name)) + '</span>') +
@@ -10308,6 +10311,27 @@ function applyDev() {
 fetch('explorations/v16/prototype/manifest.json')
   .then(r => r.json())
   .then(j => { M = j;
+    /* MK-PORTRAITS · ONE WARN, AT LOAD, LISTING WHAT HAS NO ART.
+       The initials badge is the shipped answer for a politician with no
+       portrait and it stays — deckCard() builds it, the manifest's own
+       `fallback` block documents it, and it NEVER substitutes another
+       person's face. What the badge cannot do is tell the difference
+       between a portrait that was never made and one that was lost, and
+       both look identical on the card.
+       SO THE DIFFERENCE IS SAID ONCE, HERE, IN THE CONSOLE. Not a throw:
+       a missing face must never stop a round. Not UI: the player is not
+       the audience for an asset gap. Not a placeholder file: that is the
+       thing the fallback rule forbids. One line, at the only moment the
+       whole roster and the whole manifest are both in hand.
+       IT READS data.js, WHICH IS THE ROSTER. The manifest is the art
+       index and can hold entries for people the game no longer deals —
+       six of them today; those are not missing art and are not warned
+       about. */
+    try {
+      const missing = Object.keys(DATA.politicians)
+        .filter(k => !(M.politicians && M.politicians[k]));
+      if (missing.length) console.warn('[mk] no portrait for: ' + missing.join(', '));
+    } catch (e) { /* a warn may never be the thing that breaks a load */ }
     /* THE CARD BACK'S ARTWORK, from the manifest like every other asset —
        props.card_back, added to make_manifest.py when the set was
        reframed. The literal is a fallback for a manifest generated before

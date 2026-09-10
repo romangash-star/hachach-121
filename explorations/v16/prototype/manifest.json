@@ -14,27 +14,45 @@
       "party": "רע\"ם",
       "400": "assets/mk/mk_abbas_400.webp",
       "128": "assets/mk/mk_abbas_128.webp",
-      "hi": "assets/mk/mk_abbas_648.webp",
-      "hi_px": 648,
-      "dpr": 1.62
+      "hi": "assets/mk/mk_abbas_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "ben_ari_m": {
+      "name": "מירב בן-ארי",
+      "party": "המחנה הממלכתי",
+      "400": "assets/mk/mk_ben_ari_m_400.webp",
+      "128": "assets/mk/mk_ben_ari_m_128.webp",
+      "hi": "assets/mk/mk_ben_ari_m_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "ben_gvir": {
       "name": "איתמר בן-גביר",
       "party": "עוצמה יהודית",
       "400": "assets/mk/mk_ben_gvir_400.webp",
       "128": "assets/mk/mk_ben_gvir_128.webp",
-      "hi": "assets/mk/mk_ben_gvir_625.webp",
-      "hi_px": 625,
-      "dpr": 1.56
+      "hi": "assets/mk/mk_ben_gvir_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "cohen_m": {
+      "name": "מירב כהן",
+      "party": "יש עתיד",
+      "400": "assets/mk/mk_cohen_m_400.webp",
+      "128": "assets/mk/mk_cohen_m_128.webp",
+      "hi": "assets/mk/mk_cohen_m_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "deri": {
       "name": "אריה דרעי",
       "party": "ש\"ס",
       "400": "assets/mk/mk_deri_400.webp",
       "128": "assets/mk/mk_deri_128.webp",
-      "hi": "assets/mk/mk_deri_546.webp",
-      "hi_px": 546,
-      "dpr": 1.36
+      "hi": "assets/mk/mk_deri_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "edelstein": {
       "name": "יולי אדלשטיין",
@@ -50,27 +68,36 @@
       "party": "המחנה הממלכתי",
       "400": "assets/mk/mk_eisenkot_400.webp",
       "128": "assets/mk/mk_eisenkot_128.webp",
-      "hi": "assets/mk/mk_eisenkot_606.webp",
-      "hi_px": 606,
-      "dpr": 1.51
+      "hi": "assets/mk/mk_eisenkot_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "elharrar": {
+      "name": "קארין אלהרר",
+      "party": "יש עתיד",
+      "400": "assets/mk/mk_elharrar_400.webp",
+      "128": "assets/mk/mk_elharrar_128.webp",
+      "hi": "assets/mk/mk_elharrar_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "elkin": {
       "name": "זאב אלקין",
       "party": "הימין הממלכתי",
       "400": "assets/mk/mk_elkin_400.webp",
       "128": "assets/mk/mk_elkin_128.webp",
-      "hi": "assets/mk/mk_elkin_593.webp",
-      "hi_px": 593,
-      "dpr": 1.48
+      "hi": "assets/mk/mk_elkin_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "gafni": {
       "name": "משה גפני",
       "party": "יהדות התורה",
       "400": "assets/mk/mk_gafni_400.webp",
       "128": "assets/mk/mk_gafni_128.webp",
-      "hi": "assets/mk/mk_gafni_700.webp",
-      "hi_px": 700,
-      "dpr": 1.74
+      "hi": "assets/mk/mk_gafni_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "galant": {
       "name": "יואב גלנט",
@@ -90,14 +117,41 @@
       "hi_px": 684,
       "dpr": 1.7
     },
+    "goldknopf": {
+      "name": "יצחק גולדקנופ",
+      "party": "יהדות התורה",
+      "400": "assets/mk/mk_goldknopf_400.webp",
+      "128": "assets/mk/mk_goldknopf_128.webp",
+      "hi": "assets/mk/mk_goldknopf_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
     "gotliv": {
       "name": "טלי גוטליב",
       "party": "הליכוד",
       "400": "assets/mk/mk_gotliv_400.webp",
       "128": "assets/mk/mk_gotliv_128.webp",
-      "hi": "assets/mk/mk_gotliv_580.webp",
-      "hi_px": 580,
-      "dpr": 1.45
+      "hi": "assets/mk/mk_gotliv_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "kariv": {
+      "name": "גלעד קריב",
+      "party": "העבודה",
+      "400": "assets/mk/mk_kariv_400.webp",
+      "128": "assets/mk/mk_kariv_128.webp",
+      "hi": "assets/mk/mk_kariv_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "katz": {
+      "name": "ישראל כץ",
+      "party": "הליכוד",
+      "400": "assets/mk/mk_katz_400.webp",
+      "128": "assets/mk/mk_katz_128.webp",
+      "hi": "assets/mk/mk_katz_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "lahav": {
       "name": "יוראי להב-הרצנו",
@@ -113,27 +167,36 @@
       "party": "יש עתיד",
       "400": "assets/mk/mk_lapid_400.webp",
       "128": "assets/mk/mk_lapid_128.webp",
-      "hi": "assets/mk/mk_lapid_609.webp",
-      "hi_px": 609,
-      "dpr": 1.52
+      "hi": "assets/mk/mk_lapid_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "lazimi": {
+      "name": "נעמה לזימי",
+      "party": "העבודה",
+      "400": "assets/mk/mk_lazimi_400.webp",
+      "128": "assets/mk/mk_lazimi_128.webp",
+      "hi": "assets/mk/mk_lazimi_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "levin": {
       "name": "יריב לוין",
       "party": "הליכוד",
       "400": "assets/mk/mk_levin_400.webp",
       "128": "assets/mk/mk_levin_128.webp",
-      "hi": "assets/mk/mk_levin_676.webp",
-      "hi_px": 676,
-      "dpr": 1.68
+      "hi": "assets/mk/mk_levin_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "liberman": {
       "name": "אביגדור ליברמן",
       "party": "ישראל ביתנו",
       "400": "assets/mk/mk_liberman_400.webp",
       "128": "assets/mk/mk_liberman_128.webp",
-      "hi": "assets/mk/mk_liberman_571.webp",
-      "hi_px": 571,
-      "dpr": 1.42
+      "hi": "assets/mk/mk_liberman_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "michaeli": {
       "name": "מרב מיכאלי",
@@ -149,27 +212,45 @@
       "party": "הליכוד",
       "400": "assets/mk/mk_netanyahu_400.webp",
       "128": "assets/mk/mk_netanyahu_128.webp",
-      "hi": "assets/mk/mk_netanyahu_723.webp",
-      "hi_px": 723,
-      "dpr": 1.8
+      "hi": "assets/mk/mk_netanyahu_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "odeh": {
       "name": "איימן עודה",
       "party": "חד\"ש-תע\"ל",
       "400": "assets/mk/mk_odeh_400.webp",
       "128": "assets/mk/mk_odeh_128.webp",
-      "hi": "assets/mk/mk_odeh_597.webp",
-      "hi_px": 597,
-      "dpr": 1.49
+      "hi": "assets/mk/mk_odeh_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "ohanah": {
+      "name": "אמיר אוחנה",
+      "party": "הליכוד",
+      "400": "assets/mk/mk_ohanah_400.webp",
+      "128": "assets/mk/mk_ohanah_128.webp",
+      "hi": "assets/mk/mk_ohanah_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "saar": {
       "name": "גדעון סער",
       "party": "הימין הממלכתי",
       "400": "assets/mk/mk_saar_400.webp",
       "128": "assets/mk/mk_saar_128.webp",
-      "hi": "assets/mk/mk_saar_621.webp",
-      "hi_px": 621,
-      "dpr": 1.55
+      "hi": "assets/mk/mk_saar_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "seglovitch": {
+      "name": "יואב סגלוביץ",
+      "party": "הליכוד",
+      "400": "assets/mk/mk_seglovitch_400.webp",
+      "128": "assets/mk/mk_seglovitch_128.webp",
+      "hi": "assets/mk/mk_seglovitch_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "silman": {
       "name": "עידית סילמן",
@@ -185,18 +266,54 @@
       "party": "הציונות הדתית",
       "400": "assets/mk/mk_smotrich_400.webp",
       "128": "assets/mk/mk_smotrich_128.webp",
-      "hi": "assets/mk/mk_smotrich_646.webp",
-      "hi_px": 646,
-      "dpr": 1.61
+      "hi": "assets/mk/mk_smotrich_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     },
     "son_harmelech": {
       "name": "לימור סון הר-מלך",
       "party": "עוצמה יהודית",
       "400": "assets/mk/mk_son_harmelech_400.webp",
       "128": "assets/mk/mk_son_harmelech_128.webp",
-      "hi": "assets/mk/mk_son_harmelech_707.webp",
-      "hi_px": 707,
-      "dpr": 1.76
+      "hi": "assets/mk/mk_son_harmelech_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "strook": {
+      "name": "אורית סטרוק",
+      "party": "הציונות הדתית",
+      "400": "assets/mk/mk_strook_400.webp",
+      "128": "assets/mk/mk_strook_128.webp",
+      "hi": "assets/mk/mk_strook_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "sukot": {
+      "name": "צבי סוכות",
+      "party": "הציונות הדתית",
+      "400": "assets/mk/mk_sukot_400.webp",
+      "128": "assets/mk/mk_sukot_128.webp",
+      "hi": "assets/mk/mk_sukot_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "tamno": {
+      "name": "פנינה תמנו-שטה",
+      "party": "המחנה הממלכתי",
+      "400": "assets/mk/mk_tamno_400.webp",
+      "128": "assets/mk/mk_tamno_128.webp",
+      "hi": "assets/mk/mk_tamno_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
+    },
+    "troper": {
+      "name": "חילי טרופר",
+      "party": "כחול לבן",
+      "400": "assets/mk/mk_troper_400.webp",
+      "128": "assets/mk/mk_troper_128.webp",
+      "hi": "assets/mk/mk_troper_1204.webp",
+      "hi_px": 1204,
+      "dpr": 3.0
     }
   },
   "topics": {
