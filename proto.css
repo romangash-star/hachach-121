@@ -781,9 +781,20 @@ body{
    white die-cut, same keyline, same extrusion, same tilt — so the round
    has ONE modal shape and not one for content and another for confirms.
    ===================================================================== */
+/* T35 · THE CONFIRM IS THE ONLY THING IN FOCUS. The scrim dimmed and did
+   not blur, so the sheet underneath stayed legible — a readable control
+   behind a modal still reads as tappable, and on the reset the identity
+   sheet's own ✕ was sitting there in full focus two inches above the
+   confirm's. Dim AND blur: the dim is unchanged at .74, the blur takes
+   everything behind out of reading distance without hiding where the
+   player is.
+   ONE DECLARATION SERVES ALL THREE SHEETS, because resetConfirm() builds
+   on .exitsheet too — the surfaces differ inside the box and share the
+   ground, which is the reason this component was factored out at all. */
 .exitsheet{
   position:absolute; inset:0; z-index:70; display:grid; place-items:center;
   padding:var(--sp-4); background:rgba(20,18,15,.74);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
   opacity:0; transition:opacity var(--t-ov-in) linear;
 }
 .exitsheet.is-in{ opacity:1; }
@@ -806,10 +817,26 @@ body{
    v30c · THE RESET CONFIRM. Everything above is inherited; only what is
    different from the exit confirm is declared here.
    ===================================================================== */
-.rs__q{ margin:0; font-family:var(--font-display); font-weight:900;
-  font-size:21px; line-height:1.2; text-align:center; }
-.rs__note{ margin:0; font-family:var(--font-body); font-weight:400;
-  font-size:14px; line-height:1.45; color:var(--ink-soft); text-align:center; }
+/* T35 · THE RESERVED GUTTER, SYMMETRICALLY. This class never got the
+   padding .exitsheet__q has carried since §3.3 — it is a separate class
+   and the ✕ clearance did not come with it, so the confirm's own ✕ was
+   landing on the first 33px of a title that ran the full 258px column.
+   Padded BOTH ends because this title is centred: a one-sided inset on
+   centred type moves the text off the box's centre line, which trades a
+   collision for a misalignment. 48px is the ✕'s own footprint — see
+   .exitsheet__q. */
+/* T35b · balanced too, so the three titles are one object again rather
+   than two behaviours. Measured either way — see the report. */
+.rs__q{ margin:0; padding-inline:48px;
+  font-family:var(--font-display); font-weight:900;
+  font-size:21px; line-height:1.2; text-align:center; text-wrap:balance; }
+/* T35 · THE CONSEQUENCE LINE IS THE WARNING, so it is no longer the
+   quietest thing in the box. 14px/400 in --ink-soft lost to two large
+   verb buttons; it is the app's display face at 900 in full --ink now,
+   which is the only emphasis available — lime and magenta code
+   correctness and may not be spent on danger. */
+.rs__note{ margin:0; font-family:var(--font-display); font-weight:900;
+  font-size:16px; line-height:1.4; color:var(--ink); text-align:center; }
 /* THE COST, IN FIGURES. Four chips saying how much is lost, because a
    player agreeing to a quantity is making a different decision from one
    agreeing to the word "progress". */
@@ -846,9 +873,19 @@ body{
 }
 
 /* ---- the two options ------------------------------------------------
-   SAFE FIRST, and it is the primary: yellow, 56px, the full extrusion
-   every other primary in the build carries. */
-.rs__safe{ min-height:56px; height:auto; font-size:20px; }
+   SAFE FIRST, and it is the primary: yellow, the full extrusion every
+   other primary in the build carries.
+   T35b · ON THE MATCHED SCALE NOW, 56/20 -> 52/19. It was the last pair
+   of confirm buttons off it, and the tear-off metaphor is not carried by
+   button height — it is carried by .rs__tear's dashed rule and its ✂,
+   which are untouched. Same 52px box and same 19px primary as
+   .prof-actions and .exitsheet__row. */
+/* padding-block:0 for the same reason .exitsheet__row > * carries it:
+   .p-c's own 14px block padding put this at 61 while .rs__go rendered 57,
+   and a 4px step between two controls in one stacked pair is the exact
+   defect .prof-tweak's note records. The label centres in the box. */
+.rs__safe{ min-height:52px; height:auto; font-size:19px; padding-block:0;
+  display:flex; align-items:center; justify-content:center; }
 /* FLUSH, NOT LIFTED. Every pressable object in this build carries a hard
    offset — .p-c, .r-b, .v-a, .ib-b, .h-a, the map nodes. This one does
    not: an ink ring on paper, inset only. It is the one control in the
@@ -859,11 +896,18 @@ body{
    button at all", with every affordance removed. Borrowing it here would
    make the gravest control in the game read as inert — hence the ring
    rather than the fill. */
+/* T35b · 46/15 -> 52/17, the same move as .rs__safe. 17 rather than 19
+   because the matched scale is a PAIR — .prof-actions and
+   .exitsheet__row both set the box at 52 and split the type 19/17, and
+   this is the second of two. The one sub-decision in this change: the
+   destructive line was 15px and is now 17, which makes it fractionally
+   louder than it was. The ring, the absent extrusion and the perforation
+   above it are what mark it, and none of them moved. */
 .rs__go{
-  width:100%; min-height:46px; border:0; border-radius:var(--r-chip);
+  width:100%; min-height:52px; border:0; border-radius:var(--r-chip);
   background:transparent; color:var(--ink); cursor:pointer;
   box-shadow:inset 0 0 0 2.5px var(--ink);
-  font-family:var(--font-display); font-weight:900; font-size:15px;
+  font-family:var(--font-display); font-weight:900; font-size:17px;
   display:flex; align-items:center; justify-content:center; gap:8px;
   -webkit-tap-highlight-color:transparent;
   transition:background var(--t-press) linear;
@@ -891,14 +935,34 @@ body{
    string carrying the question and the consequence at once, at
    --ink-faint's weight, which made the thing being agreed to read as
    part of the thing being asked. Padded on the end so it clears the ✕. */
+/* T35 · 34px WAS NOT THE ✕'s WIDTH. The control is 46px wide at right:2px,
+   so it occupies 48px of the box's end and the title's text was starting
+   2px inside it — the reserved column was narrower than the thing it was
+   reserving for. 48px is the footprint, measured, and it applies to the
+   whole block rather than the first line, so the title cannot wrap under
+   the ✕ at any line count. The ✕ itself is unchanged: it was already
+   pinned at top:2px, not centred on line one — what made it read as
+   centred was that a 46px control and a 19px first line occupy the same
+   band when nothing separates them. */
+/* T35b · text-wrap:balance, AND IT IS NOT A WRAP FIX BY THE BACK DOOR.
+   The longest of the three titles has broken 170/163/62 since before this
+   pass — מחדש? alone on line three — and the type may not shrink to solve
+   it. Balancing evens the lines instead: same 19px, same column, same
+   line count, 120/145/131. The orphan is a distribution problem and this
+   is the property that distributes. */
 .exitsheet__q{
-  margin:0; padding-right:34px;   /* clears the ✕, which is physically right */
+  margin:0; padding-right:48px;   /* clears the ✕, which is physically right */
   font-family:var(--font-display); font-weight:900;
   font-size:19px; line-height:1.18; color:var(--ink); text-align:start;
+  text-wrap:balance;
 }
+/* T35 · SEE .rs__note. The same inversion, the same fix: this was 13px at
+   weight 700 in --ink-soft, the smallest and greyest thing in a box whose
+   two largest objects were the words "leave" and "stay". 700 was also the
+   third weight in a two-weight build; 900 puts it back on the sheet. */
 .exitsheet__note{
-  margin:-4px 0 0; font-size:var(--fs-meta); font-weight:700;
-  line-height:1.4; color:var(--ink-soft); text-align:start;
+  margin:-2px 0 0; font-family:var(--font-display); font-size:16px; font-weight:900;
+  line-height:1.4; color:var(--ink); text-align:start;
 }
 /* §1b · EQUAL HEIGHTS AND A REAL GAP. .p-c is min-height:56px and .r-b is
    52px, so the yellow was 4px taller than the outline and the pair read as
@@ -910,16 +974,27 @@ body{
    a segmented control, which is the wrong affordance for a destructive
    confirm where the two options are opposites. */
 .exitsheet__row{ display:flex; flex-direction:column; gap:14px; }
-/* min-height is not what was making them unequal — both already had 56 and
-   both already exceeded it. The heights come from the TYPE: .p-c is 25px
-   (--fs-action) and .r-b is 17px (--fs-body), which put them at 70 and 61.
-   The type sizes are system tokens and are not this modal's to change, so
-   the fix is an explicit shared height with the label centred in it. */
+/* T35 · 70px AND 25px WERE THE APP'S LARGEST CONTROL, SPENT ON ONE WORD.
+   --fs-action is the vote chip's size — the thing the whole round is
+   about — and לצאת / להישאר are single verbs that need no emphasis at
+   all; at that scale they were the two biggest objects in a box whose
+   actual warning was set at 13px.
+   THE SCALE IS NOT PICKED, IT IS MATCHED. .prof-actions — the identity
+   sheet, one modal away, same sticker family, same 300px box — already
+   solved this pair: min-height:52px with the primary at 19px and the
+   outline at 17px, and its own comment says the two boxes have to agree
+   while the type sizes should differ. Rendered 58px there, measured. This
+   is that rule, applied to the same two controls.
+   THE DESTRUCTIVE VERB STAYS ON THE YELLOW. data-go is .p-c and is not
+   swapped — exitRound() built it that way and the pair is consistent
+   across all three sheets. */
 .exitsheet__row > *{
-  min-height:70px;
+  min-height:52px;
   display:flex; align-items:center; justify-content:center;
   padding-block:0;
 }
+.exitsheet__row .p-c{ font-size:19px; }
+.exitsheet__row .r-b{ font-size:17px; }
 /* R-B IS BUILT FOR THE DARK GROUND. hachach.css draws it as
    `color:var(--paper); background:transparent; box-shadow:inset 0 0 0 2.5px
    var(--paper)` — cream type in a cream outline, which is correct on the
@@ -3339,6 +3414,18 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   pointer-events:none;                 /* the bar is a rail, not a surface */
 }
 .map-bar > *{ pointer-events:auto; }
+/* T35 · THE BAR CLEARS THE SOUND TOGGLE ON A FINISHED MAP. .snd-t is
+   pinned at left:12px, bottom:14px, 44x44 — the SAME bottom line this bar
+   uses — so a second control in the bar reached into its corner and won
+   the hit test over 40x31px of itself. Measured, not guessed.
+   THE INSET IS PHYSICAL-LEFT, not inline-start: the toggle is placed with
+   `left`, so a logical property would reserve the wrong corner in this
+   RTL document. 66px = the toggle's 12px offset plus its 44px target plus
+   a 10px gap.
+   ONLY WHEN THE RESTART IS THERE. A fresh or mid-run map carries one
+   short centred control that never came near the corner, and insetting
+   it would move that pill off centre for nothing. */
+.map-bar.has-restart{ padding-left:66px; }
 
 .map-jump{
   position:relative; z-index:1;
@@ -6241,6 +6328,28 @@ body.no-ph .f5more .ph{ display:inline-block !important; }
   font-family:var(--font-display); font-weight:900; font-size:var(--fs-meta);
   padding:9px 16px;
 }
+/* T35 · THE RESTART DOOR, BESIDE THE SUMMARY DOOR AND QUIETER THAN IT.
+   Same pill, same bar, same 9/16 padding so the two sit on one baseline —
+   but paper-outlined on the dark ground rather than filled, because the
+   summary is where a finished player is meant to go and this is not.
+   NOT LIME AND NOT MAGENTA: those code correctness and this is
+   destruction, which in this build has no colour of its own. The warning
+   has to be carried by the label, which is why the label is still
+   Tamar's — see the report. */
+.map-restart{
+  position:relative; z-index:1;
+  border:0; border-radius:var(--r-pill); cursor:pointer;
+  background:transparent; color:var(--paper);
+  box-shadow:inset 0 0 0 2px rgba(251,247,238,.42);
+  font-family:var(--font-display); font-weight:900; font-size:var(--fs-meta);
+  padding:9px 16px;
+}
+.map-restart:active{ background:rgba(251,247,238,.10); }
+/* the marker would be hidden by the default build's body.no-ph, and an
+   unlabelled pill on a finished map is worse than a marked one. Scoped
+   here, and it goes when Tamar's string lands — same shape as .f5more's. */
+body.no-ph .map-restart .ph{ display:inline-block !important; }
+.map-restart .ph{ font-family:var(--font-ui); font-size:11px; padding:1px 6px 2px; }
 
 /* ---- the confetti ---------------------------------------------------
    CSS keyframes, not a rAF loop: it is decoration, it must cost nothing,

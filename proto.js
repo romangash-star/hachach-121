@@ -3189,17 +3189,22 @@ function renderProfile(m) {
          is active, because avatarSvg() ranks cfg first. */
       '<button type="button" class="r-b prof-tweak" data-build>' +
         esc(PROFILE.cfg ? PROF_COPY.edit : PROF_COPY.build) + '</button>' +
-      /* v30c · THE RESET DOOR. Quiet, last, and a text link rather than a
-         button: it is not one of the two things this sheet is for. It
-         opens a confirm; it never resets on its own. */
-      '<button type="button" class="prof-reset" data-reset>' +
-        esc(PROF_COPY.reset) + '</button>' +
       /* שמור, AND IT ONLY CLOSES. Everything above applied the moment it
          was tapped, so the button is always safe to press and never has
          anything to do; the copy matches the player's model — "I typed a
          name, I want to keep it" — not the code's. It was סגור for one
          device round and read as a second ✕ with no confirm. */
       '<button type="button" class="p-c prof-save" data-close>' + esc(PROF_COPY.save) + '</button>' +
+      /* T35 · v30c · THE RESET DOOR, NOW BELOW THE PRIMARY. It sat between
+         the builder's door and שמור, which put a destructive link above
+         the one button on the sheet that is safe to press — the quiet
+         thing was in the loud position and the player read past it to
+         reach שמור. Last is where it belongs: it is not one of the two
+         things this sheet is for. Still a link and not a button, so שמור
+         remains the only primary; it opens a confirm and never resets on
+         its own. */
+      '<button type="button" class="prof-reset" data-reset>' +
+        esc(PROF_COPY.reset) + '</button>' +
     '</div>';
   const paint = () => $$('.gchip', box).forEach(c => {
     const on = c.dataset.g === PROFILE.gender;
@@ -6635,6 +6640,14 @@ const nextTopicIdx = () => TOPICS().findIndex(t => !topicDone(t.id));
 /* the guard matters: an empty topic list is not a finished game, and
    TOPICS() is derived from data.js, which can be re-cut under us. */
 const gameDone = () => TOPICS().length > 0 && nextTopicIdx() < 0;
+/* T35 · THE MAP'S RESTART LABEL IS NOT WRITTEN YET, and it is the one
+   label in the app where the wrong word is actively dangerous: on a
+   finished map, a centre button reads as "play again" and this one wipes
+   the run. So it ships as a marked placeholder rather than as a guess —
+   the alternatives, and the plural/gendered question, are in the report
+   for Tamar. Same [טקסט — תמר: …] form and the same no-ph exception as
+   beat 5's line. */
+const MAP_RESTART_PH = '[טקסט — תמר: מחיקה והתחלה מחדש]';   /* TAMAR — placeholder */
 /* the soft nudge, and the only ordering the map has. No lock follows it. */
 const currentIdx = () => {
   const i = nextTopicIdx();
@@ -7178,7 +7191,7 @@ function renderMap() {
        shows and hides on scroll and the summary door only exists on a
        finished map, so on a fresh map the bar holds one hidden control
        and reserves nothing it is not using. */
-    '<div class="map-bar" id="mapbar">' +
+    '<div class="map-bar' + (gameDone() ? ' has-restart' : '') + '" id="mapbar">' +
       /* §E · THE WAY BACK INTO THE SUMMARY. Without it the end-game is a
          one-way door: its own exit is the map, and a player who takes it
          would be back in the loop the end-game exists to replace, with no
@@ -7187,6 +7200,24 @@ function renderMap() {
       (gameDone()
         ? '<button type="button" class="map-done" id="mapdone">' +
             esc('לסיכום שלכם ›') + '</button>'                        /* TAMAR */
+        : '') +
+      /* T35 · THE RESTART DOOR ON A FINISHED MAP. gameDone() ALONE, and
+         that is the ruling, not an inference: it is derived from
+         PROGRESS and stays true across reloads, so once the game is
+         finished the door is simply present on the map, every visit.
+         THE ARRIVAL IS NOT THE CONDITION. #stage.is-ending is the one
+         signal that can identify the single map view that follows the
+         end sequence, and it is the wrong hook for exactly that reason —
+         a control that vanishes on reload is a bug, not a state.
+         SAME BAR, SO IT CANNOT COLLIDE. The bar exists because two
+         absolutely-positioned pills once landed on each other; a second
+         centred control goes in it rather than beside it.
+         IT ROUTES TO resetConfirm(), the one whole-game confirm, so
+         there is one definition of what a wipe is and one sheet asking
+         for it — never a second modal. */
+      (gameDone()
+        ? '<button type="button" class="map-restart" id="maprestart">' +
+            ph(MAP_RESTART_PH) + '</button>'
         : '') +
       /* v30c · SUPPRESSED ON A FINISHED MAP, and it is a suppression
          rather than a restack. The jump exists to return the player to
@@ -7398,6 +7429,11 @@ function wireMap(cur, h) {
   const curY = nodeY(cur, h);
   const done = $('#mapdone');
   if (done) pressable(done).addEventListener('click', () => endGame());
+  /* T35 · ONE CONFIRM, TWO ENTRY POINTS. resetConfirm() is the identity
+     sheet's own door; this hands it the same call rather than building a
+     second sheet that would then have to be kept in step with it. */
+  const rst = $('#maprestart');
+  if (rst) pressable(rst).addEventListener('click', () => resetConfirm());
 
   /* PARK THE FIRST INCOMPLETE NODE IN THE LOWER THIRD. Two thirds down the
      window, so what is above it — everything still to play — is what fills
