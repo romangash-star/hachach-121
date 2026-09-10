@@ -2697,9 +2697,22 @@ body.no-ph .ph{ display:none !important; }
    one family and the open state is the same object taller, never a
    second surface arriving.
 
-   13px / 400 IN BOTH STATES. The collapsed line and the expanded panel
+   14px / 400 IN BOTH STATES. The collapsed line and the expanded panel
    are the same type at the same size and the same weight — the block
    gets taller and the fade resolves, and that is the whole transition.
+   T36 · 13px -> 14px. The size is a LITERAL here and always has been: it
+   never consumed --fs-meta, which is coincidentally also 13px, so there
+   was no token to fork and nothing else in the file moves with it. The
+   eleven other hardcoded 13px sites are unrelated declarations and are
+   untouched — see the report for the list.
+   line-height STAYS AT 18px, and that is a decision rather than an
+   oversight. The collapsed pill is a fixed 36px with 8px of padding, so
+   the content box is 20px and 18px is what fits in it; raising the
+   leading would either clip against overflow:hidden or force the pill
+   taller, and the pill's height is what .hud-mid's 36px floor is built
+   on. The cost is real and is the expanded panel's: leading goes 1.385
+   to 1.286 of the type size. Flagged in the report rather than retuned,
+   because the brief asked for a size and a panel's leading is not one.
    ===================================================================== */
 .qbar{
   position:absolute; top:2px; inset-inline:0; z-index:1;
@@ -2710,9 +2723,10 @@ body.no-ph .ph{ display:none !important; }
   background:var(--paper); color:var(--ink);
   box-shadow:0 0 0 2px var(--keyline), 0 3px 0 rgba(0,0,0,.34);
   font-family:var(--font-body); font-weight:400;
-  font-size:13px; line-height:18px;
+  font-size:14px; line-height:18px;
   text-align:start;
-  display:flex; align-items:flex-start;
+  /* T36 · CENTRED COLLAPSED, TOP-ALIGNED OPEN — see .qbar.is-open. */
+  display:flex; align-items:center;
   overflow:hidden;
   cursor:pointer; -webkit-tap-highlight-color:transparent;
   transition:height var(--t-qbar) var(--e-settle);
@@ -2727,7 +2741,17 @@ body.no-ph .ph{ display:none !important; }
 /* THE OPEN STATE IS THE SAME BLOCK, TALLER. Only the wrap and the height
    change; the radius softens because a 90px panel on a 999px pill radius
    reads as a lozenge rather than as a block. */
-.qbar.is-open{ border-radius:18px; }
+/* T36 · AND IT IS THE ONE THAT KEEPS flex-start. The base rule was
+   top-aligned for THIS state — the panel's height is written by
+   qbarSetOpen() as the text's own scrollHeight plus QBAR_PAD's 16, so
+   the text has to start at the top padding or the arithmetic and the
+   paint disagree. Collapsed, that same flex-start was pinning an 18px
+   line to the top of a 20px content box and leaving the whole 2px of
+   slack under it, which is why the single line sat high of the pill's
+   centre: 8px above the line rect, 11px below it, measured. Centring is
+   the base now and the open state opts back out, so each state gets the
+   alignment its own geometry needs and neither inherits the other's. */
+.qbar.is-open{ border-radius:18px; align-items:flex-start; }
 .qbar.is-open .qbar__t{ white-space:normal; }
 
 /* THE FADE, NOT AN ELLIPSIS. An ellipsis says "abbreviated"; a fade says
@@ -2742,6 +2766,37 @@ body.no-ph .ph{ display:none !important; }
           mask-image:linear-gradient(to left, #000 72%, transparent 100%);
 }
 .qbar:active{ box-shadow:0 0 0 2px var(--keyline), 0 1px 0 rgba(0,0,0,.34); }
+
+/* T36 · THE HIT AREA, 44px, INVISIBLE, AND BEHIND THE PILL.
+   The pill renders 36px and must keep rendering 36px: .hud-mid's
+   min-height:36px is what the round's card is measured against, so
+   growing the visible control would move the card on every phone. The
+   button is position:absolute inside .hud-mid and contributes nothing to
+   that floor, but its own box is the tap target and 36 is under the 44
+   minimum, measured — the HUD is NOT a scaled surface (cumulative
+   transform 1.0), so rendered equals declared here and 36 is really 36.
+   THE GEOMETRY IS THE PILL'S, GROWN VERTICALLY ONLY. .qbar sits at
+   top:2px and is 36 tall, so it occupies 2..38 of the row; a 44px band
+   on the same centre is -2..42, which is this rule. inset-inline:0 is
+   .qbar's own, so not one pixel of width is added and the clearances
+   either side are exactly what they were.
+   z-index 0, UNDER .qbar's 1, AND THAT IS THE WHOLE TRICK. A strip over
+   the pill would take every press itself and .qbar:active would never
+   fire again — the control would stop acknowledging touch, which is a
+   worse fault than the one being fixed. Behind it, the pill keeps every
+   tap that lands on it and this catches only the 4px bands above and
+   below. It never paints: no fill, no edge, nothing to see.
+   IT IS NOT display:none WHEN THE PANEL IS OPEN. At 70px the pill is
+   already past 44 and covers the strip completely; leaving it costs
+   nothing and means one less state to keep in step. */
+.qbar-hit{
+  position:absolute; z-index:0; inset-inline:0;
+  top:-2px; height:44px;
+  background:none; border:0;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+/* the same UA-[hidden] override .qbar needs, for the same reason */
+.qbar-hit[hidden]{ display:none; }
 
 /* BOTH STATES SURVIVE, THE MOTION DOES NOT. The panel still opens and
    still closes on a tap; it simply arrives at its height instead of
