@@ -543,6 +543,29 @@ body{
     #C4402E;
 }
 @supports (height: 100dvh){ .stage{ height:100dvh; } }
+/* T52 · THE GROUND REACHES THE TRUE BOTTOM EDGE, IN STANDALONE ONLY.
+   viewport-fit=cover extended the viewport at both ends. The top needed
+   nothing — padding-top moves content DOWN inside a box whose top edge is
+   already at 0. The bottom is not the mirror of that: padding-bottom is
+   INSIDE the height (box-sizing:border-box), so it holds content clear of
+   the home indicator within a box that still stops short of it, and body's
+   #6E6C68 showed in the difference.
+   min-height:100% IS THE FLOOR, AND IT IS SCOPED. html and body are
+   position:fixed inset:0, which under viewport-fit=cover IS the full cover
+   viewport, so 100% is the real screen height. But that is only safe where
+   nothing collapses: in BROWSER Safari the ICB is the LARGE viewport while
+   dvh is the dynamic one, so an unscoped min-height:100% would hold the
+   stage at the large height and overflow the moment the URL bar came back.
+   Browser Safari is the primary case here — most players arrive from a
+   link — so the floor is behind (display-mode: standalone), where there is
+   no chrome to collapse and dvh and the ICB cannot disagree in that
+   direction. The browser path is byte for byte what it was.
+   NO COLOUR CHANGES. Every screen's ground is painted by the stage box —
+   .stage's own background, the map's gradient on .stage[data-screen=map],
+   .mapwin's negative bottom margin — so they all follow the box down. */
+@media (display-mode: standalone){
+  .stage{ min-height:100%; }
+}
 /* §5.3, SECOND CAUSE. max-width:390px is a DESKTOP PREVIEW FRAME — it
    keeps the prototype phone-shaped in a browser window — but it applies on
    real phones too, so a 430px device ran the app at 390 with 20px of body
