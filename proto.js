@@ -9517,6 +9517,11 @@ function egPaint() {
    ===================================================================== */
 const SH_KINDS   = ['C', 'D', 'E'];
 const SH_ASPECTS = { '916': [1080, 1920], '45': [1080, 1350] };
+/* T37 · the ink .sh-hold paints OUTSIDE its own box: a 3px paper ring, a
+   5px keyline beyond it, and a 6px hard drop below. 6 is the largest of
+   the three and is what the track has to hold clear at each end -- see
+   place(). If the sticker's edge is ever retuned, this moves with it. */
+const SH_EDGE = 6;
 const SH_LINK    = 'hac121.org';
 const SH_FILE    = 'hac121-card.png';
 const SH_COPY = {
@@ -9830,7 +9835,14 @@ async function egBeat4() {
       '<button type="button" class="sh-back" id="shBack">' +
         '<i aria-hidden="true">›</i>' + esc(SH_COPY.back) + '</button>' +
     '</div>' +
-    egStripHTML() +
+    /* T37 · 2 · THE TOPIC STRIP IS GONE FROM THIS SCREEN. The six discs
+       are shown on the completion screen one step earlier and again on
+       the record; a third showing on the picker is the same information
+       for the third time, and it is the only thing between the header and
+       the card. egStripHTML() is untouched and still runs on the record —
+       this removes a call, not a component. What it frees goes to the
+       track, which is flex:1: 31px of strip plus the column's own
+       clamp(8px,1.6vh,14px) gap. */
     '<div class="sh-hd">' +
       '<h2 class="eg-h2 sh-title">' + esc(t('shTitle')) + '</h2>' +    /* TAMAR · T25 */
     '</div>' +
@@ -9857,9 +9869,23 @@ async function egBeat4() {
     const [W, H] = SH_ASPECTS[SH_ASPECT];
     const tw = track.clientWidth, th = track.clientHeight;
     if (!tw || !th) return;
-    /* the card takes the track's height, and its width follows; the width
-       is capped so a sibling's peek stays on screen at 360 */
-    const h = Math.min(th, (tw * 0.78) * H / W);
+    /* T37 · 1 · THE DIE-CUT IS PAINTED OUTSIDE THE CARD'S BOX AND HAS TO
+       BE PAID FOR OUT OF THE TRACK. .sh-hold draws the sticker edge as
+       box-shadow -- a 3px paper ring, a 5px keyline outside that, and a
+       6px hard drop -- so the ink extends 5px above the box and 6px below
+       it while the ELEMENT is only as tall as the card. This line used to
+       read Math.min(th, ...), which at 9:16 resolved to th exactly: the
+       slot filled the track's full height, top computed to 0, and
+       .sh-track's overflow:hidden -- which is there to make the peek work
+       and is correct -- cut the edge off at both ends. Measured before
+       the fix at 390x844: slot 234.6x417 in a 417 track, 0.00px of room
+       above and 0.00 below. 4:5 was never clipped because its width cap
+       binds first and left 33.98px at each end.
+       SH_EDGE IS 6 AND IS RESERVED SYMMETRICALLY. The slot is centred in
+       what is left, so 6px falls above and 6px below: above needs 5, below
+       needs 6, and one number for both keeps the card on the track's
+       centre line rather than nudged off it to save a pixel. */
+    const h = Math.min(th - SH_EDGE * 2, (tw * 0.78) * H / W);
     const w = h * W / H;
     k = w / W; step = w + 14;
     slots.forEach((s, i) => {
@@ -9961,7 +9987,12 @@ async function egBeat4() {
     tg.appendChild(h);
   });
 
-  /* the two buttons: equal 49px boxes, both rings painted OUTSIDE the box */
+  /* T37 · 3 · ONE ROW, ONE HEIGHT, AND THE ICON BESIDE THE LABEL RATHER
+     THAN PINNED TO THE EDGE. The markup is unchanged — label then icon,
+     so RTL puts the icon at the physical left of the pair — and what
+     changed is the box: .sh-acts is a row, both buttons are 64.5px, and
+     .sh-b centres its two children as one group instead of pushing them
+     to opposite ends. See .sh-b in proto.css. */
   const mkBtn = (cls, label, icon) => {
     const b = el('button', cls); b.type = 'button';
     b.innerHTML = '<span class="sh-bl">' + esc(label) + '</span><span class="sh-ico">' + icon + '</span>';
