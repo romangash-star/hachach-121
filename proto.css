@@ -4924,14 +4924,14 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   box-shadow:0 0 0 1.4px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.26);
   clip-path:inset(0 0 0 0);
 }
+/* T50 · THE FLEX ROW WENT WITH THE ARROW. display:flex, align-items and
+   the 2px gap were added only to sit a glyph beside the word; with one
+   text child left they describe nothing, and .pcov__face is already
+   display:grid place-items:center, which is what centres the label. This
+   is the rule exactly as it stood before the arrow. */
 .pcov__lab{
   font-family:var(--font-display); font-weight:900; font-size:11px;
   line-height:1; color:#6B6350; letter-spacing:.01em;
-  display:flex; align-items:center; gap:2px;
-}
-.pcov__arr{
-  font-size:8px; opacity:.55; line-height:1;
-  transform:translateY(-1px); flex:none;
 }
 /* THE CURL, and this is what gives it thickness. It rides the peeling
    edge: a narrow strip whose gradient runs light on the outer face to

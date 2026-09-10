@@ -1761,9 +1761,16 @@ function deckCard(i) {
         '<button type="button" class="pcov" aria-label="' +
           esc('גילוי המפלגה') + '">' +                       /* TAMAR */
           '<i class="pcov__face" aria-hidden="true">' +
-            '<b class="pcov__lab">' + esc('מפלגה') +
-              '<span class="pcov__arr" aria-hidden="true">↑</span>' +
-            '</b>' +
+            /* T50 · NO ARROW. The tape already says it lifts — the curl on
+               its leading edge and the hard drop under it are the
+               affordance, and they are the ones that survive being looked
+               at rather than read. The glyph pointed UP, which is not the
+               direction anything here moves: the sheet peels from the
+               leading edge and leaves on an arc. aria-hidden, so nothing
+               that spoke it loses anything either.
+               THE HEBREW IS UNTOUCHED. The arrow was its own <span>
+               sibling, never a character inside esc('מפלגה'). */
+            '<b class="pcov__lab">' + esc('מפלגה') + '</b>' +
           '</i>' +
           '<i class="pcov__curl" aria-hidden="true"></i>' +
         '</button>' +
