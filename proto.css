@@ -779,7 +779,10 @@ body{
 .hud-x{
   width:36px; height:36px; border-radius:50%;
   font-size:17px; line-height:1;
+  position:relative; overflow:visible;
 }
+/* extend touch target to 44px minimum (Apple HIG) without growing the visual disc */
+.hud-x::after{ content:""; position:absolute; inset:-4px; }
 
 /* =====================================================================
    B5-1 · THE EXIT CONFIRM, BUILT AND CENTRED
@@ -4924,6 +4927,11 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .pcov__lab{
   font-family:var(--font-display); font-weight:900; font-size:11px;
   line-height:1; color:#6B6350; letter-spacing:.01em;
+  display:flex; align-items:center; gap:2px;
+}
+.pcov__arr{
+  font-size:8px; opacity:.55; line-height:1;
+  transform:translateY(-1px); flex:none;
 }
 /* THE CURL, and this is what gives it thickness. It rides the peeling
    edge: a narrow strip whose gradient runs light on the outer face to
