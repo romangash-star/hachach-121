@@ -106,6 +106,53 @@ zapsplat_leisure_playing_cards_deck_flip_through_cards_001_83427.wav
     NOT USED — eleven separate hits across 1.26 s with no set-down
     anywhere in it. A shuffle end to end.
 
+THE WRONG STAMP AND THE FINALE COIN — added 10 Sep 2026 (N2a)
+-------------------------------------------------------------
+Same paid account and the same download-time exemption, per Lion. The two
+coin files carry a 2022 file date against this set's 2026 downloads; that
+discrepancy was raised in the N2a report and Lion resolved it as Zapsplat,
+purchased. Provenance is as Lion stated it, on the same terms as every
+other line in this file.
+
+stamp-wrong-a.wav
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.670 s
+    Used for: assets/sfx/stamp_wrong.wav — the WRONG verdict's stamp
+    ONE event at 7 ms, and the only single-hit stamp take in the folder
+    that is not already in the set. Cut the way the rest were: trimmed at
+    -40 dB, mono, 44.1 kHz/16-bit, 3 ms fades, then RMS-matched to
+    stamp.wav over the sounding portion (-19.47 against -19.38) rather
+    than peak-matched — their crest factors differ by 2.5 dB and matching
+    peaks would have made the wrong stamp the louder of the pair.
+    185 ms OF SILENCE IS PADDED IN FRONT, aligned on the ATTACK: stamp.wav's
+    press onset is 192.1 ms and this take's is 7.0. Both files are fired at
+    the start of the fall by one line, so neither can drift from the other.
+    Its hit lands at 200.1 ms against a 200 ms contact.
+
+finale-coin-a.wav
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit stereo, 0.981 s
+    Used for: assets/sfx/finale_coin.wav — the FINALE's coin only
+    A DIFFERENT OBJECT FROM coin.wav, not a bigger one: r = 0.12 against it,
+    an unrelated recording. Six attacks over 659 ms against the per-card
+    coin's three over 180 — a handful rather than one coin. RMS-matched to
+    coin.wav at -30.30, so what differs is the object and not the level.
+    Chosen over finale-coin-b, which has a 201 ms attack with no onset —
+    the same defect that ruled out the masking-tape roll and the printer
+    peel above.
+
+stamp-ok-a.wav
+    NOT USED — byte-identical to master_of_dreams_stamp_5_729.wav above
+    (sha1 222bdb15…), which is already stamp_knock.wav and layer 1 of
+    stamp.wav. The set had it twice before this file arrived.
+
+finale-coin-b.wav
+    NOT USED — 201 ms attack, no onset, eleven attacks over 968 ms.
+
+vote121-a.wav
+    NOT USED — five discrete attacks at 11/56/97/139/210 ms, which is a
+    score ticking rather than a single object set down, and 1016 ms long
+    into the 1126 ms the finale leaves between the +1 and the coin. The
+    slot keeps count_vote.wav, which is already one set-down.
+
 NOT FROM ZAPSPLAT
 -----------------
 assets/sfx/complete.wav is built here, from the files above. Every transient

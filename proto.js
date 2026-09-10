@@ -1265,11 +1265,34 @@ const SFX_SRC = {
      from --t-stamp-drop or be re-levelled by accident. It is fired at the
      START of the fall, which is what puts the press on the contact frame. */
   stamp: 'stamp.wav',
+  /* N2a · THE WRONG VERDICT'S STAMP. The SAME instrument landing badly,
+     not a second instrument: one clean hit at centroid 5209 against the
+     composite's 2997, which sits between its own two layers (press 2402,
+     knock 5690). It does not descend, buzz or sag -- flatness 0.544, no
+     pitched component to fall. The player never fails; the Knesset
+     surprised them, and a sad sound would say otherwise.
+     185ms OF SILENCE IS BAKED INTO THE FILE. Its hit is one event at 7ms
+     where stamp.wav's press is at 192, so the file carries the offset and
+     BOTH stamps are fired at the start of the fall by the same line. The
+     alternative -- firing this one at contact instead -- is a scheduling
+     divergence somebody maintains later, and the two stamps stop reading
+     as one instrument the first time either number moves. */
+  stampWrong: 'stamp_wrong.wav',
   /* three real takes, not one pitch-shifted three ways — 2106 / 3019 /
      3690 Hz, cut from separate card events. Cycled so no two consecutive
      cards in a cascade sound alike. */
   card1: 'card_1.wav', card2: 'card_2.wav', card3: 'card_3.wav',
   peel:  'tape_peel.wav',
+  /* N2a · THE FINALE'S COIN, AND IT IS A DIFFERENT OBJECT RATHER THAN A
+     BIGGER ONE. r = 0.12 against coin.wav: an unrelated recording, not
+     the same coin louder. That distinction is the whole licence for it
+     -- see award()'s `snd` argument for why nothing may reach it by
+     reading the amount.
+     LOUDNESS-MATCHED TO coin.wav, NOT RAISED. Both sit at RMS -30.30;
+     what differs is the object, its 659ms against 180, and its six
+     attacks against three. A summary payout is a handful, not a louder
+     single coin. */
+  coinFinale: 'finale_coin.wav',
   tick:  'count_tick.wav',
   land:  'count_land.wav',
   /* the player's own vote joining the count. A DIFFERENT RECORDING, not a
@@ -1416,7 +1439,18 @@ const coinCount = n => Math.max(3, Math.min(5, Math.round(n / 25) + 2));
    in the same synchronous step, at land time, so concurrent awards
    compose instead of clobbering: each adds only what it has just paid,
    and the running total is correct after any interleaving. */
-function award(n, from) {
+/* N2a · THE SOUND IS AN ARGUMENT, AND IT IS THE CALL SITE THAT PASSES IT.
+   `snd` names which coin this is. It defaults to the per-card 'coin', so
+   every existing caller is unchanged, and the finale passes 'coinFinale'
+   because the finale is a DIFFERENT EVENT -- a summary payout on a
+   sticker, not a card resolving.
+   NOTHING READS `n`. That is the rule and it is the reason this is a
+   parameter rather than a threshold: a sound chosen by how many coins
+   were won is an escalating reward, which is the Balatro register and is
+   a recorded NEVER. The axis is WHICH MOMENT, never HOW MUCH. If a future
+   change writes `if (n > ...)` anywhere near this line, that change is
+   wrong. */
+function award(n, from, snd) {
   if (!n) return;
   /* SOUND · ONCE PER AWARD, AT SPAWN. award() is already called at
      T.stamp — 340ms after the stamp lands — so this IS the 340ms mark,
@@ -1426,7 +1460,7 @@ function award(n, from) {
      ABOVE THE coinFlight() BRANCH, so the degenerate case is covered:
      an award with no origin pays as a plain count-up with no tokens at
      all, and it still gets its one sound. */
-  sfx('coin');
+  sfx(snd || 'coin');
   const chip = $('.hud-coins'), out = $('#coinNum');
   if (S) S.coins += n;             /* the round's own tally; null on the map */
 
@@ -2486,7 +2520,7 @@ async function claimReveal(ans, card) {
      in, which is --t-stamp-drop, so playing it here puts the press on the
      contact frame and inside inkBleed()'s 60ms rupture. Firing it beside
      the buzz below would put the whole thing 190ms late. */
-  sfx('stamp');
+  sfx(ok ? 'stamp' : 'stampWrong');                             /* N2a */
   /* ITEM 7 DELIBERATELY DOES NOT REACH HERE. The claim stamp keeps its
      190ms fall and its 1.8/1.06 landing; only the MK card's stamp was
      asked to land harder. Its contact stays --t-stamp-drop. */
@@ -4724,7 +4758,7 @@ async function verdict(guess, foot, card) {
      early, which is well inside the window where a listener hears the
      sound and the jolt as one event, and the alternative is a second
      file whose offset could drift from the token. */
-  sfx('stamp');
+  sfx(ok ? 'stamp' : 'stampWrong');                             /* N2a */
   inkBleed(T.stampDropMk);
   /* §5 25ms AT CONTACT, not when the stamp is appended: --t-stamp-drop-mk
      is the frame the disc actually hits the card, and the jolt is keyed to
@@ -4902,7 +4936,7 @@ async function invResolve(pid, foot, card, btn) {
   const mark = stamp(ok);
   $('.cardwrap').appendChild(mark);
   card.classList.add('is-stamped');
-  sfx('stamp');                       /* SOUND · as the cascade's */
+  sfx(ok ? 'stamp' : 'stampWrong');   /* N2a · as the cascade's */
   /* ITEM 7 · the inverted round stamps the same MK card with the same
      disc, so it lands on the same 200ms contact as the cascade's. */
   inkBleed(T.stampDropMk);
@@ -6543,7 +6577,9 @@ async function coinMoment(b, topicsWas) {
   b.appendChild(coin);
   requestAnimationFrame(() => { coin.classList.add('is-in'); });
   await wait(T.f5CoinHold);
-  award(now, coin);              /* the flight leaves FROM the sticker */
+  /* N2a · the finale's coin, named here and only here. The amount `now`
+     is passed as it always was and is not consulted by the sound. */
+  award(now, coin, 'coinFinale');   /* the flight leaves FROM the sticker */
   coin.classList.add('is-out');
   await wait(T.f5CoinOut);
   coin.remove();
