@@ -5000,7 +5000,14 @@ const MAJORITY = 61, PLENUM = 120;
    what is left; a remainder under 40 characters is joined to the next
    one rather than shown alone, which is what rescues g1's dangling
    'וזה מפתיע הרבה אנשים.' */
-const VERDICT_OPENER = /^\s*זה\s+(?:לא\s+)?נכון\s*[!.,–—-]*\s*/;   /* TAMAR */
+/* T34b · זה IS OPTIONAL. The pattern required it, and three issues open
+   with the bare form — v2 "נכון.", s1 "לא נכון —", s2 "נכון —" — so the
+   stripper matched nothing on them and their modals opened by restating
+   the verdict, which is the single thing this regex exists to prevent.
+   It was survivable while the sentence sat mid-board; it is the modal's
+   first line since T12. Not a copy change: the decision was already
+   taken, this is the decision actually reaching all sixteen issues. */
+const VERDICT_OPENER = /^\s*(?:זה\s+)?(?:לא\s+)?נכון\s*[!.,–—-]*\s*/;   /* TAMAR */
 function explainSplit(text) {
   const t = (text || '').trim();
   if (!t) return { first:'', rest:'' };
@@ -5011,6 +5018,62 @@ function explainSplit(text) {
   if (first.length < 40 && parts.length > 1) { first += ' ' + parts[1]; rest = parts.slice(2).join(' '); }
   else rest = parts.slice(1).join(' ');
   return { first: first.trim(), rest: rest.trim() };
+}
+
+/* T34b · WHAT THE BOARD'S ONE LINE IS ALLOWED TO PROMISE.
+   The line used to branch on links.length, which asks "is there anything
+   behind this door" and answers with a sentence about VIDEO. Seven of the
+   sixteen issues have something behind the door and no video in it —
+   e1, v1, s1 and m1 carry only the Knesset vote page, b1, g1 and g2 carry
+   only articles — so nearly half the game offered a video it did not
+   have. Four states now, and the test is the content itself.
+
+   A LINK IS A VIDEO BY ITS HOST, WITH THE LABEL AS A SECOND CHANCE.
+   Host first because that is what the player will actually get: a2's one
+   link is labelled כתבה and points at YouTube, and it is a video whatever
+   the label calls it. The label test catches the reverse case — a video
+   on a host not in this list — and costs nothing today, because every
+   issue it would catch the host test already catches. */
+const VIDEO_HOST =
+  /(?:^|\.)(?:youtube\.com|youtu\.be|vimeo\.com|facebook\.com|fb\.watch)$/i;
+function isVideoLink(l) {
+  if (!l) return false;
+  if (/^\s*סרטון/.test(l.label || '')) return true;          /* TAMAR's own word */
+  let h = '';
+  try { h = new URL(l.url).hostname; } catch (e) { return false; }
+  return VIDEO_HOST.test(h);
+}
+/* `links` is further_links PLUS the synthesised Knesset row, so the
+   Knesset-only case is read off further_links rather than off the merged
+   list — otherwise "one link" and "one link that this function put there
+   itself" are indistinguishable. */
+function readKind(iss, links) {
+  if (!links.length) return 'none';
+  const fl = iss.further_links || [];
+  if (fl.some(isVideoLink)) return 'video';
+  return fl.length ? 'article' : 'knesset';
+}
+/* TWO OF THE FOUR ARE PLACEHOLDERS AND THEY LOOK LIKE IT.
+   ph()'s hazard fill, in the [טקסט — תמר: …] form the pre-round sheet
+   already uses, and the text describes the BRANCH rather than proposing
+   copy for it — nothing here is a guess at what the line should say.
+   body.no-ph is the default build and hides .ph, which would leave the
+   board with an empty button, so beat 5's line takes the same narrowly
+   scoped exception .f5res and .pr-ph already take. When Tamar's two
+   strings land, both ph() calls go and the CSS exception goes with
+   them. */
+const F5_LINE = {
+  video:   'לסרטונים ועוד מידע על הנושא',   /* TAMAR · shipped, and now only where it is true */
+  none:    'עוד על ההצבעה',                 /* TAMAR · shipped; v2 and s2, nothing behind the door but the explanation */
+  article: null,                             /* TAMAR — placeholder, see below */
+  knesset: null,                             /* TAMAR — placeholder, see below */
+};
+const F5_LINE_PH = {
+  article: '[טקסט — תמר: כתבות בלבד, אין סרטון]',        /* TAMAR — placeholder */
+  knesset: '[טקסט — תמר: רק ההצבעה באתר הכנסת]',        /* TAMAR — placeholder */
+};
+function f5LineHtml(kind) {
+  return F5_LINE[kind] ? esc(F5_LINE[kind]) : ph(F5_LINE_PH[kind]);
 }
 
 /* ===================== 4.5 · THE PRE-REVEAL =========================
@@ -5614,22 +5677,16 @@ async function beat5() {
   if (issue.knesset_url) links.push({ label:'ההצבעה באתר הכנסת', url:issue.knesset_url }); /* TAMAR */
   const hasMore = !!(full || terms.length || links.length);
 
-  /* THE LINE CANNOT PROMISE WHAT THE MODAL HAS NOT GOT. v2 and s2 carry
-     no further_links and no knesset_url — links is empty on both, and on
-     those two the modal is the explanation and nothing else. A line
-     reading לסרטונים there offers a video that does not exist, so the
-     no-links case keeps the wording the button already shipped with:
-     approved copy, no new promise, INTERIM until Tamar rules. The
-     three-way split by what the issue actually has — video vs article vs
-     Knesset page — is hers to make and is NOT made here; only 3 of the
-     16 issues carry a video at all. See the report. */
+  /* T34b · THE LINE NOW SAYS WHAT THE ISSUE ACTUALLY HAS. It was one
+     test — links.length — and it was wrong on SEVEN of the sixteen: four
+     issues carry only the Knesset vote page and three carry only
+     articles, and all seven were offering the player a video. See
+     readKind(). */
   if (hasMore) {
+    const kind = readKind(issue, links);
     const read = el('div', 'f5read f5surf b5stage f5late');
     read.innerHTML =
-      '<button type="button" class="f5more">' +
-        esc(links.length ? 'לסרטונים ועוד מידע על הנושא'   /* TAMAR */
-                         : 'עוד על ההצבעה') +                    /* TAMAR */
-      '</button>';
+      '<button type="button" class="f5more">' + f5LineHtml(kind) + '</button>';
     b.appendChild(read);
     late.push(read);
     pressable($('.f5more', read)).addEventListener('click',

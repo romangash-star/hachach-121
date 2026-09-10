@@ -5116,6 +5116,13 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
    string lands, the ph() call goes and this rule goes with it. */
 body.no-ph .f5res .ph{ display:inline-block !important; }
 .f5res .ph{ font-family:var(--font-ui); }
+/* T34b · THE THIRD AND LAST EXCEPTION, for the same reason as the other
+   two. The board's one line IS the button; hiding its marker does not
+   leave a cosmetic gap, it leaves a control with nothing written on it
+   and no way to know the door is there. Scoped to .f5more so no other
+   placeholder is affected, and it goes when Tamar's two strings land. */
+body.no-ph .f5more .ph{ display:inline-block !important; }
+.f5more .ph{ font-family:var(--font-ui); font-size:12px; padding:2px 7px 3px; }
 .f5res__you{ display:block; font-size:14px; font-weight:400; color:#E6E2D8; }
 /* 23 · the numeral stays IN the demoted line. <b> takes the UA's bold,
    which in a 400/900 family resolves to the Black — so the figure was
