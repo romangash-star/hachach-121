@@ -8622,6 +8622,18 @@ const EG_CONFETTI_N = 34;
    260ms the overlay outlives the collapse, is a bug waiting to be found
    by the next person who queries it. The default is unchanged. */
 function egConfetti(host) {
+  /* SWEEP-2 · GATED ON COMPLETION AS WELL AS ON THE FLAG. The spent flag
+     answers "has this player already had it"; it never answered "has the
+     map actually been finished". On the real path that gap is invisible,
+     because endGame() is only reached at completion -- but ?screen=end
+     jumps straight here, and that is the link used to show the ending in
+     a meeting. Measured before this line existed: 34 pieces at 8/8 and
+     34 pieces at 0/6, identical. The one audience seeing confetti for a
+     map nobody finished was a client.
+     IT IS THE SAME TEST egOverlay() ALREADY MAKES one screen earlier --
+     topicsDone() against TOPICS().length -- so the celebration and the
+     screen that carries it now agree about what completion is. */
+  if (topicsDone() < TOPICS().length) return;
   if (EG_CONFETTI_SPENT || egReduced()) return;
   EG_CONFETTI_SPENT = true;
   saveState();                    /* spent is spent, across reloads too */

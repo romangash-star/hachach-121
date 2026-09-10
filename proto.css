@@ -1337,9 +1337,17 @@ body.no-ph .ph{ display:none !important; }
    point of the drag — which is the whole reason the feedback could not
    be "shrink the one you are not choosing".                            */
 .b1ans{ position:absolute; z-index:7; bottom:var(--sp-3); inset-inline:var(--sp-3); }
+/* SWEEP-2 · 60 -> 62, AND IT IS THE SAME FIX REACHING THE SAME SURFACE.
+   The claim card is in .stack too, so 60 rendered 43.06 at 0.7177 -- 0.9px
+   under, which is a miss nobody would ever diagnose. Raising it here as
+   well is what keeps ONE number on the scaled surface: two .v-a rows on
+   one scaled card at two different heights is the thing that goes
+   undocumented and then drifts. See .mf-b__foot .v-a for the argument.
+   THE FILL IS UNAFFECTED. --fill is a background wipe and changes no
+   geometry, so the drag readout behaves at 62 exactly as at 60. */
 .b1ans .v-a{
   --fill:0;
-  min-height:60px; font-size:var(--fs-action);
+  min-height:62px; font-size:var(--fs-action);
   position:relative; overflow:hidden;      /* clips the fill to the radius */
 }
 /* THE FILL IS A WIPE, NOT A CROSS-FADE. Fading the background to --ink
@@ -2101,7 +2109,24 @@ body.no-ph .ph{ display:none !important; }
   box-shadow:0 0 0 4px var(--edge), 0 0 0 6px var(--keyline);
 }
 
-.mf-b__foot .v-a{ font-size:19px; }
+/* =====================================================================
+   SWEEP-2 · 52 -> 62, AND THE NUMBER IS T32's FOR T32's REASON.
+
+   THE DECLARED VALUE IS UNSCALED CARD SPACE. .stack is scaled to fit the
+   shortest phone -- 0.7177 at 360x640 -- so the base .v-a's min-height:52
+   rendered 37.3 here: 15% under the 44px minimum, on the control the
+   player presses three to nine times a round across twenty-two rounds.
+   T32 fixed exactly this on the inverted picker's .inv-name and did not
+   reach the cascade, which is the same class on the same scaled surface.
+   62 renders 44.50 at 0.7177 and 62 at 390, where nothing is scaled.
+   IT GROWS UPWARD, and unlike T32's tray that is NOT free here. The
+   inverted round could spend its portrait because the face is withheld
+   by design; this card's face is the whole point of the beat. The cost
+   is measured rather than assumed -- see the report -- and the card's
+   own box does not move, because the foot is in flow at the foot of a
+   card whose height is fixed.
+   ===================================================================== */
+.mf-b__foot .v-a{ font-size:19px; min-height:62px; }
 
 /* ---- the guess-vs-reality axis. The payload of the beat, and it is
    INSIDE the card again, at the foot, where the board draws it.
