@@ -1761,9 +1761,16 @@ function deckCard(i) {
         '<button type="button" class="pcov" aria-label="' +
           esc('גילוי המפלגה') + '">' +                       /* TAMAR */
           '<i class="pcov__face" aria-hidden="true">' +
-            '<b class="pcov__lab">' + esc('מפלגה') +
-              '<span class="pcov__arr" aria-hidden="true">↑</span>' +
-            '</b>' +
+            /* T50 · NO ARROW. The tape already says it lifts — the curl on
+               its leading edge and the hard drop under it are the
+               affordance, and they are the ones that survive being looked
+               at rather than read. The glyph pointed UP, which is not the
+               direction anything here moves: the sheet peels from the
+               leading edge and leaves on an arc. aria-hidden, so nothing
+               that spoke it loses anything either.
+               THE HEBREW IS UNTOUCHED. The arrow was its own <span>
+               sibling, never a character inside esc('מפלגה'). */
+            '<b class="pcov__lab">' + esc('מפלגה') + '</b>' +
           '</i>' +
           '<i class="pcov__curl" aria-hidden="true"></i>' +
         '</button>' +
@@ -10100,7 +10107,16 @@ async function egBeat4() {
   const paintCards = () => slots.forEach(s => { $('.sh-scale', s).innerHTML = shCardHTML(s.dataset.k, SH_ASPECT); });
   const place = () => {
     const [W, H] = SH_ASPECTS[SH_ASPECT];
-    const tw = track.clientWidth, th = track.clientHeight;
+    /* T39 · THE SIZING WIDTH IS THE PADDED ONE, NOT THE BLED ONE. The track
+       now carries a negative margin-inline so it reaches the screen edges,
+       which grew clientWidth by twice the inset. Left alone, that would
+       have grown the CARD: the 4:5 cap is (tw * 0.78) * H / W and binds
+       where 9:16's th cap does, so 4:5 would have gone 349.05 -> 380.25 at
+       390 while 9:16 stayed put — a bleed that silently resized one aspect
+       and not the other. Reading the margin back off the element keeps one
+       source of truth in the CSS: change --ov-inline and both follow. */
+    const bleed = -parseFloat(getComputedStyle(track).marginInlineStart) || 0;
+    const tw = track.clientWidth - bleed * 2, th = track.clientHeight;
     if (!tw || !th) return;
     /* T37 · 1 · THE DIE-CUT IS PAINTED OUTSIDE THE CARD'S BOX AND HAS TO
        BE PAID FOR OUT OF THE TRACK. .sh-hold draws the sticker edge as
