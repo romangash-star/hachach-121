@@ -10192,7 +10192,7 @@ async function shExport(kind, aspect) {
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
       '<foreignObject width="100%" height="100%">' +
-        '<div xmlns="http://www.w3.org/1999/xhtml"><style>' + A.css + '</style>' + xhtml + '</div>' +
+        '<div xmlns="http://www.w3.org/1999/xhtml"><style>/*<![CDATA[*/' + A.css + '/*]]>*/</style>' + xhtml + '</div>' +
       '</foreignObject></svg>';
   /* NON-NEGOTIABLE 1 · a data: URL. blob: taints the canvas and toBlob
      throws SecurityError — Chrome, Playwright WebKit and real iOS Safari. */
