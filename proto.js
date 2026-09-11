@@ -2346,6 +2346,28 @@ async function commitClaim(ans, card, dir) {
   S.claim = ans;
   card.querySelectorAll('.v-a').forEach(b => b.disabled = true);
 
+  /* THE PUNCH LANDS HERE, ON THIS FRAME — reused, read-only, from the MK
+     cascade (see gxMark()/verdict()): same 38px .gx-punch, same sfx, no
+     transition. One call site covers both tap and swipe-release, since
+     both commit through here.
+     A SWIPED CARD IS STILL MID-DRAG at this instant — card.style.transform
+     holds the gesture's translateX/rotate, and the snap-back to square
+     runs a few lines down. Reading the button's rect while that transform
+     is live would place the mark at its DRAGGED position, and the
+     snap-back would then visibly pull the card out from under a mark that
+     cannot move. So the transform is cleared, the rect read, and the
+     transform restored, all synchronously (no repaint happens mid-script) —
+     the mark lands where the button is about to settle, not where the
+     drag currently has it. For a tap this is a no-op: the transform is
+     already empty. */
+  const punchBtn = card.querySelector('[data-ans="' + ans + '"]') || card;
+  const savedT = card.style.transform;
+  card.style.transform = '';
+  const pr = punchBtn.getBoundingClientRect();
+  card.style.transform = savedT;
+  card._punch = gxMark(pr.x + pr.width / 2, punchBtn);
+  sfx('punch');
+
   const table = COIN_TABLES[DEV.coins];
   /* under 'sheet' this is deferred to the stamp: paying out on
      correctness here would resolve the claim before the stamp does. */
@@ -2775,6 +2797,10 @@ async function claimReveal(ans, card) {
                              (dir * 13 + CM_REST) + 'deg)';
       chip.style.opacity = .2;
       await wait(T.cardExit);
+      /* the punch is on .cardwrap, same as the cascade's hole — it does
+         not ride the card's own exit and has to be taken off explicitly
+         or it is left floating over every card that follows. */
+      if (card._punch) card._punch.remove();
       card.remove(); mark.remove(); panel.remove(); chip.remove();
       /* T22 · THE BACK OF THE NEXT CARD IS SHOWN, ON PURPOSE. It was
          already visible for the frame between the throw finishing and
