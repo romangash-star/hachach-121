@@ -2443,6 +2443,13 @@ function claimLift(card) {
     .map(sel => $(sel, card))
     .filter(Boolean)
     .map(n => ({ n, y: n.getBoundingClientRect().top }));
+  /* THE PUNCH GOES DOWN IN THE SAME BREATH AS THE BUTTONS. .is-revealing
+     (next line) is what hides .b1ans via CSS — but the punch is not a
+     child of .b1ans, it is parented to .cardwrap (see commitClaim()), so
+     hiding the buttons does nothing to it on its own. Left alone it would
+     hang there, on nothing, for the rest of the reveal until the הלאה
+     cleanup finally takes it down. */
+  if (card._punch) { card._punch.remove(); card._punch = null; }
   card.classList.add('is-revealing');
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
   const moved = flip.filter(f => {
