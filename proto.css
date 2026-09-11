@@ -331,6 +331,21 @@
   --t-gx-travel-1: 420ms;   /* one slot of disagreement                 */
   --t-gx-travel-2: 650ms;   /* two — felt as bigger, not just longer    */
   --t-gx-settle:   220ms;   /* agreement: nowhere to travel             */
+  /* T55 · THE STRIP'S OWN FADE, TAKEN OFF --t-hold. gx-in ran for
+     --t-hold (640ms) while runAxis was already walking the strip through
+     its steps underneath it, so the MK's token began appearing at 1190ms
+     against a fade that did not finish until 1280: the answer arrived
+     while the player's own mark was still ramping up. 240ms COMPLETES
+     before the MK appears — which is the ordering the beat is built on —
+     and is still long enough to read as the strip arriving rather than
+     cutting in. */
+  --t-gx-in:       240ms;
+  /* T55 · THE PRESS HOLD, AND IT IS DELIBERATELY NOT --t-hold. The punch
+     lands on the pressed button at frame 0, so the quiet gap now sits
+     BETWEEN the player's mark and the MK's answer instead of in front of
+     both. --t-hold stays 640 and still drives the inverted round, which
+     opens on a button row with no punch in it. */
+  --t-punch-hold:  440ms;
   /* T53 · 80 -> 0. Pure dead air: nothing is on screen changing during it.
      Its stated job — the stamp lands after the token has settled, not with
      it — is already guaranteed by the awaits above, which do not resolve
@@ -2147,30 +2162,36 @@ body.no-ph .ph{ display:none !important; }
    own box does not move, because the foot is in flow at the foot of a
    card whose height is fixed.
    ===================================================================== */
-.mf-b__foot .v-a{ font-size:19px; min-height:62px; }
-/* T53 · THE CHOICE HAS TO LOOK CHOSEN, AND THAT IS THE WHOLE FIX.
-   verdict() waits --t-hold (640ms) under a comment that reads "the
-   player's choice sits alone before the truth arrives" — but nothing made
-   it alone. The three buttons were disabled on the same tick and there is
-   no :disabled rule for .v-a anywhere, so they sat at rest, undimmed and
-   unmarked, for 644 measured milliseconds after the finger lifted. The
-   :active depression is the only acknowledgement there was and it ends on
-   release. That is what read as a hang.
-   IT IS BEAT 2'S TREATMENT, UNCHANGED. .ovpane--vote.is-taken does exactly
-   this on the tachles vote — .3 and scale(.94) for the two not taken, full
-   strength for the one that was, on --t-b2-seat. Same values, same token,
-   same easing; only the selector is new, so the two votes in the game read
-   the same way and there is one treatment to tune rather than two.
-   RECEDE, NOT FAIL. Opacity and scale only. No hue moves: lime and magenta
-   code correctness in this app and the press knows nothing about whether
-   the guess was right — the verdict is 1.5 seconds away and belongs to the
-   stamp. A rejected answer here means "not the one you picked", never
-   "wrong". */
-.mf-b__foot.is-taken .v-a{
-  opacity:.3; transform:scale(.94);
-  transition:opacity var(--t-b2-seat) linear, transform var(--t-b2-seat) var(--e-settle);
+.mf-b__foot .v-a{ font-size:19px; min-height:62px; position:relative; }
+/* =====================================================================
+   T55 · THE PUNCH IS THE ACKNOWLEDGEMENT, AND T53'S RECESSION IS GONE.
+   T53 dimmed the two unchosen buttons to .3/scale(.94) on --t-b2-seat
+   because nothing marked the press at all. The punch does that job far
+   better: it lands on the pressed button at frame 0, it is the player's
+   own input echoed back, and it is the SAME 38px object the strip carries
+   440ms later, so the two are one mark handed along rather than two marks
+   that resemble each other.
+
+   HALF OF T53 IS THEREFORE UNSOLVED, KNOWINGLY. T53's case had two parts:
+   the press was unacknowledged, and the row read as three live buttons
+   during the wait. The punch answers the first completely. The second is
+   now unanswered — the two unchosen buttons sit fully lit and disabled for
+   440ms. Lion's call, 11 Sep 2026, on the record: if it reads as still-
+   tappable on device the fix is the ROW LEAVING SOONER, not the buttons
+   dimming. Do not reinstate a recession here without him.
+
+   BEAT 2 IS UNTOUCHED. --t-b2-seat still drives .ovpane--vote.is-taken and
+   the tachles vote keeps its own treatment; only beat 4's selector went.
+   ===================================================================== */
+.mf-b__foot .v-a__punch{
+  position:absolute; left:50%; top:50%; translate:-50% -50%;
+  z-index:2; pointer-events:none;
 }
-.mf-b__foot.is-taken .v-a.is-chosen{ opacity:1; transform:none; }
+/* THE LABEL IS REPLACED, NOT LAYERED OVER. Hard cut, no transition: the
+   global .v-a.is-chosen .v-a__lab rule fades across 60ms for beat 2's
+   travelling word, and 60ms of a Hebrew word showing through the hole is
+   60ms of the hole not being a hole. */
+.mf-b__foot .v-a.is-chosen .v-a__lab{ opacity:0; transition:none; }
 
 /* ---- the guess-vs-reality axis. The payload of the beat, and it is
    INSIDE the card again, at the foot, where the board draws it.
@@ -2190,7 +2211,7 @@ body.no-ph .ph{ display:none !important; }
 .gx{
   position:absolute; z-index:8; bottom:var(--gx-bottom); inset-inline:var(--sp-3);
   height:var(--gx-h);
-  animation:gx-in var(--t-hold) var(--e-settle) both;
+  animation:gx-in var(--t-gx-in) var(--e-settle) both;
   background:rgba(216,201,168,.92); border-radius:12px; padding:7px 9px 5px;
   box-shadow:0 0 0 2px rgba(0,0,0,.4);
 }
@@ -2267,11 +2288,16 @@ body.no-ph .ph{ display:none !important; }
 }
 .gx-m{ position:absolute; top:50%; translate:50% -50%; width:38px; height:38px; display:block;
   transition:right var(--t-flip) var(--e-settle); z-index:2; }
-/* the player's token drops into its slot rather than being there */
+/* T55 · THE PLAYER'S TOKEN NO LONGER DROPS IN — it is already at its stop
+   when the strip arrives, because the punch landed on the button 440ms
+   earlier and this is the same object continuing. .is-landing is gone with
+   runAxis's step 1.
+   THE TRANSITIONS STAY, AND THEY ARE LOAD-BEARING: .gx-m.is-paired.gx-you
+   animates `transform` on agreement, and that is still keyed to
+   --t-gx-lock. Removing them would make the paired badge snap. */
 .gx-you{ transition:right var(--t-flip) var(--e-settle),
                     transform var(--t-gx-lock) var(--e-land),
                     opacity var(--t-gx-lock) linear; }
-.gx-you.is-landing{ transform:translateY(-14px) scale(1.12); opacity:0; }
 /* the MK's token arrives in the PLAYER'S slot before it travels */
 .gx-mk{ transition:right var(--t-flip) var(--e-settle),
                    opacity var(--t-gx-appear) linear,
@@ -2280,17 +2306,50 @@ body.no-ph .ph{ display:none !important; }
 /* agreement: the two share one slot and settle instead of travelling */
 .gx.is-agreed .gx-track{ animation:gx-settle var(--t-gx-settle) var(--e-land); }
 @keyframes gx-settle{ 0%,100%{transform:none} 45%{transform:scale(1.015)} }
-/* A8 · the neutral "your guess" mark. A punch-hole: paper ring, dark
-   centre, NO hue — the verdict stamp beside it is the only coloured thing
-   in the beat and this must never compete with it or be mistaken for it.
+/* A8 · the neutral "your guess" mark, and T55 makes it read as a HOLE.
+   ONE OBJECT, TWO PLACES: this is what lands on the pressed button at
+   frame 0 and what the strip carries at its stop 440ms later. Sizing,
+   fill and shadows are declared once here so the handoff is the same 38px
+   disc and not two marks that merely resemble each other.
+
+   IT IS FILLED, NOT CUT. A genuine cut-through is possible — .deckcard is
+   preserve-3d with .cardback at rotateY(0) and .mf-b at 180, both
+   backface-visibility:hidden, so the current card's own reverse is not
+   painted and a mask on the face would show the NEXT card's back through
+   it. It was not built: it needs a DOM wrapper (a mask cuts every
+   descendant, the inner shadow included) and it puts mask + backface-
+   visibility + preserve-3d together, which is the exact combination that
+   already broke this card once — see §6 above. Lion's call, 11 Sep 2026:
+   ship the filled hole, and gate the real one on a device test. The two
+   moments that would justify it are the exit swipe and the last card, and
+   both are moments a headless harness cannot verify.
+
+   NO HUE, WHICH IS THE STANDING RULE AND NOT A PREFERENCE. #151310 is a
+   warm near-black off the same neutral axis as --ground (#2B2926); the
+   highlights are white and black at low alpha. The verdict stamp is the
+   only coloured thing in this beat and nothing before it may compete.
    Its label sits above the token rather than inside: 38px cannot hold
-   three Hebrew words, and the strip's own height is fixed. PLACEHOLDER,
-   marked as such — B4 replaces the whole mark. */
+   three Hebrew words, and the strip's own height is fixed. */
 .gx-punch{
   display:block; width:38px; height:38px; border-radius:50%;
-  background:var(--paper);
-  box-shadow:inset 0 0 0 6px var(--ground), 0 0 0 2px rgba(0,0,0,.45),
-             0 2px 0 rgba(0,0,0,.3);
+  /* THE BORE, NOT A DISC. A flat near-black fill was the first attempt and
+     it read as a sticker: an inner shadow laid on #151310 has nowhere to
+     go, so none of the modelling survived at 38px. Measured against three
+     alternatives on a settled bench — see explorations/flow-proto/
+     hole-test.html, which renders all four against the real paper.
+     THE LIGHT COMES FROM ABOVE, which the whole card already assumes (its
+     shadows are 0 2px / 0 5px). So the paper edge OCCLUDES the top of the
+     bore — darkest there — and the light reaches the far wall at the
+     bottom, which is the one lifted stop in the gradient. Reversing those
+     two turns it into a dome. */
+  background:radial-gradient(125% 125% at 50% 125%,
+             #443A30 0%, #251F1A 46%, #100E0C 100%);
+  box-shadow:
+    inset 0  7px 9px rgba(0,0,0,.95),      /* the occluded near wall      */
+    inset 0 -4px 5px rgba(255,255,255,.18),/* the far wall, catching it   */
+    inset 0  0   0 1px rgba(0,0,0,.65),    /* the cut rim                 */
+    0 1px 0 rgba(255,255,255,.38),         /* the lit edge of the paper   */
+    0 2px 3px rgba(0,0,0,.18);             /* and that edge's own depth   */
 }
 .gx-punch__lab{
   position:absolute; bottom:calc(100% + 3px); left:50%; transform:translateX(-50%);
