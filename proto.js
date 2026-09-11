@@ -10251,21 +10251,28 @@ async function shSave() {
   return 'saved';
 }
 
-/* THE WORKING STATE LIVES INSIDE THE PRESSED BUTTON: the label swaps, the
-   icon slot becomes a 21px spinner, the box does not move. THE OTHER
+/* THE WORKING STATE LIVES INSIDE THE PRESSED BUTTON: the label CLEARS, the
+   icon slot becomes a 21px spinner alone, the box does not move. THE OTHER
    BUTTON IS DISABLED WHILE ONE RUNS — two rasterise passes at once on a
-   mid-range Android is what produces a janked card. */
+   mid-range Android is what produces a janked card.
+   THE LABEL USED TO BE REPLACED WITH busyLabel RATHER THAN CLEARED — text
+   and spinner side by side in one 64.5px button, fighting for the same
+   9px gap. Cleared, the spinner centres alone; busyLabel is no longer
+   painted but is kept as the button's aria-label so the busy state still
+   has a name for a screen reader, not just aria-busy's bare "busy". */
 async function shRun(btn, other, busyLabel, fn) {
   if (SH_BUSY) return;
   SH_BUSY = true;
   const lab = $('.sh-bl', btn), ico = $('.sh-ico', btn);
   const label0 = lab.textContent, ico0 = ico.innerHTML;
   btn.classList.add('is-busy'); btn.setAttribute('aria-busy', 'true');
-  lab.textContent = busyLabel; ico.innerHTML = SH_ICON.spin;
+  btn.setAttribute('aria-label', busyLabel);
+  lab.textContent = ''; ico.innerHTML = SH_ICON.spin;
   other.disabled = true;
   let r = 'failed';
   try { r = await fn(); } catch (e) { r = 'failed'; }
   btn.classList.remove('is-busy'); btn.removeAttribute('aria-busy');
+  btn.removeAttribute('aria-label');
   ico.innerHTML = ico0;
   other.disabled = false;
   SH_BUSY = false;
