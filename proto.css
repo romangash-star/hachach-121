@@ -339,13 +339,20 @@
      before the MK appears — which is the ordering the beat is built on —
      and is still long enough to read as the strip arriving rather than
      cutting in. */
-  --t-gx-in:       240ms;
+  --t-gx-in:       140ms;
   /* T55 · THE PRESS HOLD, AND IT IS DELIBERATELY NOT --t-hold. The punch
      lands on the pressed button at frame 0, so the quiet gap now sits
      BETWEEN the player's mark and the MK's answer instead of in front of
      both. --t-hold stays 640 and still drives the inverted round, which
-     opens on a button row with no punch in it. */
-  --t-punch-hold:  440ms;
+     opens on a button row with no punch in it.
+     T56 · 440 -> 240, and 240 -> 140 on the fade above. The mark is now
+     ANNOUNCED rather than merely displayed — punch.wav's 2.68ms transient
+     lands on the same frame — so it needs far less dwell than the silent
+     recession it replaced. 240 stays clear of the ~200ms where a held
+     frame stops reading as deliberate and starts reading as a dropped
+     one. The fade still gates the MK, so the ordering guarantee is
+     unchanged; only the two durations moved. */
+  --t-punch-hold:  240ms;
   /* T53 · 80 -> 0. Pure dead air: nothing is on screen changing during it.
      Its stated job — the stamp lands after the token has settled, not with
      it — is already guaranteed by the awaits above, which do not resolve
@@ -2164,6 +2171,25 @@ body.no-ph .ph{ display:none !important; }
    ===================================================================== */
 .mf-b__foot .v-a{ font-size:19px; min-height:62px; position:relative; }
 /* =====================================================================
+   T57 · THE PUNCH IS A HOLE IN THE CARD, NOT A MARK ON THE BUTTON.
+   T55 put it inside .v-a and T56 tried straddling that button's top edge.
+   Both were wrong, and the measurements are why: the button's centre and
+   the strip's stop are 14.73px apart at 390 (the buttons are flex:1 with
+   an 18.2px gap in a 306px box; the stops were (2i+1)/6 of a 280px
+   track), and the two are 10px apart vertically. So the player's own mark
+   slid on both axes the moment the strip replaced the row.
+   IT IS NOW PARENTED TO .cardwrap AND PLACED AT THE STRIP'S STOP — the
+   same DOM node, the same left/top, before and after. foot.remove()
+   cannot take it because it was never inside the foot, and nothing it
+   sits in moves. The buttons are back to untouched: no punch inside
+   them, no is-chosen, no label override. See gxMark() in proto.js.
+   THE STOP IS MEASURED, NOT DERIVED. .mf-b's getBoundingClientRect is a
+   3D PROJECTION, not a layout box — it reads 349.7x625.26 against the
+   card's own 340x620 — so token arithmetic off --gx-bottom predicts the
+   track's centre 5px wrong. The strip is therefore built at the press and
+   held hidden (.gx--armed) purely so its real track can be measured, and
+   the hole placed on it.
+
    T55 · THE PUNCH IS THE ACKNOWLEDGEMENT, AND T53'S RECESSION IS GONE.
    T53 dimmed the two unchosen buttons to .3/scale(.94) on --t-b2-seat
    because nothing marked the press at all. The punch does that job far
@@ -2176,22 +2202,23 @@ body.no-ph .ph{ display:none !important; }
    the press was unacknowledged, and the row read as three live buttons
    during the wait. The punch answers the first completely. The second is
    now unanswered — the two unchosen buttons sit fully lit and disabled for
-   440ms. Lion's call, 11 Sep 2026, on the record: if it reads as still-
+   --t-punch-hold (240ms since T56; 440 when this was written). Lion's call, 11 Sep 2026, on the record: if it reads as still-
    tappable on device the fix is the ROW LEAVING SOONER, not the buttons
    dimming. Do not reinstate a recession here without him.
 
    BEAT 2 IS UNTOUCHED. --t-b2-seat still drives .ovpane--vote.is-taken and
    the tachles vote keeps its own treatment; only beat 4's selector went.
    ===================================================================== */
-.mf-b__foot .v-a__punch{
-  position:absolute; left:50%; top:50%; translate:-50% -50%;
-  z-index:2; pointer-events:none;
+/* THE MARK ITSELF. Absolutely placed on .cardwrap from measured screen
+   coordinates, so it is the same node at the same point throughout.
+   z-index 9 clears .gx's 8 — the strip arrives UNDER the hole. */
+.gx-punch--mark{
+  position:absolute; z-index:9; translate:-50% -50%; pointer-events:none;
 }
-/* THE LABEL IS REPLACED, NOT LAYERED OVER. Hard cut, no transition: the
-   global .v-a.is-chosen .v-a__lab rule fades across 60ms for beat 2's
-   travelling word, and 60ms of a Hebrew word showing through the hole is
-   60ms of the hole not being a hole. */
-.mf-b__foot .v-a.is-chosen .v-a__lab{ opacity:0; transition:none; }
+/* the strip exists from the press so its track can be measured, but must
+   not be seen until the hold is over. animation:none holds gx-in at its
+   first frame; removing this class is what starts the fade. */
+.gx--armed{ animation:none !important; opacity:0; }
 
 /* ---- the guess-vs-reality axis. The payload of the beat, and it is
    INSIDE the card again, at the foot, where the board draws it.
@@ -2342,14 +2369,31 @@ body.no-ph .ph{ display:none !important; }
      bore — darkest there — and the light reaches the far wall at the
      bottom, which is the one lifted stop in the gradient. Reversing those
      two turns it into a dome. */
-  background:radial-gradient(125% 125% at 50% 125%,
-             #443A30 0%, #251F1A 46%, #100E0C 100%);
+  /* T56 · THE FIRST BORE MEASURED FINE AND READ FLAT ON DEVICE, and the
+     reason is worth keeping: its bright stop sat at 125%, BELOW the disc,
+     so only the tail of it reached the bottom edge, and a .95 inset shadow
+     then crushed what was left. The gradient was monotonic and correct and
+     entirely inside the bottom 10% of the range — luminance 2..64 with a
+     mid of 25, against paper at 246. A 3x bench flattered it; 38 CSS px on
+     a phone did not.
+     JUDGE THIS BY THE PROFILE, NOT BY EYE ON A ZOOM. The bench at
+     explorations/flow-proto/hole-test.html renders the candidates and the
+     harness reads the luminance down each bore's centre line. Shipped here
+     is F: 13..130, mid 58, range 116 against the old 62. The mid is what
+     survives glare at arm's length, which is why F was taken over the more
+     physically-correct G (4..110) — G keeps half its range crushed dark,
+     which is the exact failure being fixed.
+     THE FAR-WALL HIGHLIGHT IS GONE FROM box-shadow because the gradient
+     now does that job: its 0% stop sits AT the bottom edge (50% 100%)
+     rather than beyond it. #A89070 is hue 37deg, the paper's own axis at
+     40 — and nowhere near lime 74 or magenta 319. */
+  background:radial-gradient(110% 110% at 50% 100%,
+             #A89070 0%, #5A4C3C 34%, #2A231D 70%, #100E0C 100%);
   box-shadow:
-    inset 0  7px 9px rgba(0,0,0,.95),      /* the occluded near wall      */
-    inset 0 -4px 5px rgba(255,255,255,.18),/* the far wall, catching it   */
-    inset 0  0   0 1px rgba(0,0,0,.65),    /* the cut rim                 */
-    0 1px 0 rgba(255,255,255,.38),         /* the lit edge of the paper   */
-    0 2px 3px rgba(0,0,0,.18);             /* and that edge's own depth   */
+    inset 0 4px 5px rgba(0,0,0,.62),       /* the occluded near wall      */
+    inset 0 0   0 1px rgba(0,0,0,.55),     /* the cut rim                 */
+    0 1px 0 rgba(255,255,255,.45),         /* the lit edge of the paper   */
+    0 2px 3px rgba(0,0,0,.2);              /* and that edge's own depth   */
 }
 .gx-punch__lab{
   position:absolute; bottom:calc(100% + 3px); left:50%; transform:translateX(-50%);
@@ -2374,10 +2418,30 @@ body.no-ph .ph{ display:none !important; }
    z-order, and read as separate by the die-cut edge it already carries.
    It costs no height, and it stays inside both the track and the slot at
    every stop and every card scale. */
-.gx-m.is-paired.gx-you{
-  translate:50% -50%; transform:translate(13px,-8px) scale(.58); z-index:2;
-}
-.gx-stops{ display:flex; margin-top:5px; }
+/* T57 · THE ROLES ARE SWAPPED, AND THAT IS THE WHOLE CHANGE.
+   WHAT THIS USED TO BE FOR: when guess and vote agree both tokens land on
+   one stop, and the note above worked out that a vertical stack cannot be
+   made to fit — the MK's portrait already overflows the track to -4px and
+   clearing it needs 26px against the strip's 7. So the PLAYER's token was
+   made a small badge sitting up and inline-start on the MK's portrait.
+   WHY IT NO LONGER WORKS: the player's token is now a hole on .cardwrap at
+   z-index 9, outside the strip. It cannot be made a badge, because it must
+   not move, and it cannot be painted over, because the strip is beneath it.
+   Measured on an agreement before this rule changed: hole at (303, 737.5),
+   MK token at (303.1, 737.5) at full 38px — the portrait was completely
+   covered on every correct guess, and .gx-you, which is only a label now,
+   was being scaled to 22px and shoved 13px right for no reason.
+   SO THE MK STEPS ASIDE INSTEAD. runAxis() nudges it toward the track's
+   centre — that direction, rather than a fixed one, is what stops it
+   leaving the track at the two outer stops. The pair still reads as a pair
+   because they overlap; neither is hidden. */
+.gx-m.is-paired.gx-you{ z-index:2; }
+.gx-m.is-paired-mk{ transition:right var(--t-gx-settle) var(--e-land); }
+/* T57 · THE LABELS ARE PLACED FROM THE SAME THREE MEASURED CENTRES as the
+   tokens. As flex thirds they sat 12.1px off them once the stops moved to
+   the buttons. gxPlaceStops() writes left/transform onto each <i>;
+   min-height holds the row open now that they are out of flow. */
+.gx-stops{ display:flex; margin-top:5px; position:relative; min-height:13px; }
 .gx-stops i{ flex:1; text-align:center; font-style:normal; font-size:var(--fs-meta);
   font-weight:700; color:var(--ink-soft); }
 

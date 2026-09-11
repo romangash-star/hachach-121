@@ -1,80 +1,65 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>T55 · punched-hole variants</title>
+<title>T55/T56 · punched-hole variants</title>
 <link rel="stylesheet" href="/proto.css">
 <style>
   body{ margin:0; background:#6E6C68; font-family:system-ui; }
-  .bench{ width:360px; margin:0 auto; padding:14px 0 40px; }
-  .lab{ color:#F2EFE6; font:600 12px/1.6 ui-monospace,monospace; padding:14px 10px 4px; }
-  /* the card's own ground, so each swatch is judged against the real paper */
-  .fake-card{
-    background:var(--paper); padding:10px; border-radius:14px;
-    box-shadow:0 0 0 2px var(--edge), 0 5px 0 rgba(0,0,0,.28);
-  }
-  .row{ display:flex; gap:6px; }
+  .bench{ width:390px; margin:0 auto; padding:10px 0 40px; }
+  .lab{ color:#F2EFE6; font:600 11px/1.5 ui-monospace,monospace; padding:10px 10px 3px; }
+  .fake-card{ background:var(--paper); padding:9px; border-radius:14px;
+    box-shadow:0 0 0 2px var(--edge), 0 5px 0 rgba(0,0,0,.28); }
+  .row{ display:flex; gap:18.2px; }
   .row .v-a{ flex:1; font-size:19px; min-height:62px; position:relative; }
   .v-a__punch{ position:absolute; left:50%; top:50%; translate:-50% -50%; z-index:2; pointer-events:none; }
 </style>
-<div class="stage" data-screen="round" style="height:auto; display:block; max-width:360px; margin:0 auto;">
-<div class="bench">
-
-  <div class="lab">A · shipped — #151310 flat fill</div>
-  <div class="fake-card"><div class="row v-a-row mf-b__foot">
-    <button class="v-a"><span class="v-a__lab">נגד</span></button>
-    <button class="v-a is-chosen"><span class="v-a__lab">נמנע</span>
-      <span class="v-a__punch"><span class="gx-punch v-A"></span></span></button>
-    <button class="v-a"><span class="v-a__lab">בעד</span></button>
-  </div></div>
-
-  <div class="lab">B · lifted fill, harder cues</div>
-  <div class="fake-card"><div class="row v-a-row mf-b__foot">
-    <button class="v-a"><span class="v-a__lab">נגד</span></button>
-    <button class="v-a is-chosen"><span class="v-a__lab">נמנע</span>
-      <span class="v-a__punch"><span class="gx-punch v-B"></span></span></button>
-    <button class="v-a"><span class="v-a__lab">בעד</span></button>
-  </div></div>
-
-  <div class="lab">C · bore gradient, light on the far wall</div>
-  <div class="fake-card"><div class="row v-a-row mf-b__foot">
-    <button class="v-a"><span class="v-a__lab">נגד</span></button>
-    <button class="v-a is-chosen"><span class="v-a__lab">נמנע</span>
-      <span class="v-a__punch"><span class="gx-punch v-C"></span></span></button>
-    <button class="v-a"><span class="v-a__lab">בעד</span></button>
-  </div></div>
-
-  <div class="lab">D · deeper bore, cut edge lit</div>
-  <div class="fake-card"><div class="row v-a-row mf-b__foot">
-    <button class="v-a"><span class="v-a__lab">נגד</span></button>
-    <button class="v-a is-chosen"><span class="v-a__lab">נמנע</span>
-      <span class="v-a__punch"><span class="gx-punch v-D"></span></span></button>
-    <button class="v-a"><span class="v-a__lab">בעד</span></button>
-  </div></div>
-
+<div class="stage" data-screen="round" style="height:auto; display:block; max-width:390px; margin:0 auto;">
+<div class="bench" id="bench"></div>
 </div>
-</div>
-<style>
-  /* light enters from above; the paper edge occludes the TOP of the bore, so
-     the top inner wall is darkest and the bottom-far wall catches the light. */
-  .gx-punch.v-A{
-    background:#151310;
-    box-shadow: inset 0 4px 6px rgba(0,0,0,.85), inset 0 -2px 2px rgba(255,255,255,.10),
-                inset 0 0 0 1px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.30);
-  }
-  .gx-punch.v-B{
-    background:#241F1A;
-    box-shadow: inset 0 6px 7px rgba(0,0,0,.92), inset 0 -3px 4px rgba(255,255,255,.16),
-                inset 0 0 0 1px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.34);
-  }
-  .gx-punch.v-C{
-    background:radial-gradient(120% 120% at 50% 118%, #3A322A 0%, #241F1A 42%, #14110E 100%);
-    box-shadow: inset 0 6px 8px rgba(0,0,0,.9), inset 0 -3px 4px rgba(255,255,255,.14),
-                inset 0 0 0 1px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.34);
-  }
-  .gx-punch.v-D{
-    background:radial-gradient(125% 125% at 50% 125%, #443A30 0%, #251F1A 46%, #100E0C 100%);
+<script>
+/* T56 · THE BORE HAS TO READ AT 38 CSS px, NOT ON A 3x BENCH.
+   D shipped and read as a flat black disc on device. Measured on the real
+   render its bore spans luminance 0..36 out of 255 — a real gradient, but
+   entirely inside the bottom 14% of the range, which at arm's length is
+   indistinguishable from flat. Every variant below is judged by its
+   LUMINANCE PROFILE down the bore's centre line, not by eye on a zoom. */
+const V = {
+  D_shipped: `background:radial-gradient(125% 125% at 50% 125%, #443A30 0%, #251F1A 46%, #100E0C 100%);
     box-shadow: inset 0 7px 9px rgba(0,0,0,.95), inset 0 -4px 5px rgba(255,255,255,.18),
                 inset 0 0 0 1px rgba(0,0,0,.65), 0 1px 0 rgba(255,255,255,.38),
-                0 2px 3px rgba(0,0,0,.18);
-  }
-</style>
+                0 2px 3px rgba(0,0,0,.18);`,
+  E_openbore: `background:radial-gradient(115% 115% at 50% 104%, #8A7658 0%, #4A3F33 38%, #221D19 74%, #0E0C0A 100%);
+    box-shadow: inset 0 5px 6px rgba(0,0,0,.72), inset 0 0 0 1px rgba(0,0,0,.6),
+                0 1px 0 rgba(255,255,255,.42), 0 2px 3px rgba(0,0,0,.2);`,
+  F_brightwall: `background:radial-gradient(110% 110% at 50% 100%, #A89070 0%, #5A4C3C 34%, #2A231D 70%, #100E0C 100%);
+    box-shadow: inset 0 4px 5px rgba(0,0,0,.62), inset 0 0 0 1px rgba(0,0,0,.55),
+                0 1px 0 rgba(255,255,255,.45), 0 2px 3px rgba(0,0,0,.2);`,
+  G_crescent: `background:radial-gradient(125% 100% at 50% 112%, #C2A87E 0%, #6B5942 26%, #2E2620 60%, #0E0C0A 100%);
+    box-shadow: inset 0 6px 7px rgba(0,0,0,.8), inset 0 0 0 1px rgba(0,0,0,.6),
+                0 1px 0 rgba(255,255,255,.48), 0 2px 4px rgba(0,0,0,.22);`,
+};
+const words = ['נגד','נמנע','בעד'];
+let html = '';
+for (const [name, css] of Object.entries(V)) {
+  html += `<div class="lab">${name}</div><div class="fake-card"><div class="row v-a-row mf-b__foot">`;
+  words.forEach((w,i) => {
+    const chosen = i === 1;
+    html += `<button class="v-a${chosen?' is-chosen':''}" data-v="${name}">`
+         + `<span class="v-a__lab">${w}</span>`
+         + (chosen ? `<span class="v-a__punch"><span class="gx-punch" data-k="${name}"></span></span>` : '')
+         + `</button>`;
+  });
+  html += `</div></div>`;
+}
+document.getElementById('bench').innerHTML = html;
+const st = document.createElement('style');
+st.textContent = Object.entries(V).map(([n,c]) =>
+  `.gx-punch[data-k="${n}"]{${c.replace(/\s+/g,' ')}}`).join('\n');
+document.head.appendChild(st);
+/* hand the harness the exact device-pixel box of each bore */
+window.__boxes = () => Object.keys(V).map(n => {
+  const e = document.querySelector(`.gx-punch[data-k="${n}"]`);
+  const r = e.getBoundingClientRect();
+  return {name:n, x:r.x, y:r.y, w:r.width, h:r.height};
+});
+</script>

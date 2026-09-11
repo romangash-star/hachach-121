@@ -4768,14 +4768,28 @@ async function verdict(guess, foot, card) {
      T53'S RECESSION IS GONE and is-taken with it: the two unchosen
      buttons now do not move, fade or scale at all. See the T55 block in
      proto.css for what that knowingly leaves unsolved. */
+  foot.querySelectorAll('.v-a').forEach(b => { b.disabled = true; });
+
+  /* T57 · THE THREE BUTTON CENTRES, CAPTURED BEFORE foot.remove() TAKES
+     THEM. These become the strip's stops, so the hole's x is literally the
+     same number in both states. They cannot be expressed as a fraction:
+     the buttons are flex:1 with a gap, so their centres are not at
+     (2i+1)/6 of anything. */
+  const stopX = {};
   foot.querySelectorAll('.v-a').forEach(b => {
-    b.disabled = true;
-    if (b.dataset.pred === guess) {
-      b.classList.add('is-chosen');
-      b.insertAdjacentHTML('beforeend',
-        '<span class="v-a__punch"><span class="gx-punch"></span></span>');
-    }
+    const r = b.getBoundingClientRect();
+    stopX[b.dataset.pred] = r.x + r.width / 2;
   });
+
+  /* THE STRIP IS BUILT NOW AND HELD HIDDEN, and that is not premature: it
+     is the only way to place the hole on the strip's REAL stop rather than
+     on one derived from tokens, which .mf-b's 3D projection puts 5px out.
+     It is inert behind .gx--armed until the hold ends. */
+  const g = axis(guess, p);
+  card.appendChild(g);
+  g.classList.add('gx--armed');
+  const stops = gxPlaceStops(g, stopX, guess);
+  const hole  = gxMark(stopX[guess], $('.gx-track', g));
   sfx('punch');                                                /* T55 */
 
   /* T27 · THE BLACK TAG RETIRES ON THE FIRST VERDICT. "נחשו מה הוא/היא
@@ -4794,6 +4808,7 @@ async function verdict(guess, foot, card) {
      with nothing else on screen moving at all. */
   await wait(T.punchHold);
   foot.remove();
+  g.classList.remove('gx--armed');        /* T57 · gx-in starts here */
 
   /* THE BASIS LINE IS GONE. It rendered 'הצבעה מתועדת' on basis:doc cards
      and a placeholder on basis:bloc ones, which meant the label's ABSENCE
@@ -4807,10 +4822,9 @@ async function verdict(guess, foot, card) {
      label. See the report. */
 
   /* THE AXIS IS INSIDE THE CARD, at its foot. Absolutely positioned, so
-     it adds nothing to the card's box and cannot re-scale it. */
-  const g = axis(guess, p);
-  card.appendChild(g);
-  await runAxis(g, guess, p.vote);
+     it adds nothing to the card's box and cannot re-scale it. T57 built and
+     appended it at the press; only the playing-out happens here. */
+  await runAxis(g, guess, p.vote, stops);
 
   /* THE STAMP IS ONE PLANE, ON TOP. Parented to .cardwrap rather than the
      card because .mf-b carries overflow:hidden and would cut it at the
@@ -4853,6 +4867,11 @@ async function verdict(guess, foot, card) {
   /* T24 · THE GATE GOES DOWN BEFORE THE THROW, not after it. On the last
      card the ground the deck is sitting on has to already carry the gate,
      or the throw reveals nothing and a screen has to arrive instead. */
+  /* T57 · THE HOLE IS ON .cardwrap, SO THE SWIPE CANNOT TAKE IT. Everything
+     else in this beat rides the card off screen; this one node would be left
+     hanging over the next card's face. It goes on the frame the card starts
+     leaving. */
+  hole.remove();
   const last = S.ci >= S.dealt.length;
   if (last) layGate();
   leaveCard();
@@ -5051,7 +5070,11 @@ function axis(guess, p) {
          mark would. PLACEHOLDER — B4 picks between four treatments. */
       '<span class="gx-m gx-you" style="right:' + stopPct(guess) + '%" ' +
         'role="img" aria-label="הניחוש שלך">' +
-        '<span class="gx-punch" aria-hidden="true"></span>' +
+        /* T57 · NO .gx-punch HERE. The hole on .cardwrap IS the player's
+           mark and it is already sitting at this exact stop; a second one
+           inside the token would be the same object drawn twice. What is
+           left is the label and the slot the MK's token is compared
+           against. */
         '<span class="gx-punch__lab">' + ph('הניחוש שלך') + '</span></span>' +
       /* THE MK TOKEN STARTS IN THE PLAYER'S SLOT, not in its own. The
          comparison begins where the player put it and travels from
@@ -5066,8 +5089,49 @@ function axis(guess, p) {
   return g;
 }
 
+/* T57 · THE STOPS ARE THE BUTTONS' CENTRES, MEASURED. stopPct()'s
+   (2i+1)/6 of the track sat 14.73px inside them at 390 — the buttons are
+   flex:1 with an 18.2px gap in a 306px box, the track is 280px, and no
+   fixed fraction reconciles the two. Called once, on a strip that is in
+   the DOM but still hidden, so the track has a real box to measure.
+   THE THREE STOPS STAY EVENLY SPACED AND SYMMETRIC, which is what the fill
+   depends on: d1 and d2 remain exactly 1:2, and gx--d{dist} keys off the
+   integer distance, untouched. */
+function gxPlaceStops(g, stopX, guess) {
+  const tr  = $('.gx-track', g).getBoundingClientRect();
+  const pct = {};
+  for (const v of VOTES)
+    pct[v] = +(((tr.x + tr.width - stopX[v]) / tr.width) * 100).toFixed(3);
+  $('.gx-you', g).style.right = pct[guess] + '%';
+  $('.gx-mk',  g).style.right = pct[guess] + '%';
+  /* the labels follow the tokens; as flex thirds they would now disagree */
+  const row = $('.gx-stops', g), rr = row.getBoundingClientRect();
+  [...row.children].forEach((i, k) => {
+    i.style.position  = 'absolute';
+    i.style.left      = (stopX[VOTES[k]] - rr.x).toFixed(2) + 'px';
+    i.style.transform = 'translateX(-50%)';
+  });
+  return pct;
+}
+
+/* T57 · THE HOLE, PLACED ON .cardwrap AT THE STRIP'S OWN STOP. Its x is the
+   pressed button's centre and its y is the track's, both read off real
+   boxes rather than computed from tokens — .mf-b's rect is a 3D projection
+   and lies about the layout by 5px. Parented outside the foot and outside
+   the card's flipper, so foot.remove() cannot take it and no transform can
+   move it: same node, same coordinates, before and after. */
+function gxMark(cx, track) {
+  const wrap = $('.cardwrap'), wr = wrap.getBoundingClientRect();
+  const tr = track.getBoundingClientRect();
+  const m = el('span', 'gx-punch gx-punch--mark');
+  m.style.left = (cx - wr.x).toFixed(2) + 'px';
+  m.style.top  = (tr.y + tr.height / 2 - wr.y).toFixed(2) + 'px';
+  wrap.appendChild(m);
+  return m;
+}
+
 /* the strip, played out. Every duration is a token; see :root. */
-async function runAxis(g, guess, vote) {
+async function runAxis(g, guess, vote, stops) {
   const you  = $('.gx-you', g), mk = $('.gx-mk', g), fill = $('.gx-fill', g);
   /* 1 · T55 · THE STRIP ARRIVES WITH THE PUNCH ALREADY AT ITS STOP, and
          this await is the strip's own fade FINISHING rather than a pause
@@ -5104,7 +5168,7 @@ async function runAxis(g, guess, vote) {
      stops labelled בעד · נמנע · נגד. See the note beside .gx-fill. */
   const dist = Math.abs(VOTES.indexOf(vote) - VOTES.indexOf(guess));
   g.classList.add('gx--d' + dist);
-  const from = stopPct(guess), to = stopPct(vote);
+  const from = stops[guess], to = stops[vote];      /* T57 · measured */
   if (!dist) {
     /* agreement: there is nowhere to travel. A zero-length fill reads as
        a bug, so the pair settles in place instead and the player's token
@@ -5112,6 +5176,16 @@ async function runAxis(g, guess, vote) {
     you.classList.add('is-paired');
     mk.classList.add('is-paired-mk');
     g.classList.add('is-agreed');
+    /* T57 · THE MK STEPS CLEAR OF THE HOLE, because the hole cannot move.
+       Both land on the same stop on agreement, and the hole sits above the
+       strip at z-index 9 — so without this the portrait is covered outright
+       on every correct guess. TOWARD THE TRACK'S CENTRE, not a fixed
+       direction: at the two outer stops a fixed one walks the portrait off
+       the end of the track. 28px leaves them overlapping, which is what
+       reads as a pair rather than as two separate answers. */
+    const tw  = $('.gx-track', g).getBoundingClientRect().width;
+    const dir = stops[guess] < 50 ? 1 : -1;
+    mk.style.right = (stops[guess] + dir * (28 / tw * 100)).toFixed(3) + '%';
     await wait(T.gxSettle);
   } else {
     const dur = dist === 1 ? T.gxTravel1 : T.gxTravel2;
