@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>flow-proto / Ben Gvir illustration test — A vs B</title>
+<style>
+/* ---------------------------------------------------------------------------
+   BEN GVIR ILLUSTRATION TEST — style A (halftone/riso) vs style B (line+flat).
+
+   This sheet is NOT the flow-proto grey-box prototype's own language. It
+   implements the v9 design system's ground, MF-B frame and verdict states to
+   their exact specs, because that is the context the illustration has to
+   survive — testing a portrait against a wireframe would answer nothing.
+
+   Ground:   #403E3A + the two-layer dot grid          (v9 .frame)
+   MF-B:     5px white die-cut + 2px hard dark outline + 6px straight drop
+   Verdict:  26px copy, rgba fill at .62, 7px backdrop blur, 3px white edge.
+             Two inks only — one for correct, one for surprise — which is the
+             v9 rule: colour codes CORRECTNESS, never vote direction.
+
+   ASSET SIZING RULE, enforced by hand and checked in the audit at the bottom:
+   anything rendered under ~150px uses the 128px file; only the full-size
+   cascade portrait (176px) uses the 400px file. Style A is halftone — letting
+   the browser downscale the 400px file to 48px would alias the dot screen and
+   the test would be measuring the resampler, not the style.
+--------------------------------------------------------------------------- */
+*{margin:0;padding:0;box-sizing:border-box}
+/* The root must state its own direction. Left unset, the UA propagates the
+   BODY's dir to the canvas, which right-aligns the 390px body inside the
+   wider viewport headless Chrome actually gives us on macOS (a ~500px
+   minimum window width) — and a 390px screenshot then catches the wrong
+   390 pixels. Caught by looking at the shot, not by reading the CSS. */
+html{direction:ltr}
+body{width:390px;background:#403E3A;color:#EFECE4;
+  font-family:system-ui,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(rgba(255,255,255,.07) .5px,transparent .6px),
+    radial-gradient(rgba(0,0,0,.34) .5px,transparent .6px);
+  background-size:4px 4px,7px 7px;background-position:0 0,2px 3px}
+.pg{position:relative;z-index:1;padding:16px 16px 40px}
+
+/* ---- sheet furniture (English, off the design itself) ---- */
+h1{direction:ltr;text-align:left;font-size:15px;font-weight:800;letter-spacing:.01em;margin:0 0 4px}
+.sub{direction:ltr;text-align:left;font-size:11px;font-weight:700;color:#BEB9AC;line-height:1.5}
+h2{direction:ltr;text-align:left;font-size:11px;font-weight:800;letter-spacing:.1em;
+  color:#131310;background:#FFD60A;border-radius:999px;padding:3px 11px 4px;
+  display:inline-block;margin:26px 0 10px}
+.cap{direction:ltr;text-align:left;font-size:11px;font-weight:700;color:#BEB9AC;
+  line-height:1.45;margin:6px 0 0}
+.styletag{direction:ltr;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#131310;
+  background:#FBF7EE;border-radius:5px;padding:2px 7px 3px;box-shadow:0 0 0 1.5px rgba(0,0,0,.45);
+  display:inline-block;margin:0 0 7px}
+
+/* ---- MF-B: the picked MK frame, identical for both styles ---- */
+.mkcard{position:relative;width:340px;padding:14px 16px;margin:0 auto 10px;
+  background:
+    repeating-linear-gradient(90deg,rgba(34,31,23,.05) 0 1px,transparent 1px 27px),
+    repeating-linear-gradient(rgba(34,31,23,.05) 0 1px,transparent 1px 27px),#D8C9A8;
+  border:5px solid #fff;
+  box-shadow:0 0 0 2px rgba(0,0,0,.55),0 6px 0 rgba(0,0,0,.42),0 16px 26px rgba(0,0,0,.26)}
+.defs{position:absolute;width:0;height:0}
+/* the silhouette gets the sticker die-cut, same filter for both styles */
+.mkcard .port{display:block;margin:0 auto;width:176px;height:235px;
+  filter:url(#cut-lg) drop-shadow(0 3px 0 rgba(0,0,0,.24))}
+.ident{margin-top:8px;text-align:right;color:#131310}
+.ident .nm{font-size:26px;font-weight:800;line-height:1.1}
+.ident .pt{font-size:13px;font-weight:700;color:#4A4436}
+
+/* ---- the verdict, v9 spec, unchanged between styles ---- */
+.vd{position:absolute;z-index:9;direction:ltr;left:50%;translate:-50% 0;bottom:-26px;
+  display:grid;place-items:center;white-space:nowrap;
+  border-radius:999px;padding:11px 28px 13px;
+  font-size:26px;font-weight:800;line-height:1.05;color:#131310;
+  border:3px solid rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(7px) saturate(1.3);backdrop-filter:blur(7px) saturate(1.3);
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.5),0 5px 0 rgba(0,0,0,.28)}
+.vd-right{background:rgba(46,196,182,.62)}
+.vd-surp{background:rgba(255,214,10,.62)}
+.vspacer{height:30px}
+
+/* ---- small appearances. Every one of these is under 150px and therefore
+        served by the 128px file. ---- */
+.sizes{display:flex;align-items:flex-end;gap:10px;margin:0 0 4px}
+.sz{display:flex;flex-direction:column;align-items:center;gap:5px}
+.sz i{font-style:normal;direction:ltr;font-size:9.5px;font-weight:700;color:#BEB9AC}
+/* the die-cut treatment small portraits get in v9: white edge, hard keyline */
+/* SILHOUETTE, the sticker reading: the die-cut edge rides the figure. */
+.sil{display:block}
+.sil-xs{filter:url(#cut-xs)}
+.sil-sm{filter:url(#cut-sm) drop-shadow(0 1px 0 rgba(0,0,0,.3))}
+.sil-lg{filter:url(#cut-lg) drop-shadow(0 2px 0 rgba(0,0,0,.28))}
+/* SQUARE SLOT, the avatar reading: a crop in a die-cut box. */
+.thumb{display:block;background:#D8C9A8;object-fit:cover;object-position:50% 14%;
+  border:2px solid #fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.55),0 2px 0 rgba(0,0,0,.34)}
+
+/* ---- 48px crop, on both grounds, so the die-cut edge can be judged ---- */
+.crop48{display:flex;gap:14px;align-items:center}
+.c48{display:flex;flex-direction:column;align-items:center;gap:6px}
+.c48 i{font-style:normal;direction:ltr;font-size:9.5px;font-weight:700;color:#BEB9AC}
+.c48 .thumb{width:48px;height:48px}
+.onlight{background:#EFE6D2;padding:10px;display:inline-flex;gap:14px;border-radius:4px}
+.crop48{flex-wrap:wrap}
+</style>
+</head>
+<body>
+<svg class="defs" width="0" height="0" aria-hidden="true"><defs>
+  <!-- the v9 sticker die-cut: dilate the alpha, flood it white, put the artwork
+       back on top. primitiveUnits are user space, so the radius is in CSS px of
+       the rendered element and does NOT scale with it — hence three of them.
+       That the edge has to be re-specified per size is itself a finding. -->
+  <filter id="cut-lg" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="5"></feMorphology>
+    <feFlood flood-color="#fff" result="f"></feFlood>
+    <feComposite in="f" in2="SourceAlpha" operator="in" result="x"></feComposite>
+    <feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"></feMorphology>
+    <feComposite in="f" in2="d" operator="in" result="cut"></feComposite>
+    <feMerge><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+  </filter>
+  <filter id="cut-sm" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="d"></feMorphology>
+    <feFlood flood-color="#fff" result="f"></feFlood>
+    <feComposite in="f" in2="d" operator="in" result="cut"></feComposite>
+    <feMerge><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+  </filter>
+  <filter id="cut-xs" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="d"></feMorphology>
+    <feFlood flood-color="#fff" result="f"></feFlood>
+    <feComposite in="f" in2="d" operator="in" result="cut"></feComposite>
+    <feMerge><feMergeNode in="cut"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+  </filter>
+</defs></svg>
+<div class="pg" dir="rtl">
+
+  <h1>Ben Gvir — illustration test</h1>
+  <p class="sub">Style A halftone / riso · Style B line + flat fill. Same crop box, same
+  frame (MF-B), same verdict, same ground. The only variable is the artwork.</p>
+
+  <h2>A · CASCADE CARD, FULL SIZE</h2>
+  <span class="styletag">STYLE A · 176px from the 400px file</span>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleA_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+  </div>
+  <span class="styletag">STYLE B · 176px from the 400px file</span>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleB_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+  </div>
+
+  <h2>B · THE THREE VERDICT STATES, OVER EACH STYLE</h2>
+  <p class="cap">Colour codes correctness only: one ink for “you called it”, one for
+  “the Knesset surprised you”. Copy is the v9 placeholder token — the verdict
+  strings are still unwritten.</p>
+
+  <span class="styletag">STYLE A</span>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleA_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+    <span class="vd vd-right">[RIGHT]</span>
+  </div>
+  <div class="vspacer"></div>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleA_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+    <span class="vd vd-surp">[SURPRISE-1]</span>
+  </div>
+  <div class="vspacer"></div>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleA_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+    <span class="vd vd-surp">[SURPRISE-2]</span>
+  </div>
+  <div class="vspacer"></div>
+
+  <span class="styletag">STYLE B</span>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleB_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+    <span class="vd vd-right">[RIGHT]</span>
+  </div>
+  <div class="vspacer"></div>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleB_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+    <span class="vd vd-surp">[SURPRISE-1]</span>
+  </div>
+  <div class="vspacer"></div>
+  <div class="mkcard">
+    <img class="port" src="../../assets/mk-test/bengvir_styleB_400.webp" alt="" data-expect="400">
+    <div class="ident"><div class="nm">איתמר בן-גביר</div><div class="pt">עוצמה יהודית</div></div>
+    <span class="vd vd-surp">[SURPRISE-2]</span>
+  </div>
+  <div class="vspacer"></div>
+
+  <h2>C · EVERY SMALL APPEARANCE, TRUE RENDERED SIZE</h2>
+  <p class="cap">128px file throughout — nothing here is over 150px. Sizes are the
+  ones the system actually uses: 18px sort-pot chip, 40px HUD, 48px, 64px map
+  marker, 128px list row.</p>
+  <span class="styletag">STYLE A</span>
+  <div class="sizes" dir="ltr"><div class="sz"><img class="sil sil-xs" style="width:18px;height:24px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>18</i></div><div class="sz"><img class="sil sil-sm" style="width:40px;height:53px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>40</i></div><div class="sz"><img class="sil sil-sm" style="width:48px;height:64px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>48</i></div><div class="sz"><img class="sil sil-sm" style="width:64px;height:85px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>64</i></div><div class="sz"><img class="sil sil-lg" style="width:128px;height:171px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>128</i></div></div>
+  <span class="styletag">STYLE B</span>
+  <div class="sizes" dir="ltr"><div class="sz"><img class="sil sil-xs" style="width:18px;height:24px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>18</i></div><div class="sz"><img class="sil sil-sm" style="width:40px;height:53px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>40</i></div><div class="sz"><img class="sil sil-sm" style="width:48px;height:64px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>48</i></div><div class="sz"><img class="sil sil-sm" style="width:64px;height:85px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>64</i></div><div class="sz"><img class="sil sil-lg" style="width:128px;height:171px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>128</i></div></div>
+
+  <h2>D · 48px, SIDE BY SIDE, ON BOTH GROUNDS</h2>
+  <p class="cap">The white die-cut edge is the thing under test on the light ground:
+  on cream it has almost no contrast left and the hard keyline underneath has to
+  carry the shape.</p>
+  <div class="crop48" dir="ltr">
+    <div class="c48"><img class="thumb" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>A slot</i></div>
+    <div class="c48"><img class="thumb" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>B slot</i></div>
+    <div class="c48"><img class="sil sil-sm" style="width:48px;height:64px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i>A cut</i></div>
+    <div class="c48"><img class="sil sil-sm" style="width:48px;height:64px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i>B cut</i></div>
+  </div>
+  <div class="onlight" style="margin-top:10px" dir="ltr">
+    <div class="c48"><img class="thumb" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i style="color:#4A4436">A slot</i></div>
+    <div class="c48"><img class="thumb" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i style="color:#4A4436">B slot</i></div>
+    <div class="c48"><img class="sil sil-sm" style="width:48px;height:64px" src="../../assets/mk-test/bengvir_styleA_128.webp" alt="" data-expect="128"><i style="color:#4A4436">A cut</i></div>
+    <div class="c48"><img class="sil sil-sm" style="width:48px;height:64px" src="../../assets/mk-test/bengvir_styleB_128.webp" alt="" data-expect="128"><i style="color:#4A4436">B cut</i></div>
+  </div>
+
+</div>
+
+<script>
+/* The sizing rule, checked rather than asserted: every <img> reports which
+   file it loaded and how big it is actually painted. Anything under 150px CSS
+   that came from the 400px file is a failure and is written into the page. */
+addEventListener('load', function () {
+  var bad = [];
+  document.querySelectorAll('img').forEach(function (im) {
+    var w = im.getBoundingClientRect().width;
+    var file = im.currentSrc.match(/_(\d+)\.webp$/);
+    var got = file ? file[1] : '?';
+    if (w < 150 && got !== '128') bad.push(Math.round(w) + 'px served by the ' + got + ' file');
+    if (w >= 150 && got !== '400') bad.push(Math.round(w) + 'px served by the ' + got + ' file');
+  });
+  document.body.setAttribute('data-sizecheck', bad.length ? bad.join(' | ') : 'ok');
+});
+</script>
+</body>
+</html>
