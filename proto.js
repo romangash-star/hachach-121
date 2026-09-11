@@ -2346,6 +2346,28 @@ async function commitClaim(ans, card, dir) {
   S.claim = ans;
   card.querySelectorAll('.v-a').forEach(b => b.disabled = true);
 
+  /* THE PUNCH LANDS HERE, ON THIS FRAME — reused, read-only, from the MK
+     cascade (see gxMark()/verdict()): same 38px .gx-punch, same sfx, no
+     transition. One call site covers both tap and swipe-release, since
+     both commit through here.
+     A SWIPED CARD IS STILL MID-DRAG at this instant — card.style.transform
+     holds the gesture's translateX/rotate, and the snap-back to square
+     runs a few lines down. Reading the button's rect while that transform
+     is live would place the mark at its DRAGGED position, and the
+     snap-back would then visibly pull the card out from under a mark that
+     cannot move. So the transform is cleared, the rect read, and the
+     transform restored, all synchronously (no repaint happens mid-script) —
+     the mark lands where the button is about to settle, not where the
+     drag currently has it. For a tap this is a no-op: the transform is
+     already empty. */
+  const punchBtn = card.querySelector('[data-ans="' + ans + '"]') || card;
+  const savedT = card.style.transform;
+  card.style.transform = '';
+  const pr = punchBtn.getBoundingClientRect();
+  card.style.transform = savedT;
+  card._punch = gxMark(pr.x + pr.width / 2, punchBtn);
+  sfx('punch');
+
   const table = COIN_TABLES[DEV.coins];
   /* under 'sheet' this is deferred to the stamp: paying out on
      correctness here would resolve the claim before the stamp does. */
@@ -2421,6 +2443,13 @@ function claimLift(card) {
     .map(sel => $(sel, card))
     .filter(Boolean)
     .map(n => ({ n, y: n.getBoundingClientRect().top }));
+  /* THE PUNCH GOES DOWN IN THE SAME BREATH AS THE BUTTONS. .is-revealing
+     (next line) is what hides .b1ans via CSS — but the punch is not a
+     child of .b1ans, it is parented to .cardwrap (see commitClaim()), so
+     hiding the buttons does nothing to it on its own. Left alone it would
+     hang there, on nothing, for the rest of the reveal until the הלאה
+     cleanup finally takes it down. */
+  if (card._punch) { card._punch.remove(); card._punch = null; }
   card.classList.add('is-revealing');
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
   const moved = flip.filter(f => {
@@ -2775,6 +2804,10 @@ async function claimReveal(ans, card) {
                              (dir * 13 + CM_REST) + 'deg)';
       chip.style.opacity = .2;
       await wait(T.cardExit);
+      /* the punch is on .cardwrap, same as the cascade's hole — it does
+         not ride the card's own exit and has to be taken off explicitly
+         or it is left floating over every card that follows. */
+      if (card._punch) card._punch.remove();
       card.remove(); mark.remove(); panel.remove(); chip.remove();
       /* T22 · THE BACK OF THE NEXT CARD IS SHOWN, ON PURPOSE. It was
          already visible for the frame between the throw finishing and
@@ -10159,7 +10192,7 @@ async function shExport(kind, aspect) {
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
       '<foreignObject width="100%" height="100%">' +
-        '<div xmlns="http://www.w3.org/1999/xhtml"><style>' + A.css + '</style>' + xhtml + '</div>' +
+        '<div xmlns="http://www.w3.org/1999/xhtml"><style>/*<![CDATA[*/' + A.css + '/*]]>*/</style>' + xhtml + '</div>' +
       '</foreignObject></svg>';
   /* NON-NEGOTIABLE 1 · a data: URL. blob: taints the canvas and toBlob
      throws SecurityError — Chrome, Playwright WebKit and real iOS Safari. */
@@ -10218,21 +10251,28 @@ async function shSave() {
   return 'saved';
 }
 
-/* THE WORKING STATE LIVES INSIDE THE PRESSED BUTTON: the label swaps, the
-   icon slot becomes a 21px spinner, the box does not move. THE OTHER
+/* THE WORKING STATE LIVES INSIDE THE PRESSED BUTTON: the label CLEARS, the
+   icon slot becomes a 21px spinner alone, the box does not move. THE OTHER
    BUTTON IS DISABLED WHILE ONE RUNS — two rasterise passes at once on a
-   mid-range Android is what produces a janked card. */
+   mid-range Android is what produces a janked card.
+   THE LABEL USED TO BE REPLACED WITH busyLabel RATHER THAN CLEARED — text
+   and spinner side by side in one 64.5px button, fighting for the same
+   9px gap. Cleared, the spinner centres alone; busyLabel is no longer
+   painted but is kept as the button's aria-label so the busy state still
+   has a name for a screen reader, not just aria-busy's bare "busy". */
 async function shRun(btn, other, busyLabel, fn) {
   if (SH_BUSY) return;
   SH_BUSY = true;
   const lab = $('.sh-bl', btn), ico = $('.sh-ico', btn);
   const label0 = lab.textContent, ico0 = ico.innerHTML;
   btn.classList.add('is-busy'); btn.setAttribute('aria-busy', 'true');
-  lab.textContent = busyLabel; ico.innerHTML = SH_ICON.spin;
+  btn.setAttribute('aria-label', busyLabel);
+  lab.textContent = ''; ico.innerHTML = SH_ICON.spin;
   other.disabled = true;
   let r = 'failed';
   try { r = await fn(); } catch (e) { r = 'failed'; }
   btn.classList.remove('is-busy'); btn.removeAttribute('aria-busy');
+  btn.removeAttribute('aria-label');
   ico.innerHTML = ico0;
   other.disabled = false;
   SH_BUSY = false;
