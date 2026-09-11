@@ -5104,11 +5104,20 @@ function gxPlaceStops(g, stopX, guess) {
     pct[v] = +(((tr.x + tr.width - stopX[v]) / tr.width) * 100).toFixed(3);
   $('.gx-you', g).style.right = pct[guess] + '%';
   $('.gx-mk',  g).style.right = pct[guess] + '%';
-  /* the labels follow the tokens; as flex thirds they would now disagree */
+  /* the labels follow the tokens; as flex thirds they would now disagree.
+     T58 · THE SAME VIEWPORT-INTO-LAYOUT BUG THE HOLE HAD, in the same
+     function and shipped in the same commit. stopX and the row's rect are
+     POST-scale; style.left is read PRE-scale. At 360x640 that put the three
+     labels at 206.5/150.8/95.2 against button centres of 257.6/180/102.4.
+     Invisible at 390x844 for the identical reason the hole's was: the
+     effective scale there is exactly 1. The tokens themselves were never
+     affected — they are placed with right:%, which is a fraction of the
+     track's own box and so carries no units to convert. */
   const row = $('.gx-stops', g), rr = row.getBoundingClientRect();
+  const rsc = rr.width / row.offsetWidth || 1;
   [...row.children].forEach((i, k) => {
     i.style.position  = 'absolute';
-    i.style.left      = (stopX[VOTES[k]] - rr.x).toFixed(2) + 'px';
+    i.style.left      = ((stopX[VOTES[k]] - rr.x) / rsc).toFixed(2) + 'px';
     i.style.transform = 'translateX(-50%)';
   });
   return pct;
@@ -5123,9 +5132,24 @@ function gxPlaceStops(g, stopX, guess) {
 function gxMark(cx, track) {
   const wrap = $('.cardwrap'), wr = wrap.getBoundingClientRect();
   const tr = track.getBoundingClientRect();
+  /* T58 · THE TWO COORDINATE SPACES ARE NOT THE SAME ONE, AND THAT SHIPPED.
+     getBoundingClientRect returns POST-scale viewport pixels; style.left and
+     style.top are read as PRE-scale layout pixels. .stack carries the
+     --card-scale matrix above .cardwrap, so a viewport delta written
+     straight into top/left renders SHORT by that factor — the hole landed
+     113.9px above the track at 360x640 and 102.1px above it at 375x667,
+     which is mid-card, on the MK's face.
+     IT MEASURED CLEAN BECAUSE --card-scale IS EXACTLY 1.0000 AT 844 TALL,
+     and every capture taken for T57 was at an 844-tall viewport. The delta
+     is identically zero there, so the check could not see it. Any future
+     measurement of this element has to run at a scaled profile as well.
+     offsetWidth is the layout width and the rect's width is the rendered
+     one, so their ratio IS the effective scale, whatever produced it — no
+     need to read --card-scale or to know which ancestor applied it. */
+  const sc = wr.width / wrap.offsetWidth || 1;
   const m = el('span', 'gx-punch gx-punch--mark');
-  m.style.left = (cx - wr.x).toFixed(2) + 'px';
-  m.style.top  = (tr.y + tr.height / 2 - wr.y).toFixed(2) + 'px';
+  m.style.left = ((cx - wr.x) / sc).toFixed(2) + 'px';
+  m.style.top  = ((tr.y + tr.height / 2 - wr.y) / sc).toFixed(2) + 'px';
   wrap.appendChild(m);
   return m;
 }
