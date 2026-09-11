@@ -2906,6 +2906,23 @@ const BACK_LABEL = 'חזרה';                 /* TAMAR · the nested modal's ba
    when there is somewhere to go back to, which is why it is a parameter
    and not a field on `o`: a caller cannot get it wrong, because a caller
    never passes it. */
+/* T59 · THE MODAL HEROES, AS LITERAL PATHS AND DELIBERATELY SO. The chair
+   and the building come from M.props.*, which make_manifest.py generates
+   and which is not ours to add to — the same reason .i-logo's path is
+   written out at the intro. If the manifest ever carries these, each entry
+   becomes M.props.hero_law['384'] and nothing else here changes.
+   384 IS THE ONLY SIZE WIRED, because the band is 96px tall and every one
+   of these clears 3x against it: gloss 384/96 = 4.00, howto 4.00, law
+   4.00, and sources — the one landscape file, whose longest edge is its
+   width — 302/96 = 3.15. The 256 and 128 ship alongside for whatever wants
+   them later; nothing reads them today. */
+const HERO = {
+  law:     'assets/heroes/hero_law_384.webp',
+  gloss:   'assets/heroes/hero_gloss_384.webp',
+  sources: 'assets/heroes/hero_sources_384.webp',
+  howto:   'assets/heroes/hero_howto_384.webp',
+};
+
 function stickerFill(o, nested) {
   o = o || {};
   /* ITEM 9 · THE RESERVED HERO. 96px at the top of every sticker, held
@@ -2944,9 +2961,14 @@ function stickerFill(o, nested) {
       /* T7 · the label is a child of the meta line, not a line of its own:
          a separate <p> would take the box's gap and read as a third block
          between the title and the body. */
+      /* T59 · THE DATE IS ITS OWN ELEMENT so it can carry the pill. It was
+         a bare text node beside the label, which is also why it sat right:
+         the <p> is a fit-content flex item, the LABEL set its width, and
+         the shorter date then aligned start inside it. The string itself is
+         untouched — this wraps it, it does not rewrite it. */
       (o.meta ? '<p class="stmodal__meta">' +
         (o.metaLabel ? '<span class="stmodal__metalab">' + esc(o.metaLabel) + '</span>' : '') +
-        esc(o.meta) + '</p>' : '') +
+        '<span class="stmodal__date">' + esc(o.meta) + '</span></p>' : '') +
       /* T12 · bodyHtml IS THE SAME SLOT WITH THE ESCAPING ALREADY DONE.
          The explanation moved in here carries glossary <span class="gt">
          markers from markGlossary(), and esc() would print the tags. It
@@ -2979,7 +3001,13 @@ function stickerPush(m, o) {
   const box = m && $('.stmodal__box', m);
   if (!box || m._depth) return;
   const prev = box.innerHTML;
-  stickerSwap(m, () => { box.innerHTML = stickerFill(o, true); });
+  /* T59 · the flag has to move with the content. A glossary term pushed
+     into the law sticker is still a glossary term, and without this it
+     would take the law modal's title size on the way in. */
+  stickerSwap(m, () => {
+    box.innerHTML = stickerFill(o, true);
+    box.classList.toggle('is-titlelg', !!o.titleLg);
+  });
   m._depth = 1;
   m._pop = () => {
     stickerSwap(m, () => { box.innerHTML = prev; });
@@ -2992,7 +3020,14 @@ function stickerPush(m, o) {
 function stickerModal(o) {
   o = o || {};
   const m = el('div', 'stmodal');
-  m.innerHTML = '<div class="stmodal__box" role="dialog" aria-modal="true">' +
+  /* T59 · titleLg IS NAMED FOR WHAT IT CONTROLS. It replaces
+     :has(.sthero__q), which meant "this sticker has no graphic" and was
+     being used as a proxy for "this title can afford to be bigger". The
+     two are not the same thing, and putting art into the glossary and
+     sources stickers would have shrunk their titles 20 -> 17px with
+     nothing in either change to connect them. */
+  m.innerHTML = '<div class="stmodal__box' + (o.titleLg ? ' is-titlelg' : '') +
+    '" role="dialog" aria-modal="true">' +
     stickerFill(o, false) + '</div>';
   let gone = false;
   /* ITEM 43 · ONE HOOK, FIRED ON EVERY WAY OUT. The ✕, the ground and
@@ -3137,11 +3172,16 @@ function lawModal() {
     meta:  issue.bill_date || '',
     metaLabel: LAW_DATE_LABEL,                                         /* TAMAR · T7 */
     bodyHtml: markGlossary(billContext(issue.bill_summary)),              /* T5b */
-    art:   h ? ROOT + h : '',
+    /* T59 · THE LAW HERO REPLACES THE TOPIC ICON HERE. This modal is about
+       a bill, not about the topic, and the topic icon is already on the map
+       node the player came through — drawing it again named the wrong
+       thing twice. The 576/512/384/256 lookup above is kept because the
+       note it carries is about how topic art is served everywhere else,
+       and `h` is still what the ? fallback is measured against. */
+    art:   ROOT + HERO.law,
     /* ITEM 9 · the hook a per-issue graphic drops into later. It is on the
        hero, not on the modal, so whatever fills it does not have to know
-       anything about the dialog around it. Until that art exists the slot
-       carries the topic icon this lookup returns. */
+       anything about the dialog around it. */
     heroKey: 'issue',
   });
 }
@@ -3158,7 +3198,11 @@ function lawModal() {
    therefore offers no second door out — which is what caps the depth at
    one in the markup as well as in stickerPush()'s guard. */
 function glossOpts(term) {
-  return { title: term, body: (DATA.glossary || {})[term] || '' };
+  return { title: term, body: (DATA.glossary || {})[term] || '',
+           art: ROOT + HERO.gloss, heroKey: 'gloss',
+           /* T59 · the term alone on the line, and it keeps the 20px it has
+              had since ITEM 9 — see .is-titlelg. */
+           titleLg: true };
 }
 function glossModal(term) {
   return stickerModal(glossOpts(term));
@@ -6810,6 +6854,10 @@ function moreModal(text, terms, links) {
        a term that happened to fall in the remainder was never marked at
        all, because stickerModal escaped `body`. */
     bodyHtml: text ? markGlossary(text) : '',
+    /* T59 · the read-more and sources sticker. titleLg keeps the 20px this
+       modal has had since ITEM 9 — the hero arriving is not a reason for
+       the issue's title to shrink. */
+    art: ROOT + HERO.sources, heroKey: 'sources', titleLg: true,
     extra: extra
   });
   /* T34 · IT SWAPS, IT DOES NOT STACK. This used to call glossModal(),
@@ -8477,9 +8525,10 @@ function mapIntroModal() {
        the slot is untouched and simply stops matching now. */
     title: MAP_INTRO_COPY.title,
     body:  MAP_INTRO_COPY.line,
-    /* ITEM 9's hero, with nothing in it yet: the "?" fallback is what the
-       slot draws until this screen has art of its own. heroKey marks the
-       hook so the graphic can be dropped in without touching this call. */
+    /* T59 · the how-it-works hero: the gold coin with the chair, which is
+       the game's own mark. NO titleLg — this modal sets its own 18px below
+       the .is-titlelg rule and has never taken the bigger size. */
+    art: ROOT + HERO.howto,
     heroKey: 'mapintro',
     extra: '<button type="button" class="p-c mi-go">' +
              esc(MAP_INTRO_COPY.go) + '</button>',                    /* TAMAR */

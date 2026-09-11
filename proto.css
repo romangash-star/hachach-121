@@ -4718,7 +4718,28 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   font-family:var(--font-display); font-weight:900;
   font-size:var(--fs-body); line-height:1.22; text-align:center;
 }
-.stmodal__meta{ margin:0; font-size:var(--fs-meta); font-weight:700; color:var(--ink-soft); }
+/* T59 · CENTRED LIKE THE TITLE ABOVE IT. The box is a centred column, so
+   this <p> is a fit-content flex item — 86.32px wide against the title's
+   270.93 — and the LABEL is what set that width. With text-align:start in
+   an RTL document the shorter date then hard-aligned to the same right
+   edge, and the two lines read as a narrow right-aligned column beside a
+   centred one. */
+.stmodal__meta{ margin:0; font-size:var(--fs-meta); font-weight:700;
+  color:var(--ink-soft); text-align:center; }
+/* T59 · THE DATE IS A DISCRETE FACT, SO IT IS OUTLINED AND NOT FILLED.
+   A kraft-filled pill was the alternative and it was rejected on the
+   paper: the sheet is already beige, and a filled pill puts a second
+   block of the same colour immediately under the title. The stroke marks
+   the date off from the body copy below without adding weight to a
+   surface that has plenty. Costs 12px of modal height, 336 -> 348, and
+   tightens the gap above the body by 1px. */
+.stmodal__date{
+  display:inline-block; border-radius:999px;
+  padding:3px 12px 4px; line-height:1.25;
+  font-family:var(--font-display); font-weight:900; font-size:var(--fs-meta);
+  color:var(--ink); background:none;
+  box-shadow:inset 0 0 0 1.5px rgba(43,41,38,.55);
+}
 /* T7 · the date's label. SimplerPro Regular and the date's own grey, one
    step down in size — it names the field rather than competing with it.
    400 IS WRITTEN OUT because the family ships 400 and 900: inheriting the
@@ -4726,6 +4747,8 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
 .stmodal__metalab{
   display:block; font-family:var(--font-body); font-weight:400;
   font-size:var(--fs-micro); line-height:1.3; color:var(--ink-soft);
+  /* T59 · a caption ABOVE the pill rather than a line beside it */
+  text-align:center; margin-bottom:4px;
 }
 .stmodal__body{
   margin:2px 0 0; font-size:var(--fs-meta); font-weight:700;
@@ -4733,11 +4756,25 @@ span.node-ico{ font-size:44px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,
   min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
 }
-/* a glossary term has no graphic and no date, so its title carries the
-   term alone and can afford to be bigger. ITEM 9 re-points this from the
-   retired .stmodal__art to the hero's fallback: "has a hero but no real
-   art in it" is now what "has no graphic" means. */
-.stmodal__box:has(.sthero__q) .stmodal__title{ font-size:20px; }
+/* T59 · KEYED ON THE THING IT MEANS, NOT ON A PROXY FOR IT.
+   This was .stmodal__box:has(.sthero__q) — "this sticker has no graphic" —
+   standing in for "this title can afford to be bigger". The two came apart
+   the moment the glossary and sources stickers got art: their titles would
+   have gone 20 -> 17px, and nothing in either change would have said why.
+   Measured before the swap: gloss 20, sources 20, law 17 (it already had
+   the topic icon), mapintro 18 — mapintro being the one already immune,
+   because .stmodal[data-mapintro] sets its own size below and wins the
+   (0,3,0) tie on source order. That rule must stay AFTER this one.
+   THE ERROR STATE CHANGES AND THAT IS ACCEPTED. lawModal with its art
+   missing drew 20px through the old selector and now draws 17 like every
+   other state of it. Lion's call, 11 Sep 2026: a title should not resize
+   because an image failed to load.
+   NOT data-hero. That attribute is written on .sthero when a caller passes
+   heroKey — but a BARE data-hero also sits on the profile builder's avatar
+   well (see the paintHero() closure), and it IS queried there. An unscoped
+   [data-hero] selector would reach both, and the two mean different
+   things. Do not write one. */
+.stmodal__box.is-titlelg .stmodal__title{ font-size:20px; }
 
 /* =====================================================================
    ITEM 43 · THE FIRST-ARRIVAL STICKER
