@@ -115,6 +115,8 @@ const T = {
   gxTravel2: ms('--t-gx-travel-2'),
   gxSettle:  ms('--t-gx-settle'),
   gxStampLag:ms('--t-gx-stamp-lag'),
+  gxIn:      ms('--t-gx-in'),      /* T55 · the strip's own fade         */
+  punchHold: ms('--t-punch-hold'), /* T55 · mark visible, nothing moving */
   snapback:  ms('--t-snapback'),
   resolve:   ms('--t-resolve'),
   coin:      ms('--t-coin'),
@@ -1283,6 +1285,16 @@ const SFX_SRC = {
      cards in a cascade sound alike. */
   card1: 'card_1.wav', card2: 'card_2.wav', card3: 'card_3.wav',
   peel:  'tape_peel.wav',
+  /* T55 · THE HOLE PUNCHED INTO THE PRESSED BUTTON, fired at the press.
+     A DIFFERENT OBJECT from both things it sits between: r = 0.077
+     against count_vote.wav and 0.165 against stamp.wav, where the set's
+     own baseline for two unrelated recordings is stamp vs count_vote at
+     0.063. The take with the fastest attack of the three was REJECTED on
+     exactly this test at r = 0.233 — see sources.txt.
+     LEVELLED TO count_vote, NOT TO THE STAMP. This is the player's own
+     action and it fires on every card of the cascade; stamp.wav's -19.3
+     would have made the press louder than the verdict it precedes. */
+  punch: 'punch.wav',
   /* N2a · THE FINALE'S COIN, AND IT IS A DIFFERENT OBJECT RATHER THAN A
      BIGGER ONE. r = 0.12 against coin.wav: an unrelated recording, not
      the same coin louder. That distinction is the whole licence for it
@@ -4704,8 +4716,11 @@ function armPredict(first) {
   const foot = el('div', 'v-a-row mf-b__foot');
   /* §H VOTE ORDER IS FIXED: בעד first, so in RTL it is rightmost. The
      order is VOTES', and VOTES is not reordered anywhere. */
+  /* T55 · THE LABEL IS ITS OWN SPAN so the punch can replace it rather
+     than sit on top of it. Same shape beat 2's votes already use. */
   foot.innerHTML = VOTES.map(v =>
-    '<button class="v-a" data-pred="' + v + '">' + VLABEL[v] + '</button>').join('');
+    '<button class="v-a" data-pred="' + v + '">' +
+      '<span class="v-a__lab">' + VLABEL[v] + '</span></button>').join('');
   card.appendChild(foot);
 
   /* B2-4 · THE MK QUESTION IS A STICKER NOW, not a 17px line under the
@@ -4740,19 +4755,42 @@ async function verdict(guess, foot, card) {
   S.guesses[p.id] = guess;
   const ok = guess === p.vote;
 
-  /* T53 · THE PRESS IS ACKNOWLEDGED HERE, BEFORE ANY WAIT. disabled has no
-     style on .v-a — there is no :disabled rule for it anywhere — so
-     disabling alone left three identical live-looking buttons for the whole
-     of --t-hold. is-taken recedes the two not chosen and is-chosen holds
-     the one that was, which is beat 2's treatment on beat 4's row: the
-     640ms below finally is what its comment says it is. It also covers the
-     dead-button problem, because the row now reads as resolved rather than
-     as three things still waiting to be pressed. */
+  /* T55 · THE PUNCH LANDS ON THE PRESSED BUTTON, ON THIS FRAME. No
+     transition anywhere on it and none wanted: a hole punch is
+     instantaneous, and anything that eases in reads as a fade, which is
+     the exact thing this task removed. The physicality is carried by the
+     sound, not by an animation on the mark.
+     IT REPLACES THE LABEL. .v-a__lab goes to opacity:0 with transition:
+     none (see proto.css), so the word does not show through the hole.
+     IT IS THE SAME 38px .gx-punch THE STRIP CARRIES 440ms later — one
+     object handed from the button to its stop, not two marks that
+     resemble each other.
+     T53'S RECESSION IS GONE and is-taken with it: the two unchosen
+     buttons now do not move, fade or scale at all. See the T55 block in
+     proto.css for what that knowingly leaves unsolved. */
+  foot.querySelectorAll('.v-a').forEach(b => { b.disabled = true; });
+
+  /* T57 · THE THREE BUTTON CENTRES, CAPTURED BEFORE foot.remove() TAKES
+     THEM. These become the strip's stops, so the hole's x is literally the
+     same number in both states. They cannot be expressed as a fraction:
+     the buttons are flex:1 with a gap, so their centres are not at
+     (2i+1)/6 of anything. */
+  const stopX = {};
   foot.querySelectorAll('.v-a').forEach(b => {
-    b.disabled = true;
-    if (b.dataset.pred === guess) b.classList.add('is-chosen');
+    const r = b.getBoundingClientRect();
+    stopX[b.dataset.pred] = r.x + r.width / 2;
   });
-  foot.classList.add('is-taken');
+
+  /* THE STRIP IS BUILT NOW AND HELD HIDDEN, and that is not premature: it
+     is the only way to place the hole on the strip's REAL stop rather than
+     on one derived from tokens, which .mf-b's 3D projection puts 5px out.
+     It is inert behind .gx--armed until the hold ends. */
+  const g = axis(guess, p);
+  card.appendChild(g);
+  g.classList.add('gx--armed');
+  const stops = gxPlaceStops(g, stopX, guess);
+  const hole  = gxMark(stopX[guess], $('.gx-track', g));
+  sfx('punch');                                                /* T55 */
 
   /* T27 · THE BLACK TAG RETIRES ON THE FIRST VERDICT. "נחשו מה הוא/היא
      הצביע/ה" earns card one and nothing after it: the card shows a face,
@@ -4763,9 +4801,14 @@ async function verdict(guess, foot, card) {
      the node — so this runs once and the cascade continues without it. */
   retireAsk();                                                 /* T27 */
 
-  /* §1.2 the player's choice sits alone before the truth arrives */
-  await wait(T.hold);
+  /* §1.2 the player's choice sits alone before the truth arrives — and
+     T55 is what finally makes that true. The wait used to be --t-hold
+     (640ms) spent staring at three unchanged buttons; it is now
+     --t-punch-hold (440ms) spent looking at the mark they just made,
+     with nothing else on screen moving at all. */
+  await wait(T.punchHold);
   foot.remove();
+  g.classList.remove('gx--armed');        /* T57 · gx-in starts here */
 
   /* THE BASIS LINE IS GONE. It rendered 'הצבעה מתועדת' on basis:doc cards
      and a placeholder on basis:bloc ones, which meant the label's ABSENCE
@@ -4779,10 +4822,9 @@ async function verdict(guess, foot, card) {
      label. See the report. */
 
   /* THE AXIS IS INSIDE THE CARD, at its foot. Absolutely positioned, so
-     it adds nothing to the card's box and cannot re-scale it. */
-  const g = axis(guess, p);
-  card.appendChild(g);
-  await runAxis(g, guess, p.vote);
+     it adds nothing to the card's box and cannot re-scale it. T57 built and
+     appended it at the press; only the playing-out happens here. */
+  await runAxis(g, guess, p.vote, stops);
 
   /* THE STAMP IS ONE PLANE, ON TOP. Parented to .cardwrap rather than the
      card because .mf-b carries overflow:hidden and would cut it at the
@@ -4825,6 +4867,11 @@ async function verdict(guess, foot, card) {
   /* T24 · THE GATE GOES DOWN BEFORE THE THROW, not after it. On the last
      card the ground the deck is sitting on has to already carry the gate,
      or the throw reveals nothing and a screen has to arrive instead. */
+  /* T57 · THE HOLE IS ON .cardwrap, SO THE SWIPE CANNOT TAKE IT. Everything
+     else in this beat rides the card off screen; this one node would be left
+     hanging over the next card's face. It goes on the frame the card starts
+     leaving. */
+  hole.remove();
   const last = S.ci >= S.dealt.length;
   if (last) layGate();
   leaveCard();
@@ -5021,9 +5068,13 @@ function axis(guess, p) {
          Neutral by construction: a punch-hole in paper, no hue at all, so
          it can never be read as a correctness verdict the way a coloured
          mark would. PLACEHOLDER — B4 picks between four treatments. */
-      '<span class="gx-m gx-you is-landing" style="right:' + stopPct(guess) + '%" ' +
+      '<span class="gx-m gx-you" style="right:' + stopPct(guess) + '%" ' +
         'role="img" aria-label="הניחוש שלך">' +
-        '<span class="gx-punch" aria-hidden="true"></span>' +
+        /* T57 · NO .gx-punch HERE. The hole on .cardwrap IS the player's
+           mark and it is already sitting at this exact stop; a second one
+           inside the token would be the same object drawn twice. What is
+           left is the label and the slot the MK's token is compared
+           against. */
         '<span class="gx-punch__lab">' + ph('הניחוש שלך') + '</span></span>' +
       /* THE MK TOKEN STARTS IN THE PLAYER'S SLOT, not in its own. The
          comparison begins where the player put it and travels from
@@ -5038,26 +5089,93 @@ function axis(guess, p) {
   return g;
 }
 
+/* T57 · THE STOPS ARE THE BUTTONS' CENTRES, MEASURED. stopPct()'s
+   (2i+1)/6 of the track sat 14.73px inside them at 390 — the buttons are
+   flex:1 with an 18.2px gap in a 306px box, the track is 280px, and no
+   fixed fraction reconciles the two. Called once, on a strip that is in
+   the DOM but still hidden, so the track has a real box to measure.
+   THE THREE STOPS STAY EVENLY SPACED AND SYMMETRIC, which is what the fill
+   depends on: d1 and d2 remain exactly 1:2, and gx--d{dist} keys off the
+   integer distance, untouched. */
+function gxPlaceStops(g, stopX, guess) {
+  const tr  = $('.gx-track', g).getBoundingClientRect();
+  const pct = {};
+  for (const v of VOTES)
+    pct[v] = +(((tr.x + tr.width - stopX[v]) / tr.width) * 100).toFixed(3);
+  $('.gx-you', g).style.right = pct[guess] + '%';
+  $('.gx-mk',  g).style.right = pct[guess] + '%';
+  /* the labels follow the tokens; as flex thirds they would now disagree.
+     T58 · THE SAME VIEWPORT-INTO-LAYOUT BUG THE HOLE HAD, in the same
+     function and shipped in the same commit. stopX and the row's rect are
+     POST-scale; style.left is read PRE-scale. At 360x640 that put the three
+     labels at 206.5/150.8/95.2 against button centres of 257.6/180/102.4.
+     Invisible at 390x844 for the identical reason the hole's was: the
+     effective scale there is exactly 1. The tokens themselves were never
+     affected — they are placed with right:%, which is a fraction of the
+     track's own box and so carries no units to convert. */
+  const row = $('.gx-stops', g), rr = row.getBoundingClientRect();
+  const rsc = rr.width / row.offsetWidth || 1;
+  [...row.children].forEach((i, k) => {
+    i.style.position  = 'absolute';
+    i.style.left      = ((stopX[VOTES[k]] - rr.x) / rsc).toFixed(2) + 'px';
+    i.style.transform = 'translateX(-50%)';
+  });
+  return pct;
+}
+
+/* T57 · THE HOLE, PLACED ON .cardwrap AT THE STRIP'S OWN STOP. Its x is the
+   pressed button's centre and its y is the track's, both read off real
+   boxes rather than computed from tokens — .mf-b's rect is a 3D projection
+   and lies about the layout by 5px. Parented outside the foot and outside
+   the card's flipper, so foot.remove() cannot take it and no transform can
+   move it: same node, same coordinates, before and after. */
+function gxMark(cx, track) {
+  const wrap = $('.cardwrap'), wr = wrap.getBoundingClientRect();
+  const tr = track.getBoundingClientRect();
+  /* T58 · THE TWO COORDINATE SPACES ARE NOT THE SAME ONE, AND THAT SHIPPED.
+     getBoundingClientRect returns POST-scale viewport pixels; style.left and
+     style.top are read as PRE-scale layout pixels. .stack carries the
+     --card-scale matrix above .cardwrap, so a viewport delta written
+     straight into top/left renders SHORT by that factor — the hole landed
+     113.9px above the track at 360x640 and 102.1px above it at 375x667,
+     which is mid-card, on the MK's face.
+     IT MEASURED CLEAN BECAUSE --card-scale IS EXACTLY 1.0000 AT 844 TALL,
+     and every capture taken for T57 was at an 844-tall viewport. The delta
+     is identically zero there, so the check could not see it. Any future
+     measurement of this element has to run at a scaled profile as well.
+     offsetWidth is the layout width and the rect's width is the rendered
+     one, so their ratio IS the effective scale, whatever produced it — no
+     need to read --card-scale or to know which ancestor applied it. */
+  const sc = wr.width / wrap.offsetWidth || 1;
+  const m = el('span', 'gx-punch gx-punch--mark');
+  m.style.left = ((cx - wr.x) / sc).toFixed(2) + 'px';
+  m.style.top  = ((tr.y + tr.height / 2 - wr.y) / sc).toFixed(2) + 'px';
+  wrap.appendChild(m);
+  return m;
+}
+
 /* the strip, played out. Every duration is a token; see :root. */
-async function runAxis(g, guess, vote) {
+async function runAxis(g, guess, vote, stops) {
   const you  = $('.gx-you', g), mk = $('.gx-mk', g), fill = $('.gx-fill', g);
-  /* 1 · the player's token locks into the slot the player chose.
-         A FORCED REFLOW, NOT requestAnimationFrame. rAF does not fire in
-         a backgrounded tab, so the class never came off and the token
-         stayed at opacity:0 — and the awaited rAF further down never
-         resolved at all, which left the round stuck in the verdict with
-         no stamp, permanently. Reading a layout property flushes the
-         pending style synchronously and gives the transition its "from". */
-  void g.offsetWidth;
-  you.classList.remove('is-landing');
-  await wait(T.gxLock);
-  /* 2 · and sits there. Nothing moves. This pause is the whole reason
-         the strip reads as a comparison rather than as a result. */
-  await wait(T.gxHold);
-  /* 3 · the MK's token appears in the PLAYER'S slot */
+  /* 1 · T55 · THE STRIP ARRIVES WITH THE PUNCH ALREADY AT ITS STOP, and
+         this await is the strip's own fade FINISHING rather than a pause
+         laid on top of it. gx-in runs for --t-gx-in from the moment
+         axis() is appended, so waiting exactly that long is what
+         guarantees the beat's ordering: the player's mark is fully
+         settled before the MK's token begins to appear. Those two used to
+         overlap by 90ms, because gx-in ran for --t-hold while this
+         function was already three steps in underneath it.
+         THE LOCK AND THE HOLD ARE BOTH GONE. --t-gx-lock drove the token
+         DROPPING into its slot, which cannot happen now that the punch
+         landed on the button 440ms ago and this is that same object
+         continuing; and --t-gx-hold's pause has moved to the press, where
+         the player spends it looking at their own mark instead of at
+         nothing. Both tokens stay defined, as knobs. */
+  await wait(T.gxIn);
+  /* 2 · the MK's token appears in the PLAYER'S slot */
   mk.classList.remove('is-hidden');
   await wait(T.gxAppear);
-  /* 4 · the fill travels to where the MK actually voted and carries the
+  /* 3 · the fill travels to where the MK actually voted and carries the
          token with it. DISTANCE-PROPORTIONAL on one easing, so two slots
          of disagreement feel like twice one slot rather than like the
          same event with a different endpoint. */
@@ -5074,7 +5192,7 @@ async function runAxis(g, guess, vote) {
      stops labelled בעד · נמנע · נגד. See the note beside .gx-fill. */
   const dist = Math.abs(VOTES.indexOf(vote) - VOTES.indexOf(guess));
   g.classList.add('gx--d' + dist);
-  const from = stopPct(guess), to = stopPct(vote);
+  const from = stops[guess], to = stops[vote];      /* T57 · measured */
   if (!dist) {
     /* agreement: there is nowhere to travel. A zero-length fill reads as
        a bug, so the pair settles in place instead and the player's token
@@ -5082,6 +5200,16 @@ async function runAxis(g, guess, vote) {
     you.classList.add('is-paired');
     mk.classList.add('is-paired-mk');
     g.classList.add('is-agreed');
+    /* T57 · THE MK STEPS CLEAR OF THE HOLE, because the hole cannot move.
+       Both land on the same stop on agreement, and the hole sits above the
+       strip at z-index 9 — so without this the portrait is covered outright
+       on every correct guess. TOWARD THE TRACK'S CENTRE, not a fixed
+       direction: at the two outer stops a fixed one walks the portrait off
+       the end of the track. 28px leaves them overlapping, which is what
+       reads as a pair rather than as two separate answers. */
+    const tw  = $('.gx-track', g).getBoundingClientRect().width;
+    const dir = stops[guess] < 50 ? 1 : -1;
+    mk.style.right = (stops[guess] + dir * (28 / tw * 100)).toFixed(3) + '%';
     await wait(T.gxSettle);
   } else {
     const dur = dist === 1 ? T.gxTravel1 : T.gxTravel2;
@@ -5098,7 +5226,7 @@ async function runAxis(g, guess, vote) {
     mk.style.right   = to + '%';
     await wait(dur);
   }
-  /* 5 · the stamp lands after the token has settled, not with it */
+  /* 4 · the stamp lands after the token has settled, not with it */
   await wait(T.gxStampLag);
 }
 

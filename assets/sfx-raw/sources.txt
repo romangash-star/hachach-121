@@ -1,12 +1,22 @@
 SOURCE AND LICENCE TRAIL — raw sound effects
 ============================================
 
-Thirteen raw files, all thirteen obtained from Zapsplat
+Twenty-one raw downloads, all twenty-one obtained from Zapsplat
 (https://www.zapsplat.com) on a PAID Zapsplat subscription (Gold,
 £4.99/month), not the free tier. Provenance as stated by Lion — the first
 five on 09 Sep 2026, the four stamp/peel takes and the four coin, +1 and
 deck takes confirmed the same day as coming from the same paid account,
-within the download-time exemption.
+the wrong-stamp and finale-coin takes on 10 Sep and the three hole-punch
+takes on 11 Sep, all within the download-time exemption.
+
+THE COUNT IN THIS PARAGRAPH READ "THIRTEEN" until 11 Sep 2026 and had been
+stale since the coin/deck section was added — each later section appended
+files without revising it. It is now derived by counting, and anyone adding
+a section should recount rather than trust it.
+
+assets/sfx-raw/ also holds stamp-wrong-a.prepared.wav, which is NOT a
+download: it is our own padded intermediate, and it is described with the
+file it came from.
 
 ATTRIBUTION: NOT REQUIRED
 -------------------------
@@ -152,6 +162,50 @@ vote121-a.wav
     score ticking rather than a single object set down, and 1016 ms long
     into the 1126 ms the finale leaves between the +1 and the coin. The
     slot keeps count_vote.wav, which is already one set-down.
+
+THE CARD PUNCH — added 11 Sep 2026 (T55)
+----------------------------------------
+Same paid account and the same download-time exemption, per Lion.
+
+FILENAMES WITHOUT THE zapsplat_ PREFIX, AND THAT IS A RENAME. The first two
+below were renamed on download. Both are Zapsplat Gold downloads from Lion's
+paid account, confirmed by him 11 Sep 2026 on the same footing as every other
+entry in this file. Recorded explicitly so the missing prefix is not re-raised
+as a provenance gap.
+
+office_hole_punch_001.wav
+    Zapsplat · Gold (paid), no attribution required · 48 kHz/24-bit stereo, 1.156 s
+    Used for: assets/sfx/punch.wav — the hole punched into the pressed vote
+    button on an MK card, fired at the press
+    (the SECOND of its three events, the press at 137.9 ms. The first at
+     31.7 ms is a -20.2 dB lead-in and the third at 791 ms is the spring
+     return; the press is the only one that opens on its own event.)
+    Cut the way the rest were: -40 dB trim at 105.5..167.6 ms — 62.1 ms of
+    natural decay — mono, 44.1 kHz/16-bit, 3 ms fades, then RMS-matched to
+    count_vote.wav at -23.65 rather than to stamp.wav. The punch is the
+    player's own action and it fires on every card of the cascade, so it is
+    not the hero: stamp.wav's -19.3 would have made the press louder than
+    the verdict it precedes.
+    Shipped: 68.1 ms, 2.68 ms attack, peak -6.03 dB, one event.
+    CHOSEN ON CORRELATION: r = 0.077 against count_vote.wav and 0.165
+    against stamp.wav — both at the set's own baseline for unrelated
+    recordings, which is stamp vs count_vote at 0.063.
+
+office_hole_punch_002.wav
+    Zapsplat · Gold (paid), no attribution required · 48 kHz/24-bit stereo, 1.077 s
+    NOT USED — a viable alternate, kept. Its press is the third of four
+    events, at 165.8 ms, with a 2.1 ms attack and r = 0.072 against
+    count_vote.wav. It fails no test; 001 was taken as the drier of the two,
+    which is a judgement about character and not a measurement.
+
+zapsplat_office_hole_punch_metal_single_punching_hole_thick_paper_002_33446.wav
+    Zapsplat · Gold (paid), no attribution required · 96 kHz/24-bit mono, 0.741 s
+    NOT USED — the fastest attack of the three at 0.8 ms and the best level
+    of the three, but r = 0.233 against count_vote.wav: 3.7x the 0.063
+    baseline, and a third of the way to the 0.36 that this file already
+    treats as meaning two cuts of one recording. It shares real character
+    with the poker-chip set-down. Rejected on the same test count_vote
+    itself was chosen on.
 
 NOT FROM ZAPSPLAT
 -----------------
