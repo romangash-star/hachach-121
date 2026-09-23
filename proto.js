@@ -10089,8 +10089,8 @@ const MAP_INTRO_COPY = {                                              /* TAMAR *
      card is gone; a first-time player is asked once, at the foot of
      this sticker, and each button states its own choice — neither one
      means both "continue" and "accept". */
-  consentQ:   'נוכל לאסוף נתוני שימוש לשיפור המשחק?',    /* TAMAR */
-  consentPol: 'מדיניות הפרטיות',                      /* TAMAR · the link under the question */
+  consentQ:   'האתר עושה שימוש בקבצי עוגיות (Cookies)',    /* TAMAR */
+  consentPol: 'מדיניות פרטיות',                       /* TAMAR · the link under the line */
   yes:        'כן, מאשרים',                            /* TAMAR */
   no:         'לא, תודה',                              /* TAMAR */
 };
@@ -10347,7 +10347,7 @@ function mapIntroModal() {
   const consent = !ask ? '' :
     '<hr class="info-rule mi-rule">' +
     '<p class="mi-q" id="mi-q">' + esc(MAP_INTRO_COPY.consentQ) + '</p>' +
-    '<p class="mi-ga"><span lang="en" dir="ltr">Google Analytics</span> · ' +
+    '<p class="mi-ga">' +
       '<button type="button" class="mi-pol" data-mi-privacy>' +
         esc(MAP_INTRO_COPY.consentPol) + '</button></p>' +
     '<div class="mi-row" role="group" aria-labelledby="mi-q">' +
