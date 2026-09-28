@@ -22,7 +22,7 @@
     gtag('config', G_ID, {
       send_page_view: false,
       anonymize_ip: true,
-      cookie_flags: 'SameSite=None;Secure',
+      cookie_flags: 'SameSite=Lax;Secure',
     });
 
     var script = document.createElement('script');

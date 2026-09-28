@@ -10089,7 +10089,7 @@ const MAP_INTRO_COPY = {                                              /* TAMAR *
      card is gone; a first-time player is asked once, at the foot of
      this sticker, and each button states its own choice — neither one
      means both "continue" and "accept". */
-  consentQ:   'האתר עושה שימוש בקבצי עוגיות (Cookies)',    /* TAMAR */
+  consentQ:   'האתר עושה שימוש בקבצי עוגיות (Cookies) לשיפור המשחק, באמצעות Google Analytics',    /* TAMAR */
   consentPol: 'מדיניות פרטיות',                       /* TAMAR · the link under the line */
   yes:        'כן, מאשרים',                            /* TAMAR */
   no:         'לא, תודה',                              /* TAMAR */
