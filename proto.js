@@ -5258,7 +5258,10 @@ function beat2() {
    the affordance appears. No flight, no callout, no assembly. */
 function tachlesTransition(btn, ov) {
   const vote = btn.dataset.vote;
-  if (window.HAC) HAC('beat2_vote', { issue_id: issue.id, vote: vote });
+  /* THE PLAYER'S OWN VOTE IS NOT SENT. בעד/נגד/נמנע on a real bill is a
+     political opinion; the funnel only needs to know the beat was
+     answered, so the event carries the issue and nothing else. */
+  if (window.HAC) HAC('beat2_vote', { issue_id: issue.id });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const armNext = () => {
@@ -7621,7 +7624,7 @@ async function beat5() {
   const segsWas   = segsDone(issue.topic);
   const topicsWas = topicsDone();
   PROGRESS[issue.id] = true;
-  if (window.HAC) HAC('issue_complete', { issue_id: issue.id, score: wallet, claim_correct: S.claimCorrect === true, position: S.position || null, mk_hits: roundHits(), mk_total: S.dealt.length, time_ms: HAC.beatMs() });
+  if (window.HAC) HAC('issue_complete', { issue_id: issue.id, score: wallet, claim_correct: S.claimCorrect === true, mk_hits: roundHits(), mk_total: S.dealt.length, time_ms: HAC.beatMs() });
   /* THE ROUND'S RECORD IS WRITTEN HERE AND NOWHERE ELSE. Every value it
      keeps was already deposited on S by the beat that owns it —
      claimCorrect by claimReveal(), position by the tachles chips,
