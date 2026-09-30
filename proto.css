@@ -3699,6 +3699,23 @@ body.no-ph .ph{ display:none !important; }
   width:calc(22.4% + 7.168px); height:auto;
   display:block; pointer-events:none;
 }
+/* THE PARTNER LOGO (זה עכשיו), MIRRORED. right:0 is the stage's 16px
+   gutter on the other side, bottom:4px the same baseline, and both are
+   measured inside .sc-intro, so on a desktop it sits inside the 390px
+   column, never at the viewport's edge.
+   SIZED BY LETTER HEIGHT, SO THE TWO READ AS AN EQUAL PAIR. The white
+   עכשיו is 76.645 of the file's 155.333 units (49.34%); המגדלור's letter
+   bodies — ל's ascender and the lamp excluded — are 99 of its 149px
+   (66.44%). Equal letters make this file 1.3466x המגדלור's height, and
+   with the two aspects (2.0866 here, 600x149 = 4.0268 there) that is
+   המגדלור's width x 0.6978: 61.0 x 29.2 at a 390 stage, against its
+   87.4 x 21.7. Taller overall because it is stacked on two lines — that
+   is the point, not a mismatch. Both files end at their letters'
+   baseline, so the shared bottom:4px is a shared baseline. */
+.i-logo--partner{
+  left:auto; right:0;
+  width:calc((22.4% + 7.168px) * 0.6978);
+}
 
 .i-tag{ flex:none; position:relative; z-index:5; margin:clamp(6px,1.5vh,16px) 0; }
 /* THE TITLE AND THE CHAIR ARE ONE COMPOSITE STICKER. The chair sits ON the
@@ -3893,7 +3910,15 @@ body.no-ph .ph{ display:none !important; }
    IT IS ADDED, NOT TAKEN. Every margin above the CTA is untouched, so
    nothing in the composed group gets tighter; the 24 goes on the one
    margin that has nothing under it but the gutter the logo sits in. */
-.i-cta{ margin:clamp(30px,calc(4vh + 12px),46px) 0 calc(24px + clamp(0px,calc(2.4vh - 12px),8px));
+/* THE GAP ABOVE THE CTA IS 16px LESS AT EVERY HEIGHT, and that is 8px of
+   lift. The group is centred, so a margin taken out of it moves the CTA
+   up by half — measured, not assumed: -16 on this margin put the CTA's
+   bottom edge 8px higher at 390x844, 430x932, 375x667 and 390x664.
+   The reason is the two logos under it: with a browser's toolbar up
+   (390x664) the CTA sat 36px above the partner mark, which read as
+   crowded. The clamp's three terms each drop by 16, so the curve keeps
+   its shape: 30..46 -> 14..30. Chair, title and tagline are untouched. */
+.i-cta{ margin:clamp(14px,calc(4vh - 4px),30px) 0 calc(24px + clamp(0px,calc(2.4vh - 12px),8px));
   width:280px; font-size:clamp(21px,3.1vh,26px);
   position:relative; z-index:6; flex:none; }
 

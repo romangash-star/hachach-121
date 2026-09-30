@@ -9115,6 +9115,11 @@ const INTRO_COPY = {
   sub:   'מה באמת קורה בכנסת?',                         /* retired from the screen, T1 */
   para:  'לא בוחן ידע. לא אומר למי להצביע. משחק שמראה מה קרה — ומה אתם חושבים על זה.', /* retired from the screen, T1 */
   cta:   'בואו נשחק 🎮',                                 /* index.html:  button.cta  */
+  /* THE PARTNER LOGO'S ALT TEXT. It says what the mark says, "זה
+     עכשיו". The organisation's full name is not known yet — Tamar to add
+     it here when she has it. */
+  partnerAlt: 'לוגו זה עכשיו',                                /* TAMAR · full name pending */
+  hamigAlt:   'לוגו המגדלור',                                /* TAMAR */
   note:  'סוגיה אחת = דקה · אפשר לשחק כמה שרוצים',      /* index.html:  .intro-note */
   /* the board's INT-D carries a striped slot above the title. It is
      Tamar's, unwritten, and is NOT authored here. */
@@ -9229,8 +9234,24 @@ function renderIntro() {
        which is not ours to add to. If the manifest ever carries the logo
        this becomes M.props.logo['600'] and nothing else changes.
        NO FILTER — see .i-logo in proto.css. */
+    /* NAMED, NOT HIDDEN. It was alt="" aria-hidden as decoration; beside
+       a named partner logo it is a credit too, and a screen reader should
+       hear both. */
     '<img class="i-logo" src="' + ROOT + 'assets/mk/hamigdalor_logo_600.webp" ' +
-      'alt="" aria-hidden="true">';
+      'alt="' + esc(INTRO_COPY.hamigAlt) + '">' +
+    /* THE PARTNER LOGO, placement D's mirror: bottom START-EDGE corner,
+       physically right, on המגדלור's baseline and at its height. It
+       takes .i-logo whole — position, pointer-events, and the loading
+       beat's fade — and .i-logo--partner moves it and sizes it. Unlike
+       המגדלור it carries alt text: it names another organisation, and
+       a credit a screen reader cannot hear is not a credit.
+       THE FILE IS TRIMMED AND SLIMMED, NOT REDRAWN. The designer's SVG
+       (410x361, 222KB) had its viewBox cut to the artwork's own bounds
+       and its two 1912px rasters — a colour image and a luminance mask —
+       baked into one 480px image with the mask as its alpha. The seven
+       paths and every colour are byte-for-byte the designer's. */
+    '<img class="i-logo i-logo--partner" src="' + ROOT + 'assets/mk/zeh_achshav_logo.svg" ' +
+      'alt="' + esc(INTRO_COPY.partnerAlt) + '">';
 
   /* ONE PRIMARY ACTION AND IT GOES TO THE MAP. Not to a character step:
      §4.1 kills creation-as-first-step, the default avatar is already in
